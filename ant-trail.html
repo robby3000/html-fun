@@ -313,23 +313,72 @@
             }
             
             function updateAntPosition() {
-                // Check if ant is near the edge
-                const margin = 30;
-                let needsNewTarget = false;
+                // Get the SVG's screen dimensions
+                const svgRect = canvas.getBoundingClientRect();
+                const screenWidth = svgRect.width;
+                const screenHeight = svgRect.height;
                 
-                // Ensure ant stays within bounds
-                antX = Math.max(margin, Math.min(antX, svgWidth - margin));
-                antY = Math.max(margin, Math.min(antY, svgHeight - margin));
+                // Convert SVG coordinates to screen coordinates
+                const svgPoint = canvas.createSVGPoint();
+                svgPoint.x = antX;
+                svgPoint.y = antY;
+                const CTM = canvas.getScreenCTM();
+                const screenPoint = svgPoint.matrixTransform(CTM);
                 
-                // If ant is close to any edge, set a new target toward the center
-                if (antX <= margin + 10 || antX >= svgWidth - margin - 10 || 
-                    antY <= margin + 10 || antY >= svgHeight - margin - 10) {
+                // Calculate screen position relative to SVG container
+                const screenX = screenPoint.x - svgRect.left;
+                const screenY = screenPoint.y - svgRect.top;
+                
+                // Define margins in screen pixels
+                const screenMargin = 30;
+                
+                // Check if ant is outside visible screen area
+                let needsAdjustment = false;
+                let adjustedScreenX = screenX;
+                let adjustedScreenY = screenY;
+                
+                if (screenX < screenMargin) {
+                    adjustedScreenX = screenMargin;
+                    needsAdjustment = true;
+                } else if (screenX > screenWidth - screenMargin) {
+                    adjustedScreenX = screenWidth - screenMargin;
+                    needsAdjustment = true;
+                }
+                
+                if (screenY < screenMargin) {
+                    adjustedScreenY = screenMargin;
+                    needsAdjustment = true;
+                } else if (screenY > screenHeight - screenMargin) {
+                    adjustedScreenY = screenHeight - screenMargin;
+                    needsAdjustment = true;
+                }
+                
+                // If adjustment needed, convert screen coordinates back to SVG coordinates
+                if (needsAdjustment) {
+                    // Create inverse transform to convert screen to SVG coordinates
+                    const inverse = CTM.inverse();
                     
-                    // Set target toward center with some randomness
-                    const centerX = svgWidth / 2;
-                    const centerY = svgHeight / 2;
-                    targetX = centerX + (Math.random() - 0.5) * svgWidth * 0.6;
-                    targetY = centerY + (Math.random() - 0.5) * svgHeight * 0.6;
+                    // Convert adjusted screen coordinates to SVG coordinates
+                    svgPoint.x = adjustedScreenX + svgRect.left;
+                    svgPoint.y = adjustedScreenY + svgRect.top;
+                    const adjustedSvgPoint = svgPoint.matrixTransform(inverse);
+                    
+                    // Update ant position
+                    antX = adjustedSvgPoint.x;
+                    antY = adjustedSvgPoint.y;
+                    
+                    // Set a new target toward the center
+                    const centerScreenX = screenWidth / 2;
+                    const centerScreenY = screenHeight / 2;
+                    
+                    // Convert center screen point to SVG coordinates
+                    svgPoint.x = centerScreenX + svgRect.left;
+                    svgPoint.y = centerScreenY + svgRect.top;
+                    const centerSvgPoint = svgPoint.matrixTransform(inverse);
+                    
+                    // Set target with some randomness
+                    targetX = centerSvgPoint.x + (Math.random() - 0.5) * svgWidth * 0.4;
+                    targetY = centerSvgPoint.y + (Math.random() - 0.5) * svgHeight * 0.4;
                     
                     // Make direction change faster when near edges
                     directionChangeSpeed = 0.08;
