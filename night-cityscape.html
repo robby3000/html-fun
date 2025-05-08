@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Night Cityscape Animation</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #0a0a1a;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        
+        .scene-container {
+            width: 100%;
+            height: 100vh;
+            position: fixed;
+            top: 0;
+            left: 0;
+            overflow: hidden;
+            z-index: -110;
+        }
+        
+        svg {
+            width: 100%;
+            height: 100%;
+        }
+        
+        /* Star twinkling animation */
+        .star {
+            animation: twinkle 3s infinite alternate;
+            transform-origin: center;
+            opacity: 0.1;
+        }
+        
+        /* Different timing for stars to create natural effect */
+        .star:nth-child(2n) {
+            animation-duration: 4s;
+            animation-delay: 0.5s;
+        }
+        
+        .star:nth-child(3n) {
+            animation-duration: 5s;
+            animation-delay: 1s;
+        }
+        
+        .star:nth-child(5n) {
+            animation-duration: 6s;
+            animation-delay: 1.5s;
+        }
+        
+        .star:nth-child(7n) {
+            animation-duration: 7s;
+            animation-delay: 2s;
+        }
+        
+        @keyframes twinkle {
+            0% {
+                opacity: 0.1;
+                transform: scale(0.8);
+            }
+            50% {
+                opacity: 0.8;
+                transform: scale(1.2);
+            }
+            100% {
+                opacity: 0.1;
+                transform: scale(0.8);
+            }
+        }
+        
+        /* Cloud drifting animation */
+        #cloud1, #cloud2, #cloud3 {
+            animation: drift 30s linear infinite;
+        }
+        
+        #cloud2 {
+            animation-duration: 40s;
+            animation-delay: 5s;
+        }
+        
+        #cloud3 {
+            animation-duration: 50s;
+            animation-delay: 15s;
+        }
+        
+        @keyframes drift {
+            from {
+                transform: translateX(-100px);
+            }
+            to {
+                transform: translateX(1500px);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="scene-container">
+        <svg viewBox="0 0 1000 600" preserveAspectRatio="xMidYMid slice">
+            <!-- Sky background -->
+            <defs>
+                <linearGradient id="skyGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" stop-color="#0a0a2a" />
+                    <stop offset="100%" stop-color="#1a1a4a" />
+                </linearGradient>
+                
+                <!-- Cloud pattern -->
+                <filter id="cloudFilter" x="-50%" y="-50%" width="200%" height="200%">
+                    <feGaussianBlur in="SourceGraphic" stdDeviation="5" />
+                </filter>
+            </defs>
+            
+            <!-- Sky -->
+            <rect x="0" y="0" width="1000" height="600" fill="url(#skyGradient)" />
+            
+            <!-- Moon -->
+            <circle cx="750" cy="120" r="50" fill="#f5f5f5">
+                <animate attributeName="opacity" values="0.85;0.95;0.85" dur="10s" repeatCount="indefinite" />
+            </circle>
+            <circle cx="735" cy="110" r="12" fill="#e0e0e0" opacity="0.7" />
+            <circle cx="770" cy="130" r="8" fill="#e0e0e0" opacity="0.7" />
+            <circle cx="760" cy="100" r="10" fill="#e0e0e0" opacity="0.7" />
+            
+            <!-- Stars (will be generated with JavaScript) -->
+            <g id="stars"></g>
+            
+            <!-- Clouds -->
+            <g id="clouds">
+                <path id="cloud1" d="M100,150 C120,130 150,130 170,150 C190,130 220,130 240,150 C260,130 290,130 310,150 L310,170 C290,190 260,190 240,170 C220,190 190,190 170,170 C150,190 120,190 100,170 Z" 
+                      fill="#e0e0e0" opacity="0.4" filter="url(#cloudFilter)" />
+                      
+                <path id="cloud2" d="M200,100 C220,80 250,80 270,100 C290,80 320,80 340,100 C360,80 390,80 410,100 L410,120 C390,140 360,140 340,120 C320,140 290,140 270,120 C250,140 220,140 200,120 Z" 
+                      fill="#e0e0e0" opacity="0.3" filter="url(#cloudFilter)" />
+                      
+                <path id="cloud3" d="M50,200 C70,180 100,180 120,200 C140,180 170,180 190,200 C210,180 240,180 260,200 L260,220 C240,240 210,240 190,220 C170,240 140,240 120,220 C100,240 70,240 50,220 Z" 
+                      fill="#e0e0e0" opacity="0.2" filter="url(#cloudFilter)" />
+            </g>
+            
+            <!-- Cityscape silhouette -->
+            <g id="cityscape" fill="#0a0a1a">
+                <!-- Large buildings -->
+                <rect x="50" y="350" width="80" height="250" />
+                <rect x="60" y="300" width="20" height="50" />
+                <rect x="140" y="380" width="60" height="220" />
+                <rect x="210" y="320" width="70" height="280" />
+                <rect x="220" y="280" width="15" height="40" />
+                <rect x="250" y="280" width="15" height="40" />
+                <rect x="290" y="400" width="100" height="200" />
+                <rect x="320" y="350" width="40" height="50" />
+                <rect x="400" y="330" width="70" height="270" />
+                <rect x="420" y="280" width="30" height="50" />
+                <rect x="480" y="370" width="90" height="230" />
+                <rect x="510" y="320" width="30" height="50" />
+                <rect x="580" y="400" width="60" height="200" />
+                <rect x="650" y="350" width="100" height="250" />
+                <rect x="680" y="300" width="40" height="50" />
+                <rect x="760" y="380" width="70" height="220" />
+                <rect x="840" y="420" width="110" height="180" />
+                <rect x="870" y="380" width="50" height="40" />
+                
+                <!-- Windows -->
+                <g fill="#f5f5c5" opacity="0.6">
+                    <!-- Building 1 windows -->
+                    <rect x="60" y="370" width="10" height="15" />
+                    <rect x="80" y="370" width="10" height="15" />
+                    <rect x="100" y="370" width="10" height="15" />
+                    <rect x="60" y="400" width="10" height="15" />
+                    <rect x="80" y="400" width="10" height="15" />
+                    <rect x="100" y="400" width="10" height="15" />
+                    <rect x="60" y="430" width="10" height="15" />
+                    <rect x="80" y="430" width="10" height="15" />
+                    <rect x="100" y="430" width="10" height="15" />
+                    <rect x="60" y="460" width="10" height="15" />
+                    <rect x="80" y="460" width="10" height="15" />
+                    <rect x="100" y="460" width="10" height="15" />
+                    <rect x="60" y="490" width="10" height="15" />
+                    <rect x="80" y="490" width="10" height="15" />
+                    <rect x="100" y="490" width="10" height="15" />
+                    <rect x="60" y="520" width="10" height="15" />
+                    <rect x="80" y="520" width="10" height="15" />
+                    <rect x="100" y="520" width="10" height="15" />
+                    
+                    <!-- Building 2 windows -->
+                    <rect x="150" y="400" width="10" height="15" />
+                    <rect x="170" y="400" width="10" height="15" />
+                    <rect x="150" y="430" width="10" height="15" />
+                    <rect x="170" y="430" width="10" height="15" />
+                    <rect x="150" y="460" width="10" height="15" />
+                    <rect x="170" y="460" width="10" height="15" />
+                    <rect x="150" y="490" width="10" height="15" />
+                    <rect x="170" y="490" width="10" height="15" />
+                    <rect x="150" y="520" width="10" height="15" />
+                    <rect x="170" y="520" width="10" height="15" />
+                    
+                    <!-- Building 3 windows -->
+                    <rect x="220" y="340" width="10" height="15" />
+                    <rect x="240" y="340" width="10" height="15" />
+                    <rect x="260" y="340" width="10" height="15" />
+                    <rect x="220" y="370" width="10" height="15" />
+                    <rect x="240" y="370" width="10" height="15" />
+                    <rect x="260" y="370" width="10" height="15" />
+                    <rect x="220" y="400" width="10" height="15" />
+                    <rect x="240" y="400" width="10" height="15" />
+                    <rect x="260" y="400" width="10" height="15" />
+                    <rect x="220" y="430" width="10" height="15" />
+                    <rect x="240" y="430" width="10" height="15" />
+                    <rect x="260" y="430" width="10" height="15" />
+                    <rect x="220" y="460" width="10" height="15" />
+                    <rect x="240" y="460" width="10" height="15" />
+                    <rect x="260" y="460" width="10" height="15" />
+                    <rect x="220" y="490" width="10" height="15" />
+                    <rect x="240" y="490" width="10" height="15" />
+                    <rect x="260" y="490" width="10" height="15" />
+                    <rect x="220" y="520" width="10" height="15" />
+                    <rect x="240" y="520" width="10" height="15" />
+                    <rect x="260" y="520" width="10" height="15" />
+                    
+                    <!-- More windows for other buildings -->
+                    <rect x="310" y="420" width="10" height="15" />
+                    <rect x="330" y="420" width="10" height="15" />
+                    <rect x="350" y="420" width="10" height="15" />
+                    <rect x="370" y="420" width="10" height="15" />
+                    <rect x="310" y="450" width="10" height="15" />
+                    <rect x="330" y="450" width="10" height="15" />
+                    <rect x="350" y="450" width="10" height="15" />
+                    <rect x="370" y="450" width="10" height="15" />
+                    <rect x="310" y="480" width="10" height="15" />
+                    <rect x="330" y="480" width="10" height="15" />
+                    <rect x="350" y="480" width="10" height="15" />
+                    <rect x="370" y="480" width="10" height="15" />
+                    <rect x="310" y="510" width="10" height="15" />
+                    <rect x="330" y="510" width="10" height="15" />
+                    <rect x="350" y="510" width="10" height="15" />
+                    <rect x="370" y="510" width="10" height="15" />
+                    <rect x="310" y="540" width="10" height="15" />
+                    <rect x="330" y="540" width="10" height="15" />
+                    <rect x="350" y="540" width="10" height="15" />
+                    <rect x="370" y="540" width="10" height="15" />
+                    
+                    <!-- Building 5 windows -->
+                    <rect x="420" y="350" width="10" height="15" />
+                    <rect x="440" y="350" width="10" height="15" />
+                    <rect x="420" y="380" width="10" height="15" />
+                    <rect x="440" y="380" width="10" height="15" />
+                    <rect x="420" y="410" width="10" height="15" />
+                    <rect x="440" y="410" width="10" height="15" />
+                    <rect x="420" y="440" width="10" height="15" />
+                    <rect x="440" y="440" width="10" height="15" />
+                    <rect x="420" y="470" width="10" height="15" />
+                    <rect x="440" y="470" width="10" height="15" />
+                    <rect x="420" y="500" width="10" height="15" />
+                    <rect x="440" y="500" width="10" height="15" />
+                    <rect x="420" y="530" width="10" height="15" />
+                    <rect x="440" y="530" width="10" height="15" />
+                    
+                    <!-- Building 6 windows -->
+                    <rect x="500" y="390" width="10" height="15" />
+                    <rect x="520" y="390" width="10" height="15" />
+                    <rect x="540" y="390" width="10" height="15" />
+                    <rect x="500" y="420" width="10" height="15" />
+                    <rect x="520" y="420" width="10" height="15" />
+                    <rect x="540" y="420" width="10" height="15" />
+                    <rect x="500" y="450" width="10" height="15" />
+                    <rect x="520" y="450" width="10" height="15" />
+                    <rect x="540" y="450" width="10" height="15" />
+                    <rect x="500" y="480" width="10" height="15" />
+                    <rect x="520" y="480" width="10" height="15" />
+                    <rect x="540" y="480" width="10" height="15" />
+                    <rect x="500" y="510" width="10" height="15" />
+                    <rect x="520" y="510" width="10" height="15" />
+                    <rect x="540" y="510" width="10" height="15" />
+                    <rect x="500" y="540" width="10" height="15" />
+                    <rect x="520" y="540" width="10" height="15" />
+                    <rect x="540" y="540" width="10" height="15" />
+                    
+                    <!-- Building 7 windows -->
+                    <rect x="590" y="420" width="10" height="15" />
+                    <rect x="610" y="420" width="10" height="15" />
+                    <rect x="590" y="450" width="10" height="15" />
+                    <rect x="610" y="450" width="10" height="15" />
+                    <rect x="590" y="480" width="10" height="15" />
+                    <rect x="610" y="480" width="10" height="15" />
+                    <rect x="590" y="510" width="10" height="15" />
+                    <rect x="610" y="510" width="10" height="15" />
+                    <rect x="590" y="540" width="10" height="15" />
+                    <rect x="610" y="540" width="10" height="15" />
+                    
+                    <!-- Building 8 windows -->
+                    <rect x="670" y="370" width="10" height="15" />
+                    <rect x="690" y="370" width="10" height="15" />
+                    <rect x="710" y="370" width="10" height="15" />
+                    <rect x="730" y="370" width="10" height="15" />
+                    <rect x="670" y="400" width="10" height="15" />
+                    <rect x="690" y="400" width="10" height="15" />
+                    <rect x="710" y="400" width="10" height="15" />
+                    <rect x="730" y="400" width="10" height="15" />
+                    <rect x="670" y="430" width="10" height="15" />
+                    <rect x="690" y="430" width="10" height="15" />
+                    <rect x="710" y="430" width="10" height="15" />
+                    <rect x="730" y="430" width="10" height="15" />
+                    <rect x="670" y="460" width="10" height="15" />
+                    <rect x="690" y="460" width="10" height="15" />
+                    <rect x="710" y="460" width="10" height="15" />
+                    <rect x="730" y="460" width="10" height="15" />
+                    <rect x="670" y="490" width="10" height="15" />
+                    <rect x="690" y="490" width="10" height="15" />
+                    <rect x="710" y="490" width="10" height="15" />
+                    <rect x="730" y="490" width="10" height="15" />
+                    <rect x="670" y="520" width="10" height="15" />
+                    <rect x="690" y="520" width="10" height="15" />
+                    <rect x="710" y="520" width="10" height="15" />
+                    <rect x="730" y="520" width="10" height="15" />
+                    
+                    <!-- Building 9 windows -->
+                    <rect x="770" y="400" width="10" height="15" />
+                    <rect x="790" y="400" width="10" height="15" />
+                    <rect x="810" y="400" width="10" height="15" />
+                    <rect x="770" y="430" width="10" height="15" />
+                    <rect x="790" y="430" width="10" height="15" />
+                    <rect x="810" y="430" width="10" height="15" />
+                    <rect x="770" y="460" width="10" height="15" />
+                    <rect x="790" y="460" width="10" height="15" />
+                    <rect x="810" y="460" width="10" height="15" />
+                    <rect x="770" y="490" width="10" height="15" />
+                    <rect x="790" y="490" width="10" height="15" />
+                    <rect x="810" y="490" width="10" height="15" />
+                    <rect x="770" y="520" width="10" height="15" />
+                    <rect x="790" y="520" width="10" height="15" />
+                    <rect x="810" y="520" width="10" height="15" />
+                    
+                    <!-- Building 10 windows -->
+                    <rect x="850" y="440" width="10" height="15" />
+                    <rect x="870" y="440" width="10" height="15" />
+                    <rect x="890" y="440" width="10" height="15" />
+                    <rect x="910" y="440" width="10" height="15" />
+                    <rect x="930" y="440" width="10" height="15" />
+                    <rect x="850" y="470" width="10" height="15" />
+                    <rect x="870" y="470" width="10" height="15" />
+                    <rect x="890" y="470" width="10" height="15" />
+                    <rect x="910" y="470" width="10" height="15" />
+                    <rect x="930" y="470" width="10" height="15" />
+                    <rect x="850" y="500" width="10" height="15" />
+                    <rect x="870" y="500" width="10" height="15" />
+                    <rect x="890" y="500" width="10" height="15" />
+                    <rect x="910" y="500" width="10" height="15" />
+                    <rect x="930" y="500" width="10" height="15" />
+                    <rect x="850" y="530" width="10" height="15" />
+                    <rect x="870" y="530" width="10" height="15" />
+                    <rect x="890" y="530" width="10" height="15" />
+                    <rect x="910" y="530" width="10" height="15" />
+                    <rect x="930" y="530" width="10" height="15" />
+                </g>
+            </g>
+        </svg>
+    </div>
+
+    <script>
+        // Generate stars dynamically
+        document.addEventListener('DOMContentLoaded', function() {
+            const starsGroup = document.getElementById('stars');
+            const numStars = 150;
+            
+            for (let i = 0; i < numStars; i++) {
+                const x = Math.random() * 1000;
+                const y = Math.random() * 300; // Only in the sky area
+                const radius = Math.random() * 1.5 + 0.5;
+                
+                const star = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                star.setAttribute("cx", x);
+                star.setAttribute("cy", y);
+                star.setAttribute("r", radius);
+                star.setAttribute("fill", "#ffffff");
+                star.classList.add("star");
+                
+                starsGroup.appendChild(star);
+            }
+            
+            // Add some random blinking to windows to simulate lights turning on/off
+            const windows = document.querySelectorAll('#cityscape rect[fill="#f5f5c5"]');
+            
+            windows.forEach(window => {
+                // Randomly decide if this window should blink
+                if (Math.random() > 0.7) {
+                    // Create a random animation for this window
+                    const animationDuration = Math.random() * 10 + 5; // 5-15 seconds
+                    const animationDelay = Math.random() * 20; // 0-20 seconds delay
+                    
+                    // Create opacity animation
+                    const animate = document.createElementNS("http://www.w3.org/2000/svg", "animate");
+                    animate.setAttribute("attributeName", "opacity");
+                    animate.setAttribute("values", "0.6;0.1;0.6");
+                    animate.setAttribute("dur", `${animationDuration}s`);
+                    animate.setAttribute("repeatCount", "indefinite");
+                    animate.setAttribute("begin", `${animationDelay}s`);
+                    
+                    window.appendChild(animate);
+                }
+            });
+        });
+    </script>
+</body>
+</html>

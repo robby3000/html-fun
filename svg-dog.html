@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Ymlogy Hero Image</title>
+  <style>
+    body {
+      margin: 0;
+      background: #0d0d1a;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    svg {
+      width: 80%;
+      height: auto;
+    }
+  </style>
+</head>
+<body>
+
+<svg viewBox="0 0 800 400" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background Stars -->
+  <g>
+    <circle cx="50" cy="50" r="2" fill="white" opacity="0.8"/>
+    <circle cx="750" cy="80" r="2" fill="white" opacity="0.6"/>
+    <circle cx="400" cy="20" r="2" fill="white" opacity="0.7"/>
+    <circle cx="600" cy="300" r="2" fill="white" opacity="0.5"/>
+    <circle cx="200" cy="350" r="2" fill="white" opacity="0.9"/>
+  </g>
+
+  <!-- Moon -->
+  <circle cx="400" cy="350" r="150" fill="#cccccc" />
+  <circle cx="330" cy="320" r="10" fill="#bbbbbb" />
+  <circle cx="470" cy="380" r="8" fill="#bbbbbb" />
+  <circle cx="380" cy="390" r="6" fill="#aaaaaa" />
+
+  <!-- Cartoon Dog -->
+  <g id="dog" transform="translate(300,250)">
+    <!-- Body -->
+    <ellipse cx="0" cy="0" rx="30" ry="20" fill="#ffcc99" />
+    <!-- Head -->
+    <circle cx="35" cy="-10" r="15" fill="#ffcc99" />
+    <!-- Ears -->
+    <ellipse cx="40" cy="-25" rx="5" ry="10" fill="#996633" />
+    <ellipse cx="30" cy="-25" rx="5" ry="10" fill="#996633" />
+    <!-- Eye -->
+    <circle cx="40" cy="-10" r="3" fill="black" />
+    <!-- Tail -->
+    <path d="M -30,0 Q -40,-10 -35,-20" stroke="#ffcc99" stroke-width="4" fill="none" />
+    <!-- Legs -->
+    <ellipse cx="-10" cy="15" rx="5" ry="8" fill="#ffcc99" />
+    <ellipse cx="10" cy="15" rx="5" ry="8" fill="#ffcc99" />
+  </g>
+
+  <!-- Planet -->
+  <circle id="planet" cx="600" cy="100" r="12" fill="#66ccff" />
+
+  <!-- Animations -->
+  <animateTransform
+    xlink:href="#dog"
+    attributeName="transform"
+    type="translate"
+    values="300,250; 350,200; 400,250; 450,200; 500,250"
+    dur="4s"
+    repeatCount="indefinite"
+    keyTimes="0; 0.25; 0.5; 0.75; 1"
+    keySplines="0.5 0 0.5 1; 0.5 0 0.5 1; 0.5 0 0.5 1; 0.5 0 0.5 1"
+    calcMode="spline"
+  />
+
+  <animateTransform
+    xlink:href="#planet"
+    attributeName="transform"
+    type="translate"
+    values="0,0; -20,10; 0,20; 20,10; 0,0"
+    dur="4s"
+    repeatCount="indefinite"
+  />
+
+</svg>
+
+</body>
+</html>

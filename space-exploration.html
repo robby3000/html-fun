@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Space Exploration</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #070b24;
+            overflow: hidden;
+            font-family: 'Arial', sans-serif;
+            color: white;
+        }
+        
+        .scene-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            overflow: hidden;
+            z-index: -110;
+        }
+        
+        svg {
+            width: 100%;
+            height: 100%;
+        }
+        
+        .star {
+            fill: #ffffff;
+            opacity: 0.7;
+        }
+        
+        .twinkle {
+            animation: twinkle 4s infinite alternate;
+        }
+        
+        .twinkle-slow {
+            animation: twinkle 6s infinite alternate;
+            animation-delay: 1s;
+        }
+        
+        .twinkle-slower {
+            animation: twinkle 8s infinite alternate;
+            animation-delay: 2s;
+        }
+        
+        @keyframes twinkle {
+            0% {
+                opacity: 0.2;
+                transform: scale(0.8);
+            }
+            100% {
+                opacity: 0.9;
+                transform: scale(1.2);
+            }
+        }
+        
+        .rocket-path {
+            fill: none;
+            stroke: none;
+        }
+        
+        .rocket {
+            animation: rocket-thrust 0.5s infinite alternate;
+        }
+        
+        @keyframes rocket-thrust {
+            0% {
+                transform: translateY(0);
+            }
+            100% {
+                transform: translateY(-2px);
+            }
+        }
+        
+        .planet-orbit {
+            fill: none;
+            stroke: rgba(255, 255, 255, 0.1);
+            stroke-width: 1;
+            stroke-dasharray: 5, 5;
+        }
+        
+        .satellite-orbit {
+            fill: none;
+            stroke: rgba(255, 255, 255, 0.1);
+            stroke-width: 1;
+            stroke-dasharray: 2, 3;
+        }
+        
+        .nebula {
+            opacity: 0.2;
+            filter: blur(10px);
+        }
+        
+        .comet-tail {
+            animation: comet-flicker 3s infinite alternate;
+        }
+        
+        @keyframes comet-flicker {
+            0% {
+                opacity: 0.3;
+            }
+            100% {
+                opacity: 0.7;
+            }
+        }
+        
+        .control-panel {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(20, 30, 70, 0.7);
+            border-radius: 10px;
+            padding: 10px 20px;
+            display: flex;
+            gap: 20px;
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(100, 150, 255, 0.3);
+            z-index: 100;
+        }
+        
+        .control {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .control label {
+            margin-bottom: 5px;
+            font-size: 12px;
+            color: #8af;
+        }
+        
+        .control input {
+            width: 100px;
+            background: rgba(30, 40, 80, 0.8);
+            border: 1px solid #456;
+            border-radius: 5px;
+            height: 8px;
+            outline: none;
+            -webkit-appearance: none;
+        }
+        
+        .control input::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            background: #5af;
+            cursor: pointer;
+        }
+        
+        .info-panel {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(20, 30, 70, 0.7);
+            border-radius: 10px;
+            padding: 15px;
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(100, 150, 255, 0.3);
+            font-size: 14px;
+            max-width: 250px;
+            z-index: 100;
+        }
+        
+        .info-title {
+            color: #8af;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+        
+        .info-text {
+            line-height: 1.4;
+            margin-bottom: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="scene-container">
+        <svg viewBox="0 0 1000 600" preserveAspectRatio="xMidYMid slice">
+            <defs>
+                <!-- Space background gradient -->
+                <radialGradient id="spaceGradient" cx="50%" cy="50%" r="70%" fx="50%" fy="50%">
+                    <stop offset="0%" stop-color="#1a2151" />
+                    <stop offset="50%" stop-color="#0c1445" />
+                    <stop offset="100%" stop-color="#070b24" />
+                </radialGradient>
+                
+                <!-- Star glow filter -->
+                <filter id="starGlow" x="-50%" y="-50%" width="200%" height="200%">
+                    <feGaussianBlur in="SourceGraphic" stdDeviation="2" result="blur" />
+                    <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                </filter>
+                
+                <!-- Rocket flame gradient -->
+                <linearGradient id="flameGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" stop-color="#ff5500" />
+                    <stop offset="50%" stop-color="#ff9500" />
+                    <stop offset="100%" stop-color="#ffdd00" />
+                </linearGradient>
+                
+                <!-- Planet texture patterns -->
+                <pattern id="planetPattern1" patternUnits="userSpaceOnUse" width="40" height="40">
+                    <rect width="40" height="40" fill="#3a7bd5" />
+                    <circle cx="10" cy="10" r="5" fill="#2c5aa0" />
+                    <circle cx="30" cy="30" r="8" fill="#2c5aa0" />
+                </pattern>
+                
+                <pattern id="planetPattern2" patternUnits="userSpaceOnUse" width="30" height="30">
+                    <rect width="30" height="30" fill="#d35400" />
+                    <circle cx="15" cy="15" r="7" fill="#e67e22" />
+                    <circle cx="5" cy="5" r="3" fill="#e67e22" />
+                </pattern>
+                
+                <pattern id="planetPattern3" patternUnits="userSpaceOnUse" width="50" height="50">
+                    <rect width="50" height="50" fill="#16a085" />
+                    <circle cx="25" cy="25" r="10" fill="#1abc9c" />
+                    <circle cx="10" cy="40" r="5" fill="#1abc9c" />
+                </pattern>
+                
+                <!-- Nebula gradient -->
+                <radialGradient id="nebulaGradient1" cx="50%" cy="50%" r="70%" fx="50%" fy="50%">
+                    <stop offset="0%" stop-color="#9b59b6" stop-opacity="0.7" />
+                    <stop offset="100%" stop-color="#8e44ad" stop-opacity="0" />
+                </radialGradient>
+                
+                <radialGradient id="nebulaGradient2" cx="50%" cy="50%" r="70%" fx="50%" fy="50%">
+                    <stop offset="0%" stop-color="#3498db" stop-opacity="0.7" />
+                    <stop offset="100%" stop-color="#2980b9" stop-opacity="0" />
+                </radialGradient>
+                
+                <!-- Comet trail gradient -->
+                <linearGradient id="cometGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stop-color="#ffffff" stop-opacity="0.7" />
+                    <stop offset="100%" stop-color="#ffffff" stop-opacity="0" />
+                </linearGradient>
+                
+                <!-- Rocket path for animation -->
+                <path id="rocketPath" d="M100,500 Q 300,200 500,400 T 900,300" class="rocket-path" />
+            </defs>
+            
+            <!-- Space background -->
+            <rect x="0" y="0" width="1000" height="600" fill="url(#spaceGradient)" />
+            
+            <!-- Nebulas -->
+            <ellipse cx="200" cy="150" rx="150" ry="100" fill="url(#nebulaGradient1)" class="nebula" />
+            <ellipse cx="800" cy="400" rx="200" ry="120" fill="url(#nebulaGradient2)" class="nebula" />
+            
+            <!-- Stars (will be generated with JavaScript) -->
+            <g id="starsContainer"></g>
+            
+            <!-- Planets and orbits -->
+            <circle cx="500" cy="300" r="200" class="planet-orbit" />
+            <circle cx="500" cy="300" r="300" class="planet-orbit" />
+            <circle cx="500" cy="300" r="400" class="planet-orbit" />
+            
+            <!-- Planet 1 (Earth-like) -->
+            <g id="planet1" transform="translate(700, 300)">
+                <circle cx="0" cy="0" r="40" fill="url(#planetPattern1)" />
+                <circle cx="0" cy="0" r="40" fill="#3498db" opacity="0.5" />
+                
+                <!-- Satellite orbit -->
+                <circle cx="0" cy="0" r="60" class="satellite-orbit" />
+                
+                <!-- Satellite -->
+                <g id="satellite1">
+                    <rect x="-5" y="-2" width="10" height="4" fill="#95a5a6" />
+                    <rect x="-8" y="-1" width="3" height="2" fill="#7f8c8d" />
+                    <rect x="5" y="-1" width="3" height="2" fill="#7f8c8d" />
+                </g>
+            </g>
+            
+            <!-- Planet 2 (Mars-like) -->
+            <g id="planet2" transform="translate(300, 400)">
+                <circle cx="0" cy="0" r="25" fill="url(#planetPattern2)" />
+            </g>
+            
+            <!-- Planet 3 (Alien world) -->
+            <g id="planet3" transform="translate(500, 150)">
+                <circle cx="0" cy="0" r="35" fill="url(#planetPattern3)" />
+                
+                <!-- Rings -->
+                <ellipse cx="0" cy="0" rx="55" ry="10" fill="none" stroke="#1abc9c" stroke-width="2" opacity="0.7" />
+            </g>
+            
+            <!-- Comet -->
+            <g id="comet" transform="translate(100, 100)">
+                <circle cx="0" cy="0" r="3" fill="#ffffff" />
+                <path d="M0,0 L-50,10" stroke="url(#cometGradient)" stroke-width="2" class="comet-tail" />
+            </g>
+            
+            <!-- Rocket ship -->
+            <g id="rocket">
+                <!-- Rocket body -->
+                <path d="M0,-20 L5,10 L-5,10 Z" fill="#e74c3c" />
+                <rect x="-5" y="10" width="10" height="15" fill="#e74c3c" />
+                
+                <!-- Windows -->
+                <circle cx="0" cy="0" r="3" fill="#ecf0f1" />
+                
+                <!-- Fins -->
+                <path d="M-5,15 L-15,25 L-5,25 Z" fill="#c0392b" />
+                <path d="M5,15 L15,25 L5,25 Z" fill="#c0392b" />
+                
+                <!-- Flame -->
+                <g class="rocket-flame">
+                    <path d="M-4,25 L0,35 L4,25 Z" fill="url(#flameGradient)" />
+                </g>
+            </g>
+        </svg>
+    </div>
+    
+    <div class="control-panel">
+        <div class="control">
+            <label for="speed">Speed</label>
+            <input type="range" id="speed" min="0.1" max="5" step="0.1" value="1">
+        </div>
+        <div class="control">
+            <label for="stars">Stars</label>
+            <input type="range" id="stars" min="50" max="500" step="10" value="200">
+        </div>
+        <div class="control">
+            <label for="glow">Star Glow</label>
+            <input type="range" id="glow" min="0" max="5" step="0.1" value="2">
+        </div>
+    </div>
+    
+    <div class="info-panel">
+        <div class="info-title">Space Exploration</div>
+        <p class="info-text">Exploring the vastness of space, our rocket travels between distant worlds. Use the controls to adjust the scene parameters.</p>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Get elements
+            const starsContainer = document.getElementById('starsContainer');
+            const rocket = document.getElementById('rocket');
+            const satellite1 = document.getElementById('satellite1');
+            const comet = document.getElementById('comet');
+            const planet1 = document.getElementById('planet1');
+            const planet2 = document.getElementById('planet2');
+            const planet3 = document.getElementById('planet3');
+            
+            // Controls
+            const speedControl = document.getElementById('speed');
+            const starsControl = document.getElementById('stars');
+            const glowControl = document.getElementById('glow');
+            
+            // Animation variables
+            let animationSpeed = parseFloat(speedControl.value);
+            let rocketPosition = 0;
+            let satellite1Angle = 0;
+            let cometX = 100;
+            let cometY = 100;
+            let planet1Angle = 0;
+            let planet2Angle = Math.PI / 2;
+            let planet3Angle = Math.PI;
+            
+            // Generate stars
+            function generateStars(count) {
+                // Clear existing stars
+                starsContainer.innerHTML = '';
+                
+                for (let i = 0; i < count; i++) {
+                    const x = Math.random() * 1000;
+                    const y = Math.random() * 600;
+                    const radius = Math.random() * 1.5 + 0.5;
+                    
+                    const star = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                    star.setAttribute("cx", x);
+                    star.setAttribute("cy", y);
+                    star.setAttribute("r", radius);
+                    star.setAttribute("class", "star");
+                    
+                    // Add twinkling to some stars
+                    if (Math.random() > 0.7) {
+                        if (Math.random() > 0.5) {
+                            star.classList.add("twinkle");
+                        } else if (Math.random() > 0.5) {
+                            star.classList.add("twinkle-slow");
+                        } else {
+                            star.classList.add("twinkle-slower");
+                        }
+                    }
+                    
+                    starsContainer.appendChild(star);
+                }
+            }
+            
+            // Update star glow
+            function updateStarGlow(value) {
+                const starGlow = document.getElementById('starGlow');
+                const blur = starGlow.querySelector('feGaussianBlur');
+                blur.setAttribute('stdDeviation', value);
+            }
+            
+            // Animation loop
+            function animate() {
+                // Update rocket position along path
+                rocketPosition += 0.001 * animationSpeed;
+                if (rocketPosition > 1) rocketPosition = 0;
+                
+                const rocketPath = document.getElementById('rocketPath');
+                const point = rocketPath.getPointAtLength(rocketPosition * rocketPath.getTotalLength());
+                
+                // Calculate angle for rocket rotation
+                const nextPoint = rocketPath.getPointAtLength((rocketPosition + 0.001) * rocketPath.getTotalLength());
+                const angle = Math.atan2(nextPoint.y - point.y, nextPoint.x - point.x) * 180 / Math.PI;
+                
+                rocket.setAttribute('transform', `translate(${point.x}, ${point.y}) rotate(${angle + 90})`);
+                
+                // Update satellite position
+                satellite1Angle += 0.02 * animationSpeed;
+                const satelliteX = 60 * Math.cos(satellite1Angle);
+                const satelliteY = 60 * Math.sin(satellite1Angle);
+                satellite1.setAttribute('transform', `translate(${satelliteX}, ${satelliteY})`);
+                
+                // Update comet position
+                cometX += 1 * animationSpeed;
+                cometY -= 0.2 * animationSpeed;
+                if (cometX > 1100) {
+                    cometX = -100;
+                    cometY = Math.random() * 300 + 100;
+                }
+                comet.setAttribute('transform', `translate(${cometX}, ${cometY}) rotate(15)`);
+                
+                // Update planet positions
+                planet1Angle += 0.001 * animationSpeed;
+                const planet1X = 500 + 200 * Math.cos(planet1Angle);
+                const planet1Y = 300 + 200 * Math.sin(planet1Angle);
+                planet1.setAttribute('transform', `translate(${planet1X}, ${planet1Y})`);
+                
+                planet2Angle += 0.002 * animationSpeed;
+                const planet2X = 500 + 300 * Math.cos(planet2Angle);
+                const planet2Y = 300 + 300 * Math.sin(planet2Angle);
+                planet2.setAttribute('transform', `translate(${planet2X}, ${planet2Y})`);
+                
+                planet3Angle += 0.0005 * animationSpeed;
+                const planet3X = 500 + 400 * Math.cos(planet3Angle);
+                const planet3Y = 300 + 400 * Math.sin(planet3Angle);
+                planet3.setAttribute('transform', `translate(${planet3X}, ${planet3Y})`);
+                
+                requestAnimationFrame(animate);
+            }
+            
+            // Initialize
+            generateStars(parseInt(starsControl.value));
+            updateStarGlow(parseFloat(glowControl.value));
+            animate();
+            
+            // Event listeners for controls
+            speedControl.addEventListener('input', function() {
+                animationSpeed = parseFloat(this.value);
+            });
+            
+            starsControl.addEventListener('input', function() {
+                generateStars(parseInt(this.value));
+            });
+            
+            glowControl.addEventListener('input', function() {
+                updateStarGlow(parseFloat(this.value));
+            });
+            
+            // Handle window resize
+            window.addEventListener('resize', function() {
+                // If needed, adjust viewBox or other responsive elements
+            });
+            
+            // Clean up resources on page unload to prevent memory leaks
+            window.addEventListener('beforeunload', function() {
+                // Cancel any pending animations or timers if needed
+            });
+        });
+    </script>
+</body>
+</html>

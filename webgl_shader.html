@@ -1,0 +1,242 @@
+<!-- Basic HTML structure with DOCTYPE declaration -->
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>three.js webgl</title> <!-- Page title -->
+		<meta charset="utf-8"> <!-- Character encoding for the document -->
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0"> <!-- Responsive design settings -->
+		<style>
+			body {
+				margin: 0; 
+				display: block
+			}
+		</style>
+	</head>
+	<body>
+
+		<!-- Container for the WebGL content -->
+		<div id="container"></div>
+
+		<!-- Vertex shader script -->
+		<script id="vertexShader" type="x-shader/x-vertex">
+
+			<!-- Declare varying variable for UV coordinates -->
+			varying vec2 vUv;
+
+			/* 
+			 * Main function of the vertex shader
+			 * This function is called for each vertex in the geometry
+			 */
+			void main() {
+
+				/* 
+				 * Pass UV coordinates to fragment shader
+				 * The UV coordinates are used to determine the texture coordinates
+				 */
+				vUv = uv;
+
+				/* 
+				 * Set the position of the vertex
+				 * The position is a 4-component vector (x, y, z, w)
+				 * where w is the homogeneous coordinate
+				 */
+				gl_Position = vec4( position, 1.0 );
+
+			}
+
+		</script>
+
+		<!-- Fragment shader script -->
+		<script id="fragmentShader" type="x-shader/x-fragment">
+
+			<!-- Receive UV coordinates from vertex shader -->
+			varying vec2 vUv;
+
+			/* 
+			 * Uniform variable for animation timing
+			 * This variable is updated by the JavaScript code
+			 */
+			uniform float time;
+
+			/* 
+			 * Main function of the fragment shader
+			 * This function is called for each pixel in the geometry
+			 */
+			void main() {
+
+				/* 
+				 * Calculate the position of the pixel in the 2D space
+				 * The position is a 2-component vector (x, y)
+				 */
+				vec2 p = - 1.0 + 2.0 * vUv;
+
+				/* 
+				 * Calculate the animation timing
+				 * The animation timing is used to animate the pattern
+				 */
+				float a = time * 40.0;
+
+				/* 
+				 * Calculate the distance and other variables
+				 * These variables are used to calculate the final color
+				 */
+				float d, e, f, g = 1.0 / 40.0 ,h ,i ,r ,q;
+
+				/* 
+				 * Calculate the x and y coordinates of the pixel
+				 * These coordinates are used to calculate the final color
+				 */
+				e = 400.0 * ( p.x * 0.5 + 0.5 );
+				f = 400.0 * ( p.y * 0.5 + 0.5 );
+
+				/* 
+				 * Calculate the final color of the pixel
+				 * The final color is a 3-component vector (r, g, b)
+				 */
+				i = 200.0 + sin( e * g + a / 150.0 ) * 20.0;
+				d = 200.0 + cos( f * g / 2.0 ) * 18.0 + cos( e * g ) * 7.0;
+				r = sqrt( pow( abs( i - e ), 2.0 ) + pow( abs( d - f ), 2.0 ) );
+				q = f / r;
+				e = ( r * cos( q ) ) - a / 2.0;
+				f = ( r * sin( q ) ) - a / 2.0;
+				d = sin( e * g ) * 176.0 + sin( e * g ) * 164.0 + r;
+				h = ( ( f + d ) + a / 2.0 ) * g;
+				i = cos( h + r * p.x / 1.3 ) * ( e + e + a ) + cos( q * g * 6.0 ) * ( r + h / 3.0 );
+				h = sin( f * g ) * 144.0 - sin( e * g ) * 212.0 * p.x;
+				h = ( h + ( f - e ) * q + sin( r - ( a + h ) / 7.0 ) * 10.0 + i / 4.0 ) * g;
+				i += cos( h * 2.3 * sin( a / 350.0 - q ) ) * 184.0 * sin( q - ( r * 4.3 + a / 12.0 ) * g ) + tan( r * g + h ) * 184.0 * cos( r * g + h );
+				i = mod( i / 5.6, 256.0 ) / 64.0;
+				if ( i < 0.0 ) i += 4.0;
+				if ( i >= 2.0 ) i = 4.0 - i;
+				d = r / 350.0;
+				d += sin( d * d * 8.0 ) * 0.52;
+				f = ( sin( a * g ) + 1.0 ) / 2.0;
+
+				/* 
+				 * Set the final color of the pixel
+				 * The final color is a 4-component vector (r, g, b, a)
+				 * where a is the alpha channel
+				 */
+				gl_FragColor = vec4( vec3( f * i / 1.6, i / 2.0 + d / 13.0, i ) * d * p.x + vec3( i / 1.3 + d / 8.0, i / 2.0 + d / 18.0, i ) * d * ( 1.0 - p.x ), 1.0 );
+
+			}
+
+		</script>
+
+		<!-- Import map for three.js library -->
+		<script type="importmap">
+			{
+				"imports": {
+					"three": "https://unpkg.com/three@0.145.0/build/three.module.js",
+					"three/addons/": "https://unpkg.com/three@0.145.0/examples/jsm/"
+				}
+			}
+		</script>
+
+		<!-- JavaScript code for the WebGL application -->
+		<script type="module">
+
+			// Import three.js library
+			import * as THREE from 'three';
+
+			// Global variables for the application
+			let camera, scene, renderer;
+
+			// Uniform variables for the shaders
+			let uniforms;
+
+			// Initialize the application
+			init();
+
+			/* 
+			 * Initialize the application
+			 * This function sets up the camera, scene, and renderer
+			 */
+			function init() {
+
+				// Get the container element for the WebGL content
+				const container = document.getElementById( 'container' );
+
+				// Create the camera
+				camera = new THREE.OrthographicCamera( - 1, 1, 1, - 1, 0, 1 );
+
+				// Create the scene
+				scene = new THREE.Scene();
+
+				// Create the geometry for the plane
+				const geometry = new THREE.PlaneGeometry( 2, 2 );
+
+				// Create the uniform variables for the shaders
+				uniforms = {
+					time: { value: 1.0 }
+				};
+
+				// Create the material for the plane
+				const material = new THREE.ShaderMaterial( {
+
+					// Set the uniforms for the material
+					uniforms: uniforms,
+
+					// Set the vertex shader for the material
+					vertexShader: document.getElementById( 'vertexShader' ).textContent,
+
+					// Set the fragment shader for the material
+					fragmentShader: document.getElementById( 'fragmentShader' ).textContent
+
+				} );
+
+				// Create the mesh for the plane
+				const mesh = new THREE.Mesh( geometry, material );
+
+				// Add the mesh to the scene
+				scene.add( mesh );
+
+				// Create the renderer
+				renderer = new THREE.WebGLRenderer();
+
+				// Set the pixel ratio for the renderer
+				renderer.setPixelRatio( window.devicePixelRatio );
+
+				// Set the size of the renderer
+				renderer.setSize( window.innerWidth, window.innerHeight );
+
+				// Set the animation loop for the renderer
+				renderer.setAnimationLoop( animate );
+
+				// Add the renderer to the container
+				container.appendChild( renderer.domElement );
+
+				// Add event listener for window resize
+				window.addEventListener( 'resize', onWindowResize );
+
+			}
+
+			/* 
+			 * Handle window resize event
+			 * This function updates the size of the renderer
+			 */
+			function onWindowResize() {
+
+				// Update the size of the renderer
+				renderer.setSize( window.innerWidth, window.innerHeight );
+
+			}
+
+			/* 
+			 * Animation loop function
+			 * This function updates the uniforms and renders the scene
+			 */
+			function animate() {
+
+				// Update the time uniform
+				uniforms[ 'time' ].value = performance.now() / 1000;
+
+				// Render the scene
+				renderer.render( scene, camera );
+
+			}
+
+		</script>
+
+	</body>
+</html>

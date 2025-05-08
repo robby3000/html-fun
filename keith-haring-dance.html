@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Keith Haring Inspired Dance</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            overflow: hidden;
+            background-color: #FFDE00;
+            font-family: Arial, sans-serif;
+        }
+        
+        .background-scene {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            overflow: hidden;
+            z-index: -110;
+        }
+        
+        svg {
+            width: 100%;
+            height: 100%;
+        }
+        
+        .background {
+            fill: #FFDE00;
+        }
+        
+        .floor-line {
+            stroke: #000;
+            stroke-width: 5;
+            fill: none;
+        }
+        
+        .figure {
+            fill: currentColor;
+            stroke: #000;
+            stroke-width: 4;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+        
+        .motion-line {
+            fill: none;
+            stroke: #000;
+            stroke-width: 2;
+            stroke-linecap: round;
+        }
+        
+        .dot {
+            fill: #000;
+            stroke: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="background-scene">
+        <svg viewBox="0 0 1000 600" preserveAspectRatio="xMidYMid slice">
+            <!-- Background -->
+            <rect class="background" x="0" y="0" width="1000" height="600" />
+            
+            <!-- Floor Line -->
+            <path class="floor-line" d="M0,500 L1000,500" />
+            
+            <!-- Floor Dots Pattern -->
+            <g class="dots">
+                <g id="dot-row" transform="translate(0,520)">
+                    <circle class="dot" cx="50" cy="0" r="4" />
+                    <circle class="dot" cx="100" cy="0" r="4" />
+                    <circle class="dot" cx="150" cy="0" r="4" />
+                    <circle class="dot" cx="200" cy="0" r="4" />
+                    <circle class="dot" cx="250" cy="0" r="4" />
+                    <circle class="dot" cx="300" cy="0" r="4" />
+                    <circle class="dot" cx="350" cy="0" r="4" />
+                    <circle class="dot" cx="400" cy="0" r="4" />
+                    <circle class="dot" cx="450" cy="0" r="4" />
+                    <circle class="dot" cx="500" cy="0" r="4" />
+                    <circle class="dot" cx="550" cy="0" r="4" />
+                    <circle class="dot" cx="600" cy="0" r="4" />
+                    <circle class="dot" cx="650" cy="0" r="4" />
+                    <circle class="dot" cx="700" cy="0" r="4" />
+                    <circle class="dot" cx="750" cy="0" r="4" />
+                    <circle class="dot" cx="800" cy="0" r="4" />
+                    <circle class="dot" cx="850" cy="0" r="4" />
+                    <circle class="dot" cx="900" cy="0" r="4" />
+                    <circle class="dot" cx="950" cy="0" r="4" />
+                </g>
+                <use href="#dot-row" transform="translate(0,30)" />
+                <use href="#dot-row" transform="translate(25,15)" />
+                <use href="#dot-row" transform="translate(0,45)" />
+                <use href="#dot-row" transform="translate(25,60)" />
+            </g>
+            
+            <!-- Dancing Figure 1 (Red) -->
+            <g class="figure" style="color: #FF3333" transform="translate(150, 350)">
+                <animate attributeName="transform" 
+                    type="translate"
+                    values="150,350; 155,345; 150,350; 145,355; 150,350"
+                    dur="0.8s"
+                    repeatCount="indefinite" />
+                
+                <!-- Red dancing figure with bent knees -->
+                <path d="M0,0 L0,80 M-60,40 L0,40 L60,10 M-30,80 L-40,130 M0,80 L20,130" />
+                <circle cx="0" cy="-20" r="20" />
+                
+                <!-- Motion lines -->
+                <g class="motion-line">
+                    <path d="M-40,30 L-50,20">
+                        <animate attributeName="opacity" values="0;1;0" dur="0.7s" repeatCount="indefinite" />
+                    </path>
+                    <path d="M-35,50 L-45,40">
+                        <animate attributeName="opacity" values="0;1;0" dur="0.6s" repeatCount="indefinite" />
+                    </path>
+                    <path d="M-30,70 L-40,60">
+                        <animate attributeName="opacity" values="0;1;0" dur="0.65s" repeatCount="indefinite" />
+                    </path>
+                </g>
+            </g>
+            
+            <!-- Dancing Figure 2 (Blue) -->
+            <g class="figure" style="color: #33AAFF" transform="translate(300, 350)">
+                <animate attributeName="transform" 
+                    type="translate"
+                    values="300,350; 305,345; 300,350; 295,355; 300,350"
+                    dur="0.75s"
+                    repeatCount="indefinite" />
+                
+                <!-- Blue dancing figure with arms up -->
+                <path d="M0,0 L0,80 M-60,-20 L0,30 L60,-20 M-20,80 L-30,130 M20,80 L30,130" />
+                <circle cx="0" cy="-20" r="20" />
+                
+                <!-- Motion lines -->
+                <g class="motion-line">
+                    <path d="M-50,-10 L-60,-15">
+                        <animate attributeName="opacity" values="0;1;0" dur="0.65s" repeatCount="indefinite" />
+                    </path>
+                    <path d="M50,-10 L60,-15">
+                        <animate attributeName="opacity" values="0;1;0" dur="0.7s" repeatCount="indefinite" />
+                    </path>
+                    <path d="M-25,100 L-35,90">
+                        <animate attributeName="opacity" values="0;1;0" dur="0.6s" repeatCount="indefinite" />
+                    </path>
+                    <path d="M25,100 L35,90">
+                        <animate attributeName="opacity" values="0;1;0" dur="0.55s" repeatCount="indefinite" />
+                    </path>
+                </g>
+            </g>
+            
+            <!-- Dancing Figure 3 (Green) -->
+            <g class="figure" style="color: #33CC66" transform="translate(450, 350)">
+                <animate attributeName="transform" 
+                    type="translate"
+                    values="450,350; 455,345; 450,350; 445,355; 450,350"
+                    dur="0.85s"
+                    repeatCount="indefinite" />
+                
+                <!-- Green dancing figure with twisted pose -->
+                <path d="M0,0 L0,80 M-40,20 L0,40 L30,10 M-30,80 L-20,130 M0,80 L-30,120" />
+                <circle cx="0" cy="-20" r="20" />
+                
+                <!-- Motion lines -->
+                <g class="motion-line">
+                    <path d="M-35,30 L-45,25">
+                        <animate attributeName="opacity" values="0;1;0" dur="0.75s" repeatCount="indefinite" />
+                    </path>
+                    <path d="M25,15 L35,5">
+                        <animate attributeName="opacity" values="0;1;0" dur="0.8s" repeatCount="indefinite" />
+                    </path>
+                    <path d="M-25,110 L-35,100">
+                        <animate attributeName="opacity" values="0;1;0" dur="0.7s" repeatCount="indefinite" />
+                    </path>
+                </g>
+            </g>
+            
+            <!-- Dancing Figure 4 (Pink) -->
+            <g class="figure" style="color: #FF66AA" transform="translate(600, 350)">
+                <animate attributeName="transform" 
+                    type="translate"
+                    values="600,350; 605,345; 600,350; 595,355; 600,350"
+                    dur="0.78s"
+                    repeatCount="indefinite" />
+                
+                <!-- Pink dancing figure with arms out -->
+                <path d="M0,0 L0,80 M-50,30 L0,30 L50,30 M-20,80 L-40,120 M20,80 L40,120" />
+                <circle cx="0" cy="-20" r="20" />
+                
+                <!-- Motion lines -->
+                <g class="motion-line">
+                    <path d="M-45,30 L-55,30">
+                        <animate attributeName="opacity" values="0;1;0" dur="0.65s" repeatCount="indefinite" />
+                    </path>
+                    <path d="M45,30 L55,30">
+                        <animate attributeName="opacity" values="0;1;0" dur="0.7s" repeatCount="indefinite" />
+                    </path>
+                    <path d="M-30,100 L-40,90">
+                        <animate attributeName="opacity" values="0;1;0" dur="0.6s" repeatCount="indefinite" />
+                    </path>
+                    <path d="M30,100 L40,90">
+                        <animate attributeName="opacity" values="0;1;0" dur="0.55s" repeatCount="indefinite" />
+                    </path>
+                </g>
+            </g>
+            
+            <!-- Dancing Figure 5 (Orange) -->
+            <g class="figure" style="color: #FF9933" transform="translate(750, 350)">
+                <animate attributeName="transform" 
+                    type="translate"
+                    values="750,350; 755,345; 750,350; 745,355; 750,350"
+                    dur="0.82s"
+                    repeatCount="indefinite" />
+                
+                <!-- Orange dancing figure with bent pose -->
+                <path d="M0,0 L0,80 M-50,20 L0,40 L40,50 M-20,80 L-10,130 M20,80 L40,130" />
+                <circle cx="0" cy="-20" r="20" />
+                
+                <!-- Motion lines -->
+                <g class="motion-line">
+                    <path d="M-40,25 L-50,15">
+                        <animate attributeName="opacity" values="0;1;0" dur="0.7s" repeatCount="indefinite" />
+                    </path>
+                    <path d="M35,45 L45,50">
+                        <animate attributeName="opacity" values="0;1;0" dur="0.75s" repeatCount="indefinite" />
+                    </path>
+                    <path d="M30,100 L40,110">
+                        <animate attributeName="opacity" values="0;1;0" dur="0.65s" repeatCount="indefinite" />
+                    </path>
+                </g>
+            </g>
+            
+            <!-- Dancing Dog Figure -->
+            <g class="figure" style="color: #9966FF" transform="translate(900, 380)">
+                <animate attributeName="transform" 
+                    type="translate"
+                    values="900,380; 905,375; 900,380; 895,385; 900,380"
+                    dur="0.7s"
+                    repeatCount="indefinite" />
+                
+                <!-- Simple Haring-style dog -->
+                <path d="M-30,-15 L-50,-30 M30,-15 L50,-30" /> <!-- Ears -->
+                <rect x="-30" y="-30" width="60" height="40" rx="15" ry="15" /> <!-- Head -->
+                <path d="M0,10 L0,50 M-25,50 L-25,90 M25,50 L25,90" /> <!-- Body and legs -->
+                <path d="M-10,50 L-10,90 M10,50 L10,90" /> <!-- More legs -->
+                <path d="M0,30 C40,30 50,50 60,30" /> <!-- Tail -->
+                
+                <!-- Motion lines around figure -->
+                <g class="motion-line">
+                    <path d="M-40,20 L-50,10">
+                        <animate attributeName="opacity" values="0;1;0" dur="0.65s" repeatCount="indefinite" />
+                    </path>
+                    <path d="M40,20 L50,10">
+                        <animate attributeName="opacity" values="0;1;0" dur="0.55s" repeatCount="indefinite" />
+                    </path>
+                    <path d="M55,30 L65,25">
+                        <animate attributeName="opacity" values="0;1;0" dur="0.6s" repeatCount="indefinite" />
+                    </path>
+                </g>
+            </g>
+        </svg>
+    </div>
+</body>
+</html>

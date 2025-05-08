@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ant Trail Animation</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #ffffff;
+        }
+        
+        .scene-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            overflow: hidden;
+            z-index: -110;
+        }
+        
+        svg {
+            width: 100%;
+            height: 100%;
+        }
+        
+        .ant {
+            filter: drop-shadow(1px 1px 1px rgba(0, 0, 0, 0.3));
+        }
+        
+        .leg {
+            transform-origin: 0 0;
+        }
+        
+        .trail-dot {
+            fill: #87CEEB;
+            opacity: 0.7;
+        }
+        
+        .controls {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 10px;
+            padding: 10px 20px;
+            display: flex;
+            gap: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            z-index: 100;
+        }
+        
+        .control {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .control label {
+            margin-bottom: 5px;
+            font-size: 12px;
+            color: #333;
+        }
+        
+        .control input {
+            width: 100px;
+        }
+        
+        .control button {
+            padding: 5px 10px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        .control button:hover {
+            background: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <div class="scene-container">
+        <svg id="canvas" viewBox="0 0 1000 600" preserveAspectRatio="xMidYMid slice">
+            <!-- Ant SVG -->
+            <g id="ant" class="ant" transform="translate(0, 0) rotate(0)">
+                <!-- Ant abdomen (rear part) -->
+                <ellipse cx="-8" cy="0" rx="10" ry="8" fill="#222222" />
+                <!-- Ant thorax (middle part) -->
+                <ellipse cx="5" cy="0" rx="7" ry="6" fill="#333333" />
+                <!-- Ant head -->
+                <circle cx="15" cy="0" r="5" fill="#444444" />
+                <!-- Antennae -->
+                <path d="M18,-2 Q25,-10 30,-8" stroke="#333333" stroke-width="1" fill="none" />
+                <path d="M18,2 Q25,10 30,8" stroke="#333333" stroke-width="1" fill="none" />
+                <!-- Mandibles -->
+                <path d="M20,-2 Q23,-4 24,-3" stroke="#333333" stroke-width="1" fill="none" />
+                <path d="M20,2 Q23,4 24,3" stroke="#333333" stroke-width="1" fill="none" />
+                <!-- Legs (left side) -->
+                <g id="leftLegs">
+                    <path id="leftFrontLeg" class="leg" d="M8,-5 Q2,-15 -5,-18" stroke="#333333" stroke-width="1.5" fill="none" />
+                    <path id="leftMiddleLeg" class="leg" d="M2,-5 Q-3,-12 -8,-10" stroke="#333333" stroke-width="1.5" fill="none" />
+                    <path id="leftRearLeg" class="leg" d="M-5,-5 Q-12,-15 -18,-18" stroke="#333333" stroke-width="1.5" fill="none" />
+                </g>
+                <!-- Legs (right side) -->
+                <g id="rightLegs">
+                    <path id="rightFrontLeg" class="leg" d="M8,5 Q2,15 -5,18" stroke="#333333" stroke-width="1.5" fill="none" />
+                    <path id="rightMiddleLeg" class="leg" d="M2,5 Q-3,12 -8,10" stroke="#333333" stroke-width="1.5" fill="none" />
+                    <path id="rightRearLeg" class="leg" d="M-5,5 Q-12,15 -18,18" stroke="#333333" stroke-width="1.5" fill="none" />
+                </g>
+            </g>
+            <!-- Trail dots will be added here dynamically -->
+            <g id="trail"></g>
+        </svg>
+    </div>
+    
+    <div class="controls">
+        <div class="control">
+            <label for="speed">Speed</label>
+            <input type="range" id="speed" min="1" max="10" value="5">
+        </div>
+        <div class="control">
+            <label for="dotSize">Dot Size</label>
+            <input type="range" id="dotSize" min="1" max="10" value="3">
+        </div>
+        <div class="control">
+            <label for="maxDots">Max Dots</label>
+            <input type="range" id="maxDots" min="50" max="2000" step="50" value="500">
+        </div>
+        <div class="control">
+            <button id="reset">Reset Trail</button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Get elements
+            const canvas = document.getElementById('canvas');
+            const ant = document.getElementById('ant');
+            const trail = document.getElementById('trail');
+            
+            // Controls
+            const speedControl = document.getElementById('speed');
+            const dotSizeControl = document.getElementById('dotSize');
+            const maxDotsControl = document.getElementById('maxDots');
+            const resetButton = document.getElementById('reset');
+            
+            // Get SVG dimensions
+            const svgRect = canvas.getBoundingClientRect();
+            const viewBox = canvas.viewBox.baseVal;
+            const svgWidth = viewBox.width;
+            const svgHeight = viewBox.height;
+            
+            // Animation variables
+            let antX = -50; // Start off-screen
+            let antY = svgHeight / 2;
+            let antAngle = 0;
+            let targetX = Math.random() * svgWidth;
+            let targetY = Math.random() * svgHeight;
+            let dots = [];
+            let maxDots = parseInt(maxDotsControl.value);
+            let dotSize = parseInt(dotSizeControl.value);
+            let speed = parseInt(speedControl.value);
+            let animationId;
+            let entryComplete = false;
+            let stepCount = 0;
+            let dotSpacing = 15; // Increased spacing between dots
+            let lastDotDistance = 0;
+            let curveAngle = 0;
+            let curveFrequency = 0.02; // Reduced for smoother movement
+            let curveAmplitude = 20; // Reduced for less shakiness
+            
+            // For smooth direction changes
+            let currentDirection = 0;
+            let targetDirection = 0;
+            let directionChangeSpeed = 0.05;
+            
+            // Initialize ant position
+            updateAntPosition();
+            
+            // Animation functions
+            function animate() {
+                // Entry animation
+                if (!entryComplete) {
+                    if (antX < 50) {
+                        antX += speed;
+                        updateAntPosition();
+                    } else {
+                        entryComplete = true;
+                        // Set first random target
+                        setNewTarget();
+                    }
+                } else {
+                    // Move towards target
+                    const dx = targetX - antX;
+                    const dy = targetY - antY;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    
+                    // If we're close to the target, set a new one
+                    if (distance < 10) {
+                        setNewTarget();
+                    }
+                    
+                    // Calculate new position with smoother curvy path
+                    curveAngle += curveFrequency * speed;
+                    
+                    // Use smoother sine wave with reduced amplitude
+                    const curve = Math.sin(curveAngle) * curveAmplitude;
+                    
+                    // Calculate target direction
+                    targetDirection = Math.atan2(dy, dx);
+                    
+                    // Smoothly interpolate between current and target direction
+                    let angleDiff = targetDirection - currentDirection;
+                    
+                    // Handle angle wrapping
+                    if (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
+                    if (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
+                    
+                    // Gradually change direction (smoother turning)
+                    currentDirection += angleDiff * directionChangeSpeed * speed;
+                    
+                    // Apply curve to smoothed direction
+                    antAngle = currentDirection + (curve * Math.PI / 180);
+                    
+                    // Move ant along curved path
+                    const moveStep = speed * 0.5;
+                    antX += Math.cos(antAngle) * moveStep;
+                    antY += Math.sin(antAngle) * moveStep;
+                    
+                    // Animate legs based on movement
+                    animateLegs();
+                    
+                    // Add trail dot with spacing
+                    lastDotDistance += moveStep;
+                    if (lastDotDistance >= dotSpacing) {
+                        addTrailDot();
+                        lastDotDistance = 0;
+                    }
+                    
+                    // Update ant position
+                    updateAntPosition();
+                }
+                
+                animationId = requestAnimationFrame(animate);
+            }
+            
+            function updateAntPosition() {
+                // Check if ant is near the edge
+                const margin = 30;
+                let needsNewTarget = false;
+                
+                // Ensure ant stays within bounds
+                antX = Math.max(margin, Math.min(antX, svgWidth - margin));
+                antY = Math.max(margin, Math.min(antY, svgHeight - margin));
+                
+                // If ant is close to any edge, set a new target toward the center
+                if (antX <= margin + 10 || antX >= svgWidth - margin - 10 || 
+                    antY <= margin + 10 || antY >= svgHeight - margin - 10) {
+                    
+                    // Set target toward center with some randomness
+                    const centerX = svgWidth / 2;
+                    const centerY = svgHeight / 2;
+                    targetX = centerX + (Math.random() - 0.5) * svgWidth * 0.6;
+                    targetY = centerY + (Math.random() - 0.5) * svgHeight * 0.6;
+                    
+                    // Make direction change faster when near edges
+                    directionChangeSpeed = 0.08;
+                }
+                
+                // Update ant position and rotation
+                const degrees = antAngle * 180 / Math.PI;
+                ant.setAttribute('transform', `translate(${antX}, ${antY}) rotate(${degrees})`);
+            }
+            
+            function animateLegs() {
+                // Animate legs to create walking motion
+                stepCount += speed * 0.1;
+                
+                // Get leg elements
+                const leftFrontLeg = document.getElementById('leftFrontLeg');
+                const leftMiddleLeg = document.getElementById('leftMiddleLeg');
+                const leftRearLeg = document.getElementById('leftRearLeg');
+                const rightFrontLeg = document.getElementById('rightFrontLeg');
+                const rightMiddleLeg = document.getElementById('rightMiddleLeg');
+                const rightRearLeg = document.getElementById('rightRearLeg');
+                
+                // Create smoother alternating leg movements
+                const legAngle1 = Math.sin(stepCount) * 15;
+                const legAngle2 = Math.sin(stepCount + Math.PI) * 15;
+                
+                // Apply rotations to create walking effect
+                leftFrontLeg.setAttribute('transform', `rotate(${legAngle1}, 8, -5)`);
+                leftMiddleLeg.setAttribute('transform', `rotate(${legAngle2}, 2, -5)`);
+                leftRearLeg.setAttribute('transform', `rotate(${legAngle1}, -5, -5)`);
+                
+                rightFrontLeg.setAttribute('transform', `rotate(${legAngle2}, 8, 5)`);
+                rightMiddleLeg.setAttribute('transform', `rotate(${legAngle1}, 2, 5)`);
+                rightRearLeg.setAttribute('transform', `rotate(${legAngle2}, -5, 5)`);
+            }
+            
+            function setNewTarget() {
+                // Set a new random target
+                targetX = Math.random() * svgWidth;
+                targetY = Math.random() * svgHeight;
+                
+                // Add some randomness to make path more interesting
+                if (Math.random() > 0.7) {
+                    // Sometimes make a more dramatic turn
+                    targetX = antX + (Math.random() - 0.5) * 200;
+                    targetY = antY + (Math.random() - 0.5) * 200;
+                }
+                
+                // Reset curve parameters for new direction - more gentle values for smoother movement
+                curveFrequency = 0.01 + Math.random() * 0.03;
+                curveAmplitude = 15 + Math.random() * 25;
+                
+                // Adjust direction change speed based on how sharp the turn is
+                const dx = targetX - antX;
+                const dy = targetY - antY;
+                const newDirection = Math.atan2(dy, dx);
+                const directionDiff = Math.abs(newDirection - currentDirection);
+                
+                // Slower direction changes for sharper turns (smoother movement)
+                directionChangeSpeed = directionDiff > Math.PI/2 ? 0.02 : 0.05;
+            }
+            
+            function addTrailDot() {
+                // Create a new trail dot
+                const dot = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                dot.setAttribute("cx", antX);
+                dot.setAttribute("cy", antY);
+                dot.setAttribute("r", dotSize);
+                dot.setAttribute("class", "trail-dot");
+                
+                // Add some randomness to dot size
+                const sizeVariation = (Math.random() * 0.4) + 0.8;
+                dot.setAttribute("r", dotSize * sizeVariation);
+                
+                trail.appendChild(dot);
+                dots.push(dot);
+                
+                // Remove oldest dots if we exceed the maximum
+                if (dots.length > maxDots) {
+                    const oldestDot = dots.shift();
+                    trail.removeChild(oldestDot);
+                }
+            }
+            
+            function resetTrail() {
+                // Clear all trail dots
+                trail.innerHTML = '';
+                dots = [];
+                lastDotDistance = 0;
+            }
+            
+            // Start animation
+            animate();
+            
+            // Event listeners for controls
+            speedControl.addEventListener('input', function() {
+                speed = parseInt(this.value);
+            });
+            
+            dotSizeControl.addEventListener('input', function() {
+                dotSize = parseInt(this.value);
+            });
+            
+            // Additional control for dot spacing
+            const updateDotSpacing = function() {
+                // Scale dot spacing based on speed (faster = more space between dots)
+                dotSpacing = 10 + (speed * 2);
+            };
+            
+            speedControl.addEventListener('change', updateDotSpacing);
+            
+            maxDotsControl.addEventListener('input', function() {
+                maxDots = parseInt(this.value);
+                
+                // Remove excess dots if needed
+                while (dots.length > maxDots) {
+                    const oldestDot = dots.shift();
+                    trail.removeChild(oldestDot);
+                }
+            });
+            
+            resetButton.addEventListener('click', resetTrail);
+            
+            // Handle window resize
+            window.addEventListener('resize', function() {
+                // Update SVG dimensions
+                const newRect = canvas.getBoundingClientRect();
+                
+                // Get the current viewport dimensions
+                const viewportWidth = window.innerWidth;
+                const viewportHeight = window.innerHeight;
+                
+                // Get the viewBox from the SVG element
+                const viewBox = canvas.viewBox.baseVal;
+                
+                // Update internal variables to match new dimensions
+                // This ensures the ant moves within the visible area
+                svgWidth = viewBox.width;
+                svgHeight = viewBox.height * (viewportHeight / viewportWidth);
+                
+                // If ant is near an edge after resize, move it toward center
+                const margin = 50;
+                if (antX <= margin || antX >= svgWidth - margin || 
+                    antY <= margin || antY >= svgHeight - margin) {
+                    // Set a new target toward the center
+                    targetX = svgWidth / 2;
+                    targetY = svgHeight / 2;
+                }
+            });
+            
+            // Clean up on page unload to prevent memory leaks
+            window.addEventListener('beforeunload', function() {
+                cancelAnimationFrame(animationId);
+            });
+        });
+    </script>
+</body>
+</html>

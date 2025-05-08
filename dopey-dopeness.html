@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dopey Dopeness and Sunday Rhythms</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Archivo+Black&family=Cabin+Sketch:wght@700&family=Monoton&family=Press+Start+2P&display=swap');
+        
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #000;
+            color: #fff;
+            font-family: 'Cabin Sketch', cursive;
+            overflow-x: hidden;
+        }
+        
+        .background-container {
+            position: fixed;
+            width: 100vw;
+            height: 100vh;
+            z-index: -1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .content {
+            position: relative;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            background-color: rgba(0, 0, 0, 0.7);
+            box-shadow: 0 0 50px rgba(255, 0, 255, 0.3);
+        }
+        
+        h1 {
+            font-family: 'Monoton', cursive;
+            font-size: 4em;
+            text-align: center;
+            color: #ff00ff;
+            text-shadow: 0 0 10px rgba(255, 0, 255, 0.8);
+            margin-bottom: 40px;
+            line-height: 1.2;
+        }
+        
+        p {
+            font-size: 1.4em;
+            line-height: 1.6;
+            margin-bottom: 25px;
+            font-family: 'Archivo Black', sans-serif;
+            text-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
+        }
+        
+        p:first-of-type::first-letter {
+            font-size: 3em;
+            float: left;
+            line-height: 0.8;
+            margin-right: 10px;
+            color: #ff00ff;
+        }
+        
+        p.quote {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 1.1em;
+            padding: 20px;
+            border-left: 5px solid #ff00ff;
+            background-color: rgba(255, 0, 255, 0.1);
+        }
+        
+        .mix-container {
+            margin: 40px 0;
+            padding: 20px;
+            background-color: rgba(0, 0, 0, 0.5);
+            border: 2px solid #ff00ff;
+            border-radius: 10px;
+        }
+        
+        .mix-container h2 {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 1.5em;
+            color: #ff00ff;
+            margin-bottom: 20px;
+        }
+        
+        .playlist-controls {
+            display: flex;
+            justify-content: center;
+            margin: 30px 0;
+        }
+        
+        .playlist-btn {
+            background-color: #ff00ff;
+            color: black;
+            border: none;
+            padding: 10px 20px;
+            margin: 0 10px;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 0.8em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .playlist-btn:hover {
+            background-color: #ff66ff;
+            transform: scale(1.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="background-container">
+        <svg width="800" height="800" viewBox="0 0 800 800">
+            <g id="turntable">
+                <circle cx="400" cy="400" r="300" fill="none" stroke="#ff00ff" stroke-width="2" />
+                <circle cx="400" cy="400" r="200" fill="none" stroke="#00ffff" stroke-width="2" />
+                <circle cx="400" cy="400" r="100" fill="none" stroke="#ffff00" stroke-width="2" />
+                
+                <line x1="400" y1="100" x2="400" y2="700" stroke="#ff00ff" stroke-width="1" />
+                <line x1="100" y1="400" x2="700" y2="400" stroke="#ff00ff" stroke-width="1" />
+                
+                <polygon points="400,150 380,250 420,250" fill="#ffff00" />
+                <polygon points="400,550 380,450 420,450" fill="#00ffff" />
+                <polygon points="150,400 250,380 250,420" fill="#ff00ff" />
+                <polygon points="550,400 450,380 450,420" fill="#ff00ff" />
+                
+                <circle cx="400" cy="400" r="50" fill="#ff00ff" />
+                <circle cx="400" cy="400" r="10" fill="#fff" />
+                
+                <!-- Spinning pattern -->
+                <g id="pattern">
+                    <path d="M400 100 L425 200 L500 150 Z" fill="none" stroke="#ff00ff" stroke-width="2" />
+                    <path d="M500 150 L525 250 L600 200 Z" fill="none" stroke="#00ffff" stroke-width="2" />
+                    <path d="M600 200 L625 300 L700 250 Z" fill="none" stroke="#ffff00" stroke-width="2" />
+                    <path d="M400 100 L375 200 L300 150 Z" fill="none" stroke="#ff00ff" stroke-width="2" />
+                    <path d="M300 150 L275 250 L200 200 Z" fill="none" stroke="#00ffff" stroke-width="2" />
+                    <path d="M200 200 L175 300 L100 250 Z" fill="none" stroke="#ffff00" stroke-width="2" />
+                </g>
+            </g>
+        </svg>
+    </div>
+    
+    <div class="content">
+        <h1>Dopey Dopeness and Sunday Rhythms</h1>
+        
+        <p>We were somewhere around Barstow on the edge of the desert when the soundtrack began to take hold. I remember saying something like "I need the perfect Sunday mix; maybe you should drive..." And suddenly there was a terrible roar all around us and the sky was full of what looked like huge vibrations, all wobbling and grinding around us, and a voice was screaming: "Holy Jesus! What are these goddamn sonic masterpieces?"</p>
+        
+        <p>The quest for the perfect Sunday soundtrack is a serious affair, not to be taken lightly or approached with anything less than religious fervor. Sundays demand a particular kind of music—something that elevates the spirit without crushing the cranium, something that dances between the raindrops of your hangover without drowning you in its downpour.</p>
+        
+        <p class="quote">"The music business is a cruel and shallow money trench, a long plastic hallway where thieves and pimps run free, and good men die like dogs. There's also a negative side."</p>
+        
+        <p>I had armed myself with nothing but a manic determination and a browser loaded with obscure music blogs. The journey through the auditory wilderness had begun at dawn with a fistful of coffee and a head full of amphetamines. By noon, I had traversed continents of sound, from the throbbing jungles of dub to the crystalline peaks of ambient techno.</p>
+        
+        <p>These three mixes, dear friends, are the distilled essence of Sunday dopeness—sonic journeys that I have personally field-tested in the trenches of post-Saturday oblivion. Play them in sequence for the ultimate channeling of cosmic energy through your auditory nerves.</p>
+        
+        <div class="mix-container">
+            <h2>Mix 1: The Morning Elixir</h2>
+            <iframe
+                width="100%"
+                height="166"
+                scrolling="no"
+                frameborder="no"
+                allow="autoplay"
+                src="https://w.soundcloud.com/player/?url=https%3A%2F%2Fon.soundcloud.com%2F9WdTfYsWS6AS5mwt9">
+            </iframe>
+        </div>
+        
+        <p>As the first vibrations of this mix hit my ears, I felt my brain cells reorganizing themselves into a more efficient pattern. The savage journey to the heart of Sunday had begun, and there was no turning back. The quest had morphed from a mere search for pleasant background noise into something far more deranged—a baptism by sound waves.</p>
+        
+        <div class="mix-container">
+            <h2>Mix 2: The Midday Transmission</h2>
+            <iframe
+                width="100%"
+                height="166"
+                scrolling="no"
+                frameborder="no"
+                allow="autoplay"
+                src="https://w.soundcloud.com/player/?url=https%3A%2F%2Fon.soundcloud.com%2Fna6KhiMjStN44xxQA">
+            </iframe>
+        </div>
+        
+        <p>By the time the second mix drops its first bass note, you should be firmly in the clutches of the groove. This is music for cooking elaborate meals that you'll never finish, for conversations that spiral into the metaphysical abyss, for those moments when the Sunday papers have been read and the void begins to stare back.</p>
+        
+        <div class="mix-container">
+            <h2>Mix 3: The Evening Comedown</h2>
+            <iframe
+                width="100%"
+                height="120"
+                src="https://www.mixcloud.com/widget/iframe/?feed=https%3A%2F%2Fwww.mixcloud.com%2FNTSRadio%2Fbreakwave-25th-august-2018%2F"
+                frameborder="0"
+                allow="autoplay">
+            </iframe>
+        </div>
+        
+        <p>And then, as the sun begins its descent and the grim specter of Monday looms on the horizon, this final mix serves as a kind of sonic landing gear. It's the audio equivalent of a slow-motion reentry into the Earth's atmosphere—a controlled burn that prepares you for the harsh reality of the work week.</p>
+        
+        <p>I've seen the best minds of my generation destroyed by poor Sunday playlists—ragged hipsters dragging themselves through Monday morning traffic, looking for an angry fix of caffeine. Don't be like them. Embrace these mixes as your salvation from the banal and the ordinary.</p>
+        
+        <p class="quote">"The only people who know where it's at are the ones who are cool enough to know where it's at."</p>
+        
+        <p>We can't stop here, this is bat country. But we can pause, we can breathe, and we can let these carefully curated sounds wash over us like a cleansing wave of pure auditory bliss. The quest for the perfect Sunday mix is never truly over—it's a lifelong journey down the rabbit hole of rhythm and melody. But for now, in this moment, with these three mixes in your arsenal, you're as close as you'll ever get to sonic nirvana.</p>
+        
+        <div class="playlist-controls">
+            <button class="playlist-btn" id="play-all">PLAY ALL</button>
+            <button class="playlist-btn" id="pause-all">PAUSE</button>
+        </div>
+    </div>
+
+    <script>
+        // Animated SVG rotation
+        const turntable = document.getElementById('turntable');
+        const pattern = document.getElementById('pattern');
+        
+        function rotateTurntable() {
+            const now = Date.now() / 1000;
+            pattern.setAttribute('transform', `rotate(${now * 20}, 400, 400)`);
+            requestAnimationFrame(rotateTurntable);
+        }
+        
+        rotateTurntable();
+        
+        // Sequential playback of mixes
+        document.addEventListener('DOMContentLoaded', function() {
+            const iframes = document.querySelectorAll('iframe');
+            let currentPlayer = 0;
+            const SC = SC || {};
+            SC.Widget = SC.Widget || (function() {
+                return {
+                    Events: {
+                        FINISH: 'finish'
+                    }
+                };
+            })();
+            
+            function setupPlayers() {
+                // Wait for SoundCloud and Mixcloud APIs to load
+                if (typeof SC === 'undefined' || typeof SC.Widget !== 'function' || typeof Mixcloud === 'undefined') {
+                    setTimeout(setupPlayers, 500);
+                    return;
+                }
+                
+                const players = Array.from(iframes).map(iframe => {
+                    if (iframe.src.includes('soundcloud')) {
+                        return SC.Widget(iframe);
+                    } else if (iframe.src.includes('mixcloud')) {
+                        return Mixcloud.PlayerWidget(iframe);
+                    }
+                    return null;
+                }).filter(Boolean);
+                
+                // Set up event listeners for each player
+                players.forEach((player, index) => {
+                    if (player) {
+                        if (typeof player.bind === 'function') {
+                            player.bind(SC.Widget.Events.FINISH, function() {
+                                if (index < players.length - 1) {
+                                    players[index + 1].play();
+                                }
+                            });
+                        } else if (typeof player.events === 'object') {
+                            player.events.listen('finished', function() {
+                                if (index < players.length - 1) {
+                                    players[index + 1].play();
+                                }
+                            });
+                        }
+                    }
+                });
+                
+                // Play All button
+                document.getElementById('play-all').addEventListener('click', function() {
+                    players[0].play();
+                });
+                
+                // Pause All button
+                document.getElementById('pause-all').addEventListener('click', function() {
+                    players.forEach(player => {
+                        if (typeof player.pause === 'function') {
+                            player.pause();
+                        }
+                    });
+                });
+            }
+            
+            // Load SoundCloud API
+            const scScript = document.createElement('script');
+            scScript.src = 'https://w.soundcloud.com/player/api.js';
+            document.body.appendChild(scScript);
+            
+            // Load Mixcloud API
+            const mcScript = document.createElement('script');
+            mcScript.src = 'https://widget.mixcloud.com/media/js/widgetApi.js';
+            document.body.appendChild(mcScript);
+            
+            setupPlayers();
+        });
+    </script>
+</body>
+</html>

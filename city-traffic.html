@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>City Traffic SVG Animation</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background: #e0e7ef;
+      overflow: hidden;
+    }
+    .scene-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      z-index: -110;
+    }
+    svg {
+      width: 100vw;
+      height: 100vh;
+      display: block;
+    }
+    .crosswalk {
+      fill: #fff;
+      opacity: 0.8;
+    }
+    .pedestrian {
+      transition: opacity 0.3s;
+    }
+  </style>
+</head>
+<body>
+<div class="scene-container">
+<svg id="citysvg" viewBox="0 0 800 600">
+  <!-- Roads (full viewport) -->
+  <rect x="390" y="0" width="60" height="600" fill="#555" /> <!-- vertical road -->
+  <rect x="0" y="270" width="800" height="60" fill="#555" /> <!-- horizontal road -->
+
+  <!-- Crosswalks -->
+  <g id="crosswalks">
+    <!-- Vertical -->
+    <rect class="crosswalk" x="370" y="280" width="20" height="40" />
+    <rect class="crosswalk" x="410" y="280" width="20" height="40" />
+    <!-- Horizontal -->
+    <rect class="crosswalk" x="380" y="270" width="40" height="20" />
+    <rect class="crosswalk" x="380" y="310" width="40" height="20" />
+  </g>
+
+  <!-- Tram tracks -->
+  <rect x="390" y="0" width="6" height="600" fill="#aaa" />
+  <rect x="404" y="0" width="6" height="600" fill="#aaa" />
+
+  <!-- Sidewalks -->
+  <rect x="370" y="0" width="20" height="600" fill="#bbb" />
+  <rect x="450" y="0" width="20" height="600" fill="#bbb" />
+  <rect x="0" y="250" width="800" height="20" fill="#bbb" />
+  <rect x="0" y="330" width="800" height="20" fill="#bbb" />
+
+  <!-- Buildings (corners) -->
+  <rect x="0" y="0" width="370" height="250" fill="#d3d3d3" stroke="#a0a0a0" stroke-width="3"/>
+  <rect x="450" y="0" width="350" height="250" fill="#d3d3d3" stroke="#a0a0a0" stroke-width="3"/>
+  <rect x="0" y="330" width="370" height="270" fill="#d3d3d3" stroke="#a0a0a0" stroke-width="3"/>
+  <rect x="450" y="330" width="350" height="270" fill="#d3d3d3" stroke="#a0a0a0" stroke-width="3"/>
+
+  <!-- Parks (add some green areas) -->
+  <ellipse cx="185" cy="125" rx="60" ry="35" fill="#7ed957" opacity="0.7"/>
+  <ellipse cx="615" cy="125" rx="50" ry="30" fill="#7ed957" opacity="0.7"/>
+  <ellipse cx="185" cy="465" rx="50" ry="28" fill="#7ed957" opacity="0.7"/>
+  <ellipse cx="615" cy="465" rx="60" ry="36" fill="#7ed957" opacity="0.7"/>
+
+  <!-- Vehicles, tram, and people will be added by JS -->
+  <g id="vehicles"></g>
+  <g id="tram"></g>
+  <g id="pedestrians"></g>
+</svg>
+</div>
+<script>
+// --- Parameters ---
+const carColors = ['#e74c3c','#3498db','#27ae60','#f1c40f','#8e44ad'];
+const vehicleData = [
+  { type: 'car', color: carColors[0], x: 100, y: 275, dir: 'right', speed: 1.5, stopX: 370 },
+  { type: 'car', color: carColors[1], x: 700, y: 325, dir: 'left', speed: 1.2, stopX: 430 },
+  { type: 'bus', color: '#2980b9', x: 120, y: 305, dir: 'right', speed: 1.0, stopX: 370 },
+  { type: 'truck', color: '#7f8c8d', x: 650, y: 255, dir: 'left', speed: 1.1, stopX: 430 }
+];
+const tramData = { x: 300, y: -80, speed: 1.3, stopY: 280 };
+const pedestrianData = [
+  { x: 390, y: 230, dir: 'down', speed: 0.7, crossY: 270 },
+  { x: 410, y: 370, dir: 'up', speed: 0.7, crossY: 330 },
+  { x: 360, y: 290, dir: 'right', speed: 0.6, crossX: 380 },
+  { x: 440, y: 310, dir: 'left', speed: 0.6, crossX: 420 }
+];
+
+let trafficLight = 'green';
+let trafficTimer = 0;
+let trafficCycle = 220; // frames per cycle
+
+// --- SVG Elements ---
+const svg = document.getElementById('citysvg');
+const vehiclesGroup = document.getElementById('vehicles');
+const tramGroup = document.getElementById('tram');
+const pedsGroup = document.getElementById('pedestrians');
+
+// --- Helper Functions ---
+function makeVehicle(v) {
+  if(v.type === 'car') {
+    return `<rect x="${v.x}" y="${v.y}" width="36" height="18" rx="5" fill="${v.color}" stroke="#222" stroke-width="2"/>`;
+  } else if(v.type === 'bus') {
+    return `<rect x="${v.x}" y="${v.y}" width="60" height="20" rx="6" fill="${v.color}" stroke="#222" stroke-width="2"/>`;
+  } else if(v.type === 'truck') {
+    return `<rect x="${v.x}" y="${v.y}" width="48" height="18" rx="4" fill="${v.color}" stroke="#222" stroke-width="2"/>`;
+  }
+}
+function makeTram(y) {
+  return `<rect x="392" y="${y}" width="16" height="80" rx="8" fill="#f39c12" stroke="#333" stroke-width="2"/>
+    <rect x="396" y="${y+10}" width="8" height="60" fill="#fff" opacity="0.7"/>`;
+}
+function makePed(p) {
+  return `<circle class="pedestrian" cx="${p.x}" cy="${p.y}" r="7" fill="#222" stroke="#fff" stroke-width="2"/>`;
+}
+
+// --- Animation State ---
+let vehicles = JSON.parse(JSON.stringify(vehicleData));
+let tram = Object.assign({}, tramData);
+let peds = JSON.parse(JSON.stringify(pedestrianData));
+let pedsCrossing = [false, false, false, false];
+
+function animate() {
+  // --- Traffic Light Logic ---
+  trafficTimer++;
+  if (trafficLight === 'green' && trafficTimer > trafficCycle) {
+    trafficLight = 'red';
+    trafficTimer = 0;
+  } else if (trafficLight === 'red' && trafficTimer > 80) {
+    trafficLight = 'green';
+    trafficTimer = 0;
+  }
+
+  // --- Vehicles ---
+  vehicles.forEach((v, i) => {
+    if (v.dir === 'right') {
+      if (trafficLight === 'red' && v.x + 36 >= v.stopX && v.x < v.stopX + 30) {
+        // stop at crosswalk
+      } else {
+        v.x += v.speed;
+        if (v.x > 800) v.x = -40;
+      }
+    } else if (v.dir === 'left') {
+      if (trafficLight === 'red' && v.x <= v.stopX && v.x > v.stopX - 30) {
+        // stop at crosswalk
+      } else {
+        v.x -= v.speed;
+        if (v.x < -60) v.x = 800;
+      }
+    }
+  });
+
+  // --- Tram ---
+  if (trafficLight === 'red' && tram.y + 80 >= tram.stopY && tram.y < tram.stopY + 40) {
+    // stop at intersection
+  } else {
+    tram.y += tram.speed;
+    if (tram.y > 600) tram.y = -80;
+  }
+
+  // --- Pedestrians ---
+  peds.forEach((p, i) => {
+    let crossing = false;
+    if (i < 2) {
+      // vertical crossers
+      if (trafficLight === 'red') {
+        if ((p.dir === 'down' && p.y < 310) || (p.dir === 'up' && p.y > 270)) {
+          crossing = true;
+        }
+      }
+      if (crossing) {
+        pedsCrossing[i] = true;
+        if (p.dir === 'down') {
+          p.y += p.speed;
+          if (p.y > 370) { p.y = 230; pedsCrossing[i] = false; }
+        } else {
+          p.y -= p.speed;
+          if (p.y < 230) { p.y = 370; pedsCrossing[i] = false; }
+        }
+      }
+    } else {
+      // horizontal crossers
+      if (trafficLight === 'red') {
+        if ((p.dir === 'right' && p.x < 440) || (p.dir === 'left' && p.x > 380)) {
+          crossing = true;
+        }
+      }
+      if (crossing) {
+        pedsCrossing[i] = true;
+        if (p.dir === 'right') {
+          p.x += p.speed;
+          if (p.x > 440) { p.x = 360; pedsCrossing[i] = false; }
+        } else {
+          p.x -= p.speed;
+          if (p.x < 360) { p.x = 440; pedsCrossing[i] = false; }
+        }
+      }
+    }
+  });
+
+  // --- Draw ---
+  vehiclesGroup.innerHTML = vehicles.map(makeVehicle).join('');
+  tramGroup.innerHTML = makeTram(tram.y);
+  pedsGroup.innerHTML = peds.map(makePed).join('');
+
+  // --- Draw traffic light ---
+  let tlColor = (trafficLight === 'green') ? '#2ecc40' : '#e74c3c';
+  let tl = svg.getElementById('trafficlight');
+  if (!tl) {
+    let g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    g.setAttribute('id', 'trafficlight');
+    g.innerHTML = `<rect x="470" y="230" width="18" height="40" rx="4" fill="#222" stroke="#000" stroke-width="2"/>
+      <circle cx="479" cy="240" r="7" fill="#e74c3c" opacity="${trafficLight==='red'?1:0.3}"/>
+      <circle cx="479" cy="260" r="7" fill="#2ecc40" opacity="${trafficLight==='green'?1:0.3}"/>`;
+    svg.appendChild(g);
+  } else {
+    tl.innerHTML = `<rect x="470" y="230" width="18" height="40" rx="4" fill="#222" stroke="#000" stroke-width="2"/>
+      <circle cx="479" cy="240" r="7" fill="#e74c3c" opacity="${trafficLight==='red'?1:0.3}"/>
+      <circle cx="479" cy="260" r="7" fill="#2ecc40" opacity="${trafficLight==='green'?1:0.3}"/>`;
+  }
+
+  requestAnimationFrame(animate);
+}
+
+animate();
+</script>
+</body>
+</html>
