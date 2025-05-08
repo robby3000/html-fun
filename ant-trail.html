@@ -49,25 +49,36 @@
             border-radius: 10px;
             padding: 10px 20px;
             display: flex;
-            gap: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 15px;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
             z-index: 100;
+            max-width: 95%;
+            width: auto;
         }
         
         .control {
             display: flex;
             flex-direction: column;
             align-items: center;
+            min-width: 80px;
         }
         
         .control label {
             margin-bottom: 5px;
             font-size: 12px;
             color: #333;
+            text-align: center;
         }
         
         .control input {
-            width: 100px;
+            width: 80px;
+        }
+        
+        .control select {
+            width: 80px;
+            padding: 2px;
         }
         
         .control button {
@@ -81,6 +92,33 @@
         
         .control button:hover {
             background: #45a049;
+        }
+        
+        /* Mobile responsiveness */
+        @media (max-width: 600px) {
+            .controls {
+                padding: 8px 12px;
+                gap: 10px;
+                bottom: 10px;
+            }
+            
+            .control {
+                min-width: 70px;
+            }
+            
+            .control label {
+                font-size: 10px;
+            }
+            
+            .control input,
+            .control select {
+                width: 70px;
+            }
+            
+            .control button {
+                padding: 4px 8px;
+                font-size: 10px;
+            }
         }
     </style>
 </head>
@@ -133,6 +171,17 @@
             <input type="range" id="maxDots" min="50" max="2000" step="50" value="500">
         </div>
         <div class="control">
+            <label for="dotColor">Color</label>
+            <select id="dotColor">
+                <option value="#87CEEB">Light Blue</option>
+                <option value="#FF9999">Pink</option>
+                <option value="#90EE90">Light Green</option>
+                <option value="#FFFF99">Yellow</option>
+                <option value="#D8BFD8">Thistle</option>
+                <option value="random">Random</option>
+            </select>
+        </div>
+        <div class="control">
             <button id="reset">Reset Trail</button>
         </div>
     </div>
@@ -153,8 +202,19 @@
             // Get SVG dimensions
             const svgRect = canvas.getBoundingClientRect();
             const viewBox = canvas.viewBox.baseVal;
-            const svgWidth = viewBox.width;
-            const svgHeight = viewBox.height;
+            let svgWidth = viewBox.width;
+            let svgHeight;
+            
+            // Check if mobile and adjust height accordingly
+            const isMobileCheck = window.innerWidth <= 600;
+            if (isMobileCheck) {
+                // For mobile, constrain by vertical viewport
+                const viewportWidth = window.innerWidth;
+                const viewportHeight = window.innerHeight;
+                svgHeight = viewportHeight * (viewBox.width / viewportWidth);
+            } else {
+                svgHeight = viewBox.height;
+            }
             
             // Animation variables
             let antX = -50; // Start off-screen
@@ -166,6 +226,8 @@
             let maxDots = parseInt(maxDotsControl.value);
             let dotSize = parseInt(dotSizeControl.value);
             let speed = parseInt(speedControl.value);
+            let dotColor = document.getElementById('dotColor').value;
+            let isMobile = window.innerWidth <= 600;
             let animationId;
             let entryComplete = false;
             let stepCount = 0;
@@ -275,7 +337,7 @@
                 
                 // Update ant position and rotation
                 const degrees = antAngle * 180 / Math.PI;
-                ant.setAttribute('transform', `translate(${antX}, ${antY}) rotate(${degrees})`);
+                ant.setAttribute('transform', `translate(${antX}, ${antY}) rotate(${degrees}) scale(0.5)`);
             }
             
             function animateLegs() {
@@ -342,6 +404,16 @@
                 const sizeVariation = (Math.random() * 0.4) + 0.8;
                 dot.setAttribute("r", dotSize * sizeVariation);
                 
+                // Set dot color based on selection
+                if (dotColor === 'random') {
+                    // Random color from our palette
+                    const colors = ['#87CEEB', '#FF9999', '#90EE90', '#FFFF99', '#D8BFD8'];
+                    const randomColor = colors[Math.floor(Math.random() * colors.length)];
+                    dot.style.fill = randomColor;
+                } else {
+                    dot.style.fill = dotColor;
+                }
+                
                 trail.appendChild(dot);
                 dots.push(dot);
                 
@@ -389,10 +461,18 @@
                 }
             });
             
+            // Color control event listener
+            document.getElementById('dotColor').addEventListener('change', function() {
+                dotColor = this.value;
+            });
+            
             resetButton.addEventListener('click', resetTrail);
             
             // Handle window resize
             window.addEventListener('resize', function() {
+                // Update mobile status
+                isMobile = window.innerWidth <= 600;
+                
                 // Update SVG dimensions
                 const newRect = canvas.getBoundingClientRect();
                 
@@ -406,7 +486,14 @@
                 // Update internal variables to match new dimensions
                 // This ensures the ant moves within the visible area
                 svgWidth = viewBox.width;
-                svgHeight = viewBox.height * (viewportHeight / viewportWidth);
+                
+                // For mobile, constrain by vertical viewport
+                if (isMobile) {
+                    // Set height based on actual viewport height to constrain the ant
+                    svgHeight = viewportHeight * (viewBox.width / viewportWidth);
+                } else {
+                    svgHeight = viewBox.height * (viewportHeight / viewportWidth);
+                }
                 
                 // If ant is near an edge after resize, move it toward center
                 const margin = 50;
