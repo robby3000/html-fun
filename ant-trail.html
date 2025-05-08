@@ -125,6 +125,8 @@
 <body>
     <div class="scene-container">
         <svg id="canvas" viewBox="0 0 1000 600" preserveAspectRatio="xMidYMid slice">
+            <!-- Trail dots will be added here dynamically -->
+            <g id="trail"></g>
             <!-- Ant SVG -->
             <g id="ant" class="ant" transform="translate(0, 0) rotate(0)">
                 <!-- Ant abdomen (rear part) -->
@@ -152,8 +154,6 @@
                     <path id="rightRearLeg" class="leg" d="M-5,5 Q-12,15 -18,18" stroke="#333333" stroke-width="1.5" fill="none" />
                 </g>
             </g>
-            <!-- Trail dots will be added here dynamically -->
-            <g id="trail"></g>
         </svg>
     </div>
     
