@@ -1,0 +1,987 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Quirky SVG Virtual Pet</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #e0e0e0; /* Light grey background */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: 'Comic Sans MS', 'Chalkboard SE', 'Marker Felt', sans-serif; /* Quirky font */
+        }
+        #gameContainer {
+            /* The canvas will be inserted here by Three.js */
+            box-shadow: 0 0 20px rgba(0,0,0,0.2);
+            background-color: #f0f8ff; /* AliceBlue play area background */
+        }
+        /* Basic styling for any HTML elements if needed later, though UI is SVG */
+        .speech-bubble-text { /* Example if using HTML text overlay, but we'll use SVG text */
+            font-size: 14px;
+            color: black;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer"></div>
+
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.164.1/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.164.1/examples/jsm/"
+            }
+        }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { SVGRenderer } from 'three/addons/renderers/SVGRenderer.js';
+
+        // --- Constants ---
+        const GAME_WIDTH = 800;
+        const GAME_HEIGHT = 600;
+        const PET_START_Y = -50; // Where the pet rests
+        const GRABBER_START_Y = GAME_HEIGHT / 2 + 100;
+        const GRABBER_DROP_Y = PET_START_Y + 50; // Y position for dropping pet
+
+        const COLORS = ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40']; // Chart.js colors
+        const BODY_COLORS = ['#87CEEB', '#98FB98', '#FFB6C1', '#E6E6FA', '#FAFAD2']; // SkyBlue, PaleGreen, LightPink, Lavender, LightGoldenrodYellow
+        const ACCESSORY_COLORS = ['#000000', '#A52A2A', '#808080', '#FFD700']; // Black, Brown, Grey, Gold
+
+        const STAT_MAX = 100;
+        const STAT_DECAY_RATE = 0.1; // Smaller is slower decay
+        const HUNGER_DECAY_INTERVAL = 2000; // ms
+        const HAPPINESS_DECAY_INTERVAL = 3000; // ms
+        const CLEANLINESS_POOP_CHANCE = 0.002; // Chance per frame to poop if not perfectly clean
+
+        // --- Game Variables ---
+        let scene, camera, renderer;
+        let pet, grabberArm, poops = [], uiElements = {}, speechBubble;
+        let gameState = {
+            pet: null,
+            stats: { hunger: STAT_MAX * 0.8, happiness: STAT_MAX * 0.8, cleanliness: STAT_MAX },
+            poopsData: [], // To store positions of poops for saving
+            growthStage: 0,
+            gameTime: 0, // Accumulated game time for timed events
+            inMiniGame: false,
+            currentRandomEvent: null
+        };
+        let raycaster, mouse;
+
+        // --- SVG Path Data ---
+        const SVG_PATHS = {
+            mustache: "M10,20 Q20,10 30,20 Q20,30 10,20 M50,20 Q40,10 30,20 Q40,30 50,20 Z",
+            poop: "M15,30 C0,30 0,15 15,15 C30,15 30,0 15,0 C0,0 0,15 15,15", // Simpler swirl
+            wizard_hat: "M0,30 L15,0 L30,30 Z M-5,28 H35", // Triangle and brim
+            traffic_cone: "M5,30 L15,0 L25,30 Z M0,30 H30 M2,25 H28 M8,10 H22", // Cone with stripes
+            speech_bubble_path: "M0,0 H100 V50 H20 L10,60 L10,50 H0 Z" // Basic rectangle bubble with tail
+        };
+
+        // --- Initialization ---
+        function init() {
+            // Scene
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0xf0f8ff); // AliceBlue
+
+            // Camera
+            camera = new THREE.OrthographicCamera(GAME_WIDTH / -2, GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_HEIGHT / -2, 1, 1000);
+            camera.position.z = 500;
+
+            // Renderer
+            renderer = new SVGRenderer();
+            renderer.setSize(GAME_WIDTH, GAME_HEIGHT);
+            renderer.setQuality('low'); // Or 'high'. 'low' can be faster.
+            document.getElementById('gameContainer').appendChild(renderer.domElement);
+
+            // Raycaster for mouse interaction
+            raycaster = new THREE.Raycaster();
+            mouse = new THREE.Vector2();
+            renderer.domElement.addEventListener('click', onCanvasClick, false);
+            renderer.domElement.addEventListener('mousemove', onCanvasMouseMove, false); // For mini-game or hover effects
+
+            // Load game or start new
+            if (!loadGameState()) {
+                initNewGame();
+            } else {
+                // If game loaded, create pet directly from saved state
+                createPetFromState(gameState.pet);
+                gameState.poopsData.forEach(p => createPoop(p.x, p.y, false)); // Recreate poops
+                updateUI();
+            }
+
+            createUI();
+            animate(); // Start animation loop
+            setInterval(decayStats, 1000); // General stat decay timer
+        }
+
+        function initNewGame() {
+            gameState = { // Reset game state
+                pet: null,
+                stats: { hunger: STAT_MAX * 0.8, happiness: STAT_MAX * 0.8, cleanliness: STAT_MAX },
+                poopsData: [],
+                growthStage: 0,
+                gameTime: 0,
+                inMiniGame: false,
+                currentRandomEvent: null
+            };
+            poops.forEach(p => scene.remove(p.mesh)); // Clear existing poops from scene
+            poops = [];
+            if (pet) scene.remove(pet.group); // Remove old pet if any
+            pet = null;
+
+            createGrabberArm();
+            animateGrabberDelivery();
+        }
+
+        // --- SVG Element Creation Helpers ---
+        function createSVGObject(svgNode) {
+            return new THREE.SVGObject(svgNode.cloneNode(true));
+        }
+
+        function createCircle(radius, color, x = 0, y = 0) {
+            const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            circle.setAttribute('cx', String(x));
+            circle.setAttribute('cy', String(y));
+            circle.setAttribute('r', String(radius));
+            circle.setAttribute('fill', color);
+            return createSVGObject(circle);
+        }
+
+        function createRectangle(width, height, color, x = 0, y = 0) {
+            const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            rect.setAttribute('x', String(x - width/2)); // Center it
+            rect.setAttribute('y', String(y - height/2)); // Center it
+            rect.setAttribute('width', String(width));
+            rect.setAttribute('height', String(height));
+            rect.setAttribute('fill', color);
+            return createSVGObject(rect);
+        }
+        
+        function createPath(d, fillColor, strokeColor = 'none', strokeWidth = 1, x = 0, y = 0) {
+            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            path.setAttribute('d', d);
+            path.setAttribute('fill', fillColor);
+            path.setAttribute('stroke', strokeColor);
+            path.setAttribute('stroke-width', String(strokeWidth));
+            const obj = createSVGObject(path);
+            obj.position.set(x,y,0);
+            return obj;
+        }
+
+        function createText(textContent, x, y, fontSize = 16, color = '#000000', anchor = 'middle') {
+            const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            text.setAttribute('x', String(x));
+            text.setAttribute('y', String(y + fontSize / 3)); // Adjust for vertical alignment
+            text.setAttribute('font-size', String(fontSize));
+            text.setAttribute('fill', color);
+            text.setAttribute('text-anchor', anchor); // start, middle, end
+            text.setAttribute('font-family', "'Comic Sans MS', 'Chalkboard SE', 'Marker Felt', sans-serif");
+            text.textContent = textContent;
+            return createSVGObject(text);
+        }
+
+        // --- Pet Creation ---
+        function createRandomPet() {
+            const bodyType = ['oval', 'rectangle', 'blob'][Math.floor(Math.random() * 3)];
+            const eyeType = ['circles', 'ovals', 'squinty'][Math.floor(Math.random() * 3)];
+            
+            gameState.pet = {
+                bodyType: bodyType,
+                bodyColor: BODY_COLORS[Math.floor(Math.random() * BODY_COLORS.length)],
+                eyeType: eyeType,
+                eyeColor: '#FFFFFF',
+                pupilColor: '#000000',
+                mouthType: 'smile',
+                accessories: [],
+                scale: 1,
+                name: "Wobblegong", // Default name
+                mood: 'happy',
+            };
+            createPetFromState(gameState.pet);
+        }
+        
+        function createPetFromState(petData) {
+            if (pet && pet.group) scene.remove(pet.group); // Clean up old pet mesh
+
+            pet = { ...petData, group: new THREE.Group() }; // Store data and Three.js group
+
+            // Body
+            let body;
+            const bodyScale = 60 + pet.scale * 10; // Base size + growth
+            switch (pet.bodyType) {
+                case 'oval':
+                    body = createCircle(bodyScale, pet.bodyColor); // Use radius for circle
+                    body.scale.y = 0.8; // Make it more oval
+                    break;
+                case 'rectangle':
+                    body = createRectangle(bodyScale * 1.5, bodyScale * 0.9, pet.bodyColor); // width, height
+                    // Add rounded corners via SVG attributes if desired (more complex for basic shapes)
+                    break;
+                case 'blob': // A simple blob: two overlapping circles
+                    const blobPart1 = createCircle(bodyScale * 0.7, pet.bodyColor, -bodyScale * 0.2, 0);
+                    const blobPart2 = createCircle(bodyScale * 0.6, pet.bodyColor, bodyScale * 0.3, bodyScale * 0.1);
+                    body = new THREE.Group();
+                    body.add(blobPart1);
+                    body.add(blobPart2);
+                    break;
+            }
+            pet.group.add(body);
+            pet.bodyMesh = body; // Keep reference for changes
+
+            // Eyes
+            updatePetFace(); // Create eyes and mouth
+
+            // Accessories
+            pet.accessories.forEach(acc => addAccessory(acc.type, acc.color, false));
+
+            pet.group.position.set(0, PET_START_Y, 1); // z=1 to be on top of background elements
+            scene.add(pet.group);
+        }
+
+        function updatePetFace() {
+            if (!pet || !pet.group) return;
+
+            // Remove old eyes/mouth if they exist
+            if (pet.eyes) pet.group.remove(pet.eyes);
+            if (pet.mouth) pet.group.remove(pet.mouth);
+
+            pet.eyes = new THREE.Group();
+            const eyeRadius = 8 * pet.scale;
+            const pupilRadius = 3 * pet.scale;
+            const eyeSpacing = 20 * pet.scale;
+
+            let leftEye, rightEye, leftPupil, rightPupil;
+
+            switch (pet.eyeType) {
+                case 'ovals':
+                    leftEye = createCircle(eyeRadius, pet.eyeColor); leftEye.scale.y = 1.5;
+                    rightEye = createCircle(eyeRadius, pet.eyeColor); rightEye.scale.y = 1.5;
+                    break;
+                case 'squinty': // Use thin rectangles for squinty eyes
+                    leftEye = createRectangle(eyeRadius * 2, eyeRadius * 0.3, pet.pupilColor);
+                    rightEye = createRectangle(eyeRadius * 2, eyeRadius * 0.3, pet.pupilColor);
+                    break;
+                default: // circles
+                    leftEye = createCircle(eyeRadius, pet.eyeColor);
+                    rightEye = createCircle(eyeRadius, pet.eyeColor);
+                    break;
+            }
+
+            if (pet.eyeType !== 'squinty') { // Pupils for non-squinty
+                leftPupil = createCircle(pupilRadius, pet.pupilColor);
+                rightPupil = createCircle(pupilRadius, pet.pupilColor);
+                leftEye.add(leftPupil);
+                rightEye.add(rightPupil);
+            }
+            
+            leftEye.position.x = -eyeSpacing / 2;
+            rightEye.position.x = eyeSpacing / 2;
+            pet.eyes.add(leftEye);
+            pet.eyes.add(rightEye);
+            pet.eyes.position.y = 15 * pet.scale;
+            pet.group.add(pet.eyes);
+
+            // Mouth
+            let mouthD;
+            let mouthY = -10 * pet.scale;
+            switch (pet.mood) {
+                case 'happy': mouthD = `M-15,0 Q0,10 15,0`; break; // Smile
+                case 'sad': mouthD = `M-15,10 Q0,0 15,10`; break; // Frown
+                case 'grumpy': mouthD = `M-15,5 Q0,0 15,5`; break; // Less sad frown
+                case 'surprised': // Small circle mouth
+                    pet.mouth = createCircle(5 * pet.scale, pet.pupilColor, 0, mouthY);
+                    break;
+                default: mouthD = `M-15,0 L15,0`; break; // Neutral
+            }
+            if (pet.mood !== 'surprised') {
+                 pet.mouth = createPath(mouthD, 'none', pet.pupilColor, 2 * pet.scale, 0, mouthY);
+            }
+            pet.group.add(pet.mouth);
+        }
+        
+        function addAccessory(type, color, isNew = true) {
+            if (!pet) return;
+            if (isNew && pet.accessories.find(acc => acc.type === type)) return; // Don't add duplicates from random growth
+
+            let accessoryMesh;
+            let yPos = 30 * pet.scale; // Default head accessory position
+            let xPos = 0;
+            let scale = 0.5 * pet.scale;
+
+            switch (type) {
+                case 'mustache':
+                    accessoryMesh = createPath(SVG_PATHS.mustache, color, 'none', 1);
+                    yPos = -5 * pet.scale; // Below eyes
+                    scale = 0.4 * pet.scale;
+                    break;
+                case 'monocle': // Right eye monocle
+                    const lens = createCircle(8 * pet.scale, 'none');
+                    lens.node.setAttribute('stroke', color);
+                    lens.node.setAttribute('stroke-width', '2');
+                    const chain = createPath("M0,0 Q10,-10 20,-5", 'none', color, 1);
+                    chain.position.set(8 * pet.scale, 0, 0);
+                    accessoryMesh = new THREE.Group();
+                    accessoryMesh.add(lens);
+                    accessoryMesh.add(chain);
+                    xPos = (10 + 4) * pet.scale; // eyeSpacing/2 + eyeRadius/2
+                    yPos = 15 * pet.scale; // eye level
+                    break;
+                case 'wizard_hat':
+                    accessoryMesh = createPath(SVG_PATHS.wizard_hat, color, ACCESSORY_COLORS[0], 2);
+                    yPos = (30 + 15) * pet.scale; // Higher for hat
+                    scale = 1 * pet.scale;
+                    break;
+                case 'traffic_cone_hat':
+                    accessoryMesh = createPath(SVG_PATHS.traffic_cone, '#FF4500', ACCESSORY_COLORS[0], 1); // OrangeRed cone
+                    yPos = (30 + 15) * pet.scale;
+                    scale = 1 * pet.scale;
+                    break;
+                case 'third_eye':
+                    const thirdEye = createCircle(7 * pet.scale, pet.eyeColor);
+                    const thirdPupil = createCircle(2.5 * pet.scale, pet.pupilColor);
+                    thirdEye.add(thirdPupil);
+                    accessoryMesh = thirdEye;
+                    yPos = 35 * pet.scale; // Forehead
+                    break;
+            }
+
+            if (accessoryMesh) {
+                accessoryMesh.position.set(xPos, yPos, 0.1); // Slightly in front
+                accessoryMesh.scale.set(scale, scale, scale);
+                pet.group.add(accessoryMesh);
+                if (isNew) {
+                    pet.accessories.push({ type, color, mesh: accessoryMesh });
+                } else { // Find existing and assign mesh
+                    const existing = pet.accessories.find(a => a.type === type);
+                    if (existing) existing.mesh = accessoryMesh;
+                }
+            }
+        }
+
+        // --- Grabber Arm ---
+        function createGrabberArm() {
+            if (grabberArm) scene.remove(grabberArm);
+            grabberArm = new THREE.Group();
+            
+            const armMaterialColor = '#808080'; // Grey
+
+            const base = createRectangle(80, 20, armMaterialColor); // Main horizontal bar
+            const armSegment = createRectangle(10, 100, armMaterialColor); // Vertical arm
+            armSegment.position.y = -60; // Below base
+
+            const clawGroup = new THREE.Group();
+            const clawLeft = createPath("M0,0 L-10,10 L-10,20", 'none', armMaterialColor, 3);
+            const clawRight = createPath("M0,0 L10,10 L10,20", 'none', armMaterialColor, 3);
+            clawGroup.add(clawLeft);
+            clawGroup.add(clawRight);
+            clawGroup.position.y = -110; // End of armSegment
+            
+            grabberArm.add(base);
+            grabberArm.add(armSegment);
+            grabberArm.add(clawGroup);
+            
+            grabberArm.claw = clawGroup; // For easy access to animate
+            grabberArm.claw.opened = true; // Initial state
+
+            grabberArm.position.set(0, GRABBER_START_Y, 10); // Start off-screen top
+            scene.add(grabberArm);
+        }
+
+        function animateGrabberClaw(open) {
+            if (!grabberArm) return;
+            const angle = open ? Math.PI / 6 : 0; // Open wider or closed
+            grabberArm.claw.children[0].rotation.z = -angle; // Left claw
+            grabberArm.claw.children[1].rotation.z = angle;  // Right claw
+            grabberArm.claw.opened = open;
+        }
+
+        let grabberState = 'idle'; // idle, lowering_to_pet, grabbing, raising_pet, moving_to_drop, lowering_to_drop, releasing, retracting
+        let grabberTargetY = 0;
+        let grabberPetToDeliver = null;
+
+        function animateGrabberDelivery() {
+            if (!grabberArm) createGrabberArm();
+            grabberState = 'lowering_to_pet';
+            grabberTargetY = GRABBER_START_Y - 200; // "Pick up" pet from above canvas view
+            grabberArm.position.set(0, GRABBER_START_Y, 10);
+            animateGrabberClaw(true); // Open claw
+
+            // Generate the pet that will be delivered (but don't add to scene yet)
+            createRandomPet(); // This sets gameState.pet
+            grabberPetToDeliver = pet.group; // Reference to the pet's mesh group
+            grabberPetToDeliver.visible = false; // Keep it hidden until "grabbed"
+            scene.add(grabberPetToDeliver); // Add to scene so it's part of rendering, but invisible
+        }
+        
+        function updateGrabberAnimation() {
+            if (!grabberArm || grabberState === 'idle') return;
+            const speed = 5;
+
+            switch (grabberState) {
+                case 'lowering_to_pet':
+                    grabberArm.position.y -= speed;
+                    if (grabberArm.position.y <= grabberTargetY) {
+                        grabberState = 'grabbing';
+                        animateGrabberClaw(false); // Close claw
+                        if (grabberPetToDeliver) grabberPetToDeliver.visible = true;
+                        // Attach pet to claw (visually)
+                        grabberPetToDeliver.position.set(grabberArm.position.x, grabberArm.position.y + grabberArm.claw.position.y - (pet.bodyMesh.node.getBBox().height/2) * pet.scale, grabberArm.position.z);
+
+                        // Simple timeout for "grab" action
+                        setTimeout(() => { grabberState = 'raising_pet'; grabberTargetY = GRABBER_START_Y; }, 500);
+                    }
+                    break;
+                case 'grabbing':
+                    // Pet becomes child of claw group for movement
+                    if (grabberPetToDeliver && grabberPetToDeliver.parent !== grabberArm.claw) {
+                         // Calculate offset from claw center to pet center
+                        const petHeight = pet.bodyMesh.node.getBBox().height * pet.scale;
+                        grabberPetToDeliver.position.set(0, -petHeight / 2 -10, 0); // Position relative to claw
+                        grabberArm.claw.add(grabberPetToDeliver);
+                    }
+                    break; // Wait for timeout
+                case 'raising_pet':
+                    grabberArm.position.y += speed;
+                     if (grabberArm.position.y >= grabberTargetY) {
+                        grabberState = 'moving_to_drop';
+                        // Target X is center of screen, assuming arm starts at X=0
+                    }
+                    break;
+                case 'moving_to_drop': // Assuming it's already at X=0 for simplicity
+                    grabberState = 'lowering_to_drop';
+                    grabberTargetY = GRABBER_DROP_Y + (pet.bodyMesh.node.getBBox().height/2)* pet.scale + Math.abs(grabberArm.claw.position.y) + 10; // Adjust drop height based on pet size and claw pos
+                    break;
+                case 'lowering_to_drop':
+                    grabberArm.position.y -= speed;
+                    if (grabberArm.position.y <= grabberTargetY) {
+                        grabberState = 'releasing';
+                        animateGrabberClaw(true); // Open claw
+
+                        // Detach pet from claw and place in scene
+                        const worldPosition = new THREE.Vector3();
+                        grabberPetToDeliver.getWorldPosition(worldPosition);
+                        scene.add(grabberPetToDeliver); // Re-add to scene root
+                        grabberPetToDeliver.position.set(worldPosition.x, PET_START_Y, 1);
+                        
+                        pet.group = grabberPetToDeliver; // Ensure main pet reference is correct
+                        grabberPetToDeliver = null;
+
+                        setTimeout(() => { grabberState = 'retracting'; grabberTargetY = GRABBER_START_Y + 50; }, 500);
+                    }
+                    break;
+                case 'releasing': break; // Wait for timeout
+                case 'retracting':
+                    grabberArm.position.y += speed;
+                    if (grabberArm.position.y >= grabberTargetY) {
+                        grabberState = 'idle';
+                        scene.remove(grabberArm); // Optional: remove arm after use
+                        grabberArm = null;
+                        showSpeechBubble("Ta-da! I'm here!", 3000);
+                        saveGameState(); // Save initial state
+                    }
+                    break;
+            }
+        }
+
+        // --- Game Mechanics ---
+        function feedPet() {
+            if (!pet || gameState.inMiniGame || grabberState !== 'idle') return;
+            if (gameState.stats.hunger >= STAT_MAX) {
+                showSpeechBubble("I'm too full for that!", 2000);
+                return;
+            }
+
+            gameState.stats.hunger = Math.min(STAT_MAX, gameState.stats.hunger + 25);
+            gameState.stats.happiness = Math.min(STAT_MAX, gameState.stats.happiness + 10);
+            showSpeechBubble("Yummy!", 1500);
+            
+            // Growth
+            gameState.growthStage++;
+            pet.scale = Math.min(3, 1 + gameState.growthStage * 0.1); // Cap max scale
+            pet.group.scale.set(pet.scale, pet.scale, pet.scale);
+            
+            // Chance to add new feature
+            if (Math.random() < 0.3 + gameState.growthStage * 0.05) { // Higher chance as it grows
+                const possibleAccessories = ['mustache', 'monocle', 'wizard_hat', 'third_eye'];
+                // Filter out accessories pet already has
+                const availableAccessories = possibleAccessories.filter(accType => !pet.accessories.find(a => a.type === accType));
+                if (availableAccessories.length > 0) {
+                    const newAccessoryType = availableAccessories[Math.floor(Math.random() * availableAccessories.length)];
+                    const newAccessoryColor = ACCESSORY_COLORS[Math.floor(Math.random() * ACCESSORY_COLORS.length)];
+                    addAccessory(newAccessoryType, newAccessoryColor);
+                    showSpeechBubble(`Ooh, a ${newAccessoryType.replace('_', ' ')}! Stylish!`, 2500);
+                }
+            }
+            updatePetMood();
+            updateUI();
+            saveGameState();
+        }
+        
+        function createPoop(x, y, isNew = true) {
+            if (gameState.inMiniGame || grabberState !== 'idle' && isNew) return;
+
+            const poopColor = '#795548'; // Brown
+            const poopMesh = createPath(SVG_PATHS.poop, poopColor, '#5D4037', 1); // Darker brown stroke
+            poopMesh.scale.set(1.5, 1.5, 1.5); // Make poop visible
+
+            // Random position near pet, but not directly on it.
+            const randomX = x !== undefined ? x : pet.group.position.x + (Math.random() - 0.5) * 100;
+            const randomY = y !== undefined ? y : pet.group.position.y - (pet.bodyMesh.node.getBBox().height * pet.scale / 2) - 10 + (Math.random() -0.8) * 20 ; // Below pet
+            
+            poopMesh.position.set(randomX, randomY, 0.5); // z=0.5, behind pet but above background
+            poopMesh.userData = { id: Date.now() + Math.random(), type: 'poop' }; // Identify for clicking and saving
+            
+            scene.add(poopMesh);
+            poops.push({mesh: poopMesh, id: poopMesh.userData.id, x: randomX, y: randomY});
+            if (isNew) { // Only update stats and save if it's a new poop, not loaded from save
+                gameState.stats.cleanliness = Math.max(0, gameState.stats.cleanliness - 20);
+                showSpeechBubble("Oopsie! Stinky!", 2000);
+                updatePetMood();
+                updateUI();
+                gameState.poopsData.push({x: randomX, y: randomY, id: poopMesh.userData.id });
+                saveGameState();
+            }
+        }
+
+        function cleanPoop(poopObject) {
+            if (gameState.inMiniGame) return;
+            scene.remove(poopObject.mesh);
+            poops = poops.filter(p => p.id !== poopObject.id);
+            gameState.poopsData = gameState.poopsData.filter(p => p.id !== poopObject.id);
+
+            gameState.stats.cleanliness = Math.min(STAT_MAX, gameState.stats.cleanliness + 30);
+            gameState.stats.happiness = Math.min(STAT_MAX, gameState.stats.happiness + 5);
+            showSpeechBubble("So fresh and so clean!", 2000);
+            updatePetMood();
+            updateUI();
+            saveGameState();
+        }
+
+        function decayStats() {
+            if (!pet || gameState.inMiniGame || grabberState !== 'idle') return;
+
+            gameState.gameTime++;
+
+            // Hunger
+            if (gameState.gameTime % (HUNGER_DECAY_INTERVAL / 1000) === 0) {
+                gameState.stats.hunger = Math.max(0, gameState.stats.hunger - STAT_DECAY_RATE * 10);
+            }
+            // Happiness (decays if hungry or dirty)
+            if (gameState.stats.hunger < STAT_MAX / 3 || gameState.stats.cleanliness < STAT_MAX / 3) {
+                 if (gameState.gameTime % (HAPPINESS_DECAY_INTERVAL / 1000) === 0) {
+                    gameState.stats.happiness = Math.max(0, gameState.stats.happiness - STAT_DECAY_RATE * 5);
+                }
+            }
+            // Cleanliness (chance to poop)
+            if (Math.random() < CLEANLINESS_POOP_CHANCE && gameState.stats.cleanliness > STAT_MAX / 5 && poops.length < 5) {
+                if (pet && pet.group) createPoop(); // Let createPoop handle stats update
+            }
+            
+            // Trigger random event occasionally
+            if (gameState.gameTime % 30 === 0 && Math.random() < 0.15 && !gameState.currentRandomEvent) { // Every 30s, 15% chance
+                triggerRandomEvent();
+            }
+
+            updatePetMood();
+            updateUI();
+            saveGameState(); // Save periodically
+        }
+        
+        function updatePetMood() {
+            if (!pet) return;
+            let newMood = 'neutral';
+            if (gameState.stats.happiness > 70 && gameState.stats.hunger > 50) {
+                newMood = 'happy';
+            } else if (gameState.stats.happiness < 30 || gameState.stats.hunger < 30 || gameState.stats.cleanliness < 30) {
+                newMood = 'sad';
+            } else if (gameState.stats.happiness < 50 || gameState.stats.hunger < 50 || gameState.stats.cleanliness < 50) {
+                newMood = 'grumpy'; // A more specific "sulking" mood
+            }
+
+            if (newMood !== pet.mood) {
+                pet.mood = newMood;
+                updatePetFace(); // Redraws eyes and mouth based on mood
+                if (pet.mood === 'sad') showSpeechBubble("I'm feeling a bit neglected...", 3000);
+                if (pet.mood === 'grumpy') showSpeechBubble("Hmph. This place needs some pizazz.", 3000);
+            }
+        }
+
+        // --- UI Elements ---
+        function createButton(text, x, y, width, height, callback, color = '#4CAF50', textColor = '#FFFFFF') {
+            const btnGroup = new THREE.Group();
+            const rect = createRectangle(width, height, color);
+            const btnText = createText(text, 0, 0, height * 0.4, textColor);
+            
+            btnGroup.add(rect);
+            btnGroup.add(btnText);
+            btnGroup.position.set(x, y, 10); // UI on top
+            btnGroup.userData = { type: 'button', callback: callback, text: text }; // For raycasting
+            scene.add(btnGroup);
+            return btnGroup;
+        }
+
+        function createStatBar(label, x, y, width, height, valueGetter, color = '#2196F3') {
+            const barGroup = new THREE.Group();
+            const bgRect = createRectangle(width, height, '#DDDDDD'); // Background of the bar
+            const fillRect = createRectangle(0, height - 4, color); // The fill part, starts at 0 width
+            fillRect.position.x = -width/2 + 2; // Align left
+            fillRect.position.y = 0; // Centered in Y within bgRect
+            
+            const labelText = createText(label, -width / 2 - 5, 0, height * 0.6, '#333333', 'end');
+
+            barGroup.add(bgRect);
+            barGroup.add(fillRect);
+            barGroup.add(labelText);
+            barGroup.position.set(x, y, 10);
+            
+            barGroup.userData = { 
+                type: 'statBar', 
+                fillRect: fillRect, 
+                maxWidth: width - 4, // Max width for fill
+                valueGetter: valueGetter 
+            };
+            scene.add(barGroup);
+            return barGroup;
+        }
+        
+        function createUI() {
+            const btnWidth = 120, btnHeight = 40, btnSpacing = 10;
+            const bottomY = -GAME_HEIGHT / 2 + btnHeight / 2 + btnSpacing;
+
+            uiElements.feedButton = createButton("Feed Me", -GAME_WIDTH/2 + btnWidth/2 + btnSpacing, bottomY, btnWidth, btnHeight, feedPet);
+            uiElements.cleanButton = createButton("Clean Poop", -GAME_WIDTH/2 + btnWidth * 1.5 + btnSpacing * 2, bottomY, btnWidth, btnHeight, () => {
+                if (poops.length > 0) cleanPoop(poops[0]); // Clean oldest poop by default
+                else showSpeechBubble("Nothing to clean!", 1500);
+            });
+            uiElements.miniGameButton = createButton("Play Game!", -GAME_WIDTH/2 + btnWidth * 2.5 + btnSpacing * 3, bottomY, btnWidth, btnHeight, startMiniGame);
+            uiElements.resetButton = createButton("Reset Pet", GAME_WIDTH/2 - btnWidth/2 - btnSpacing, bottomY, btnWidth, btnHeight, () => {
+                 if(confirm("Are you sure you want to reset your pet? All progress will be lost!")) {
+                    localStorage.removeItem('virtualPetGame');
+                    initNewGame();
+                 }
+            }, '#FF6347'); // Red for reset
+
+            // Stat Bars
+            const statBarWidth = 150, statBarHeight = 20, statSpacing = 5;
+            const topY = GAME_HEIGHT / 2 - statBarHeight / 2 - statSpacing;
+            uiElements.hungerBar = createStatBar("Hunger:", -GAME_WIDTH/2 + statBarWidth/2 + 20, topY, statBarWidth, statBarHeight, () => gameState.stats.hunger, '#FF8C00');
+            uiElements.happinessBar = createStatBar("Happy:", -GAME_WIDTH/2 + statBarWidth/2 + 20, topY - (statBarHeight + statSpacing), statBarWidth, statBarHeight, () => gameState.stats.happiness, '#32CD32');
+            uiElements.cleanlinessBar = createStatBar("Clean:", -GAME_WIDTH/2 + statBarWidth/2 + 20, topY - 2*(statBarHeight + statSpacing), statBarWidth, statBarHeight, () => gameState.stats.cleanliness, '#1E90FF');
+            updateUI();
+        }
+
+        function updateUI() {
+            if (!uiElements.hungerBar) return; // UI not created yet
+            Object.values(uiElements).forEach(el => {
+                if (el.userData.type === 'statBar') {
+                    const value = el.userData.valueGetter();
+                    const fillWidth = (value / STAT_MAX) * el.userData.maxWidth;
+                    // The SVG rect object is el.userData.fillRect.node
+                    // We change the attribute 'width' directly
+                    el.userData.fillRect.node.setAttribute('width', String(Math.max(0, fillWidth)));
+                }
+            });
+        }
+
+        function showSpeechBubble(message, duration = 3000) {
+            if (speechBubble && speechBubble.group) scene.remove(speechBubble.group);
+            if (!pet || !pet.group) return;
+
+            speechBubble = {}; // Reset
+            speechBubble.group = new THREE.Group();
+
+            const textLines = message.split('\n');
+            const fontSize = 16;
+            const padding = 10;
+            let maxWidth = 0;
+            
+            const textObjects = textLines.map((line, index) => {
+                const svgText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                svgText.setAttribute('x', String(padding));
+                svgText.setAttribute('y', String(padding + (index + 1) * fontSize));
+                svgText.setAttribute('font-size', String(fontSize));
+                svgText.setAttribute('fill', '#000000');
+                svgText.setAttribute('font-family', "'Comic Sans MS', 'Chalkboard SE', 'Marker Felt', sans-serif");
+                svgText.textContent = line;
+                
+                // Quick measure width (approximate, proper way is getBBox after rendering)
+                // For SVGRenderer, it's better to set a fixed width or make bubble path first.
+                // Let's estimate for now. A real app might use getComputedTextLength().
+                if (line.length * (fontSize * 0.6) > maxWidth) {
+                    maxWidth = line.length * (fontSize * 0.6);
+                }
+                return createSVGObject(svgText);
+            });
+            
+            const bubbleWidth = Math.max(100, maxWidth + 2 * padding); // Min width 100
+            const bubbleHeight = textLines.length * fontSize + 2 * padding;
+
+            // Create dynamic path for bubble
+            const tailX = 20, tailY = bubbleHeight + 10;
+            const bubblePathD = `M0,0 H${bubbleWidth} V${bubbleHeight} H${tailX + 5} L${tailX},${tailY} L${tailX - 5},${bubbleHeight} H0 Z`;
+            const bubbleBg = createPath(bubblePathD, '#FFFFFF', '#000000', 2);
+            
+            speechBubble.group.add(bubbleBg);
+            textObjects.forEach(txt => speechBubble.group.add(txt));
+
+            // Position above pet
+            const petHeight = pet.bodyMesh.node.getBBox().height * pet.scale;
+            speechBubble.group.position.set(
+                pet.group.position.x - bubbleWidth / 3, // Adjust for tail
+                pet.group.position.y + petHeight / 2 + 10, // Above pet
+                5 // UI layer
+            );
+            scene.add(speechBubble.group);
+
+            if (speechBubble.timeout) clearTimeout(speechBubble.timeout);
+            speechBubble.timeout = setTimeout(() => {
+                if (speechBubble && speechBubble.group) scene.remove(speechBubble.group);
+                speechBubble = null; // Clear it
+            }, duration);
+        }
+
+        // --- Mini-Game: Catch the Snack ---
+        let miniGame = {
+            active: false,
+            catcher: null,
+            snacks: [],
+            score: 0,
+            timer: 0,
+            duration: 15000, // 15 seconds
+            spawnInterval: 1000 // ms
+        };
+
+        function startMiniGame() {
+            if (gameState.inMiniGame || grabberState !== 'idle') return;
+            gameState.inMiniGame = true;
+            miniGame.active = true;
+            miniGame.score = 0;
+            miniGame.timer = Date.now();
+            miniGame.snacks.forEach(s => scene.remove(s.mesh));
+            miniGame.snacks = [];
+            
+            showSpeechBubble("Catch the snacks!", miniGame.duration);
+
+            // Create catcher (controlled by mouse X)
+            miniGame.catcher = createRectangle(100, 20, '#FF69B4'); // HotPink catcher
+            miniGame.catcher.position.set(0, -GAME_HEIGHT / 2 + 50, 20); // Bottom of screen
+            scene.add(miniGame.catcher);
+
+            // Hide normal UI buttons temporarily
+            Object.values(uiElements).forEach(el => { if (el.userData.type === 'button') el.visible = false; });
+            if (pet && pet.group) pet.group.visible = false; // Hide pet
+        }
+
+        function updateMiniGame() {
+            if (!miniGame.active) return;
+
+            const currentTime = Date.now();
+            if (currentTime - miniGame.timer > miniGame.duration) {
+                endMiniGame();
+                return;
+            }
+
+            // Catcher movement (update in onCanvasMouseMove)
+            if (miniGame.catcher) {
+                const targetX = Math.max(-GAME_WIDTH/2 + 50, Math.min(GAME_WIDTH/2 - 50, mouse.x * (GAME_WIDTH / 2)));
+                miniGame.catcher.position.x = targetX;
+            }
+
+            // Spawn snacks
+            if (currentTime % miniGame.spawnInterval < 20) { // Approx every interval
+                const snack = createCircle(15, COLORS[Math.floor(Math.random() * COLORS.length)]);
+                snack.position.set( (Math.random() - 0.5) * (GAME_WIDTH - 50) , GAME_HEIGHT / 2 - 20, 15);
+                snack.userData = { type: 'snack', vy: -(2 + Math.random() * 3) }; // Falling speed
+                scene.add(snack);
+                miniGame.snacks.push({mesh: snack, ...snack.userData});
+            }
+
+            // Move snacks & check collision
+            for (let i = miniGame.snacks.length - 1; i >= 0; i--) {
+                const snackObj = miniGame.snacks[i];
+                snackObj.mesh.position.y += snackObj.vy;
+
+                // Collision with catcher
+                if (snackObj.mesh.position.y < miniGame.catcher.position.y + 20 && // 10 (half height catcher) + 10 (half height snack)
+                    snackObj.mesh.position.y > miniGame.catcher.position.y - 20 &&
+                    Math.abs(snackObj.mesh.position.x - miniGame.catcher.position.x) < (100/2 + 15/2) ) { // 50 (half width catcher) + 7.5 (snack radius)
+                    scene.remove(snackObj.mesh);
+                    miniGame.snacks.splice(i, 1);
+                    miniGame.score++;
+                } else if (snackObj.mesh.position.y < -GAME_HEIGHT / 2 - 20) { // Missed
+                    scene.remove(snackObj.mesh);
+                    miniGame.snacks.splice(i, 1);
+                }
+            }
+        }
+
+        function endMiniGame() {
+            miniGame.active = false;
+            gameState.inMiniGame = false;
+
+            if (miniGame.catcher) scene.remove(miniGame.catcher);
+            miniGame.catcher = null;
+            miniGame.snacks.forEach(s => scene.remove(s.mesh));
+            miniGame.snacks = [];
+
+            gameState.stats.happiness = Math.min(STAT_MAX, gameState.stats.happiness + miniGame.score * 5); // Reward happiness
+            showSpeechBubble(`Game Over! You caught ${miniGame.score} snacks!`, 3000);
+
+            // Restore UI and pet
+            Object.values(uiElements).forEach(el => { if (el.userData.type === 'button') el.visible = true; });
+            if (pet && pet.group) pet.group.visible = true;
+            updateUI();
+            updatePetMood();
+            saveGameState();
+        }
+
+        // --- Random Events ---
+        const RANDOM_EVENTS = [
+            {
+                id: 'traffic_cone_hat_request',
+                message: "I yearn for the majestic\nsafety of a traffic cone hat!",
+                action: () => addAccessory('traffic_cone_hat', '#FF4500')
+            },
+            {
+                id: 'wizard_hat_request',
+                message: "A wizard hat, perchance?\nI feel... magical!",
+                action: () => addAccessory('wizard_hat', COLORS[Math.floor(Math.random()*COLORS.length)])
+            },
+            {
+                id: 'tell_joke',
+                message: "Knock knock...\n(Nevermind, I forgot the rest.)",
+                action: () => { gameState.stats.happiness = Math.min(STAT_MAX, gameState.stats.happiness + 5); } // Small happiness boost for trying
+            }
+        ];
+
+        function triggerRandomEvent() {
+            if (gameState.inMiniGame || grabberState !== 'idle' || gameState.currentRandomEvent) return;
+
+            const event = RANDOM_EVENTS[Math.floor(Math.random() * RANDOM_EVENTS.length)];
+            gameState.currentRandomEvent = event;
+
+            showSpeechBubble(event.message + "\n\n(Click pet to agree)", 10000); // Longer duration for player to react
+            // Player interacts by clicking the pet itself for these events for simplicity for now
+            // Or, you could spawn temporary "Yes"/"No" SVG buttons.
+        }
+        
+        function handleRandomEventResponse() { // Called when pet is clicked during an event
+            if (!gameState.currentRandomEvent) return;
+            
+            gameState.currentRandomEvent.action(); // Perform the event action
+            gameState.stats.happiness = Math.min(STAT_MAX, gameState.stats.happiness + 20); // Reward for interaction
+            showSpeechBubble("Oh boy! Thanks!", 3000);
+            
+            gameState.currentRandomEvent = null; // Clear current event
+            updatePetMood();
+            updateUI();
+            saveGameState();
+        }
+
+
+        // --- Saving & Loading ---
+        function saveGameState() {
+            if (grabberState !== 'idle' && grabberState !== 'retracting') return; // Don't save during critical animations like delivery
+            // Update poopsData before saving
+            gameState.poopsData = poops.map(p => ({ x: p.mesh.position.x, y: p.mesh.position.y, id: p.id }));
+            try {
+                localStorage.setItem('virtualPetGame', JSON.stringify(gameState));
+            } catch (e) {
+                console.error("Failed to save game state:", e);
+            }
+        }
+
+        function loadGameState() {
+            try {
+                const savedState = localStorage.getItem('virtualPetGame');
+                if (savedState) {
+                    const loaded = JSON.parse(savedState);
+                    // Basic validation
+                    if (loaded && loaded.pet && loaded.stats) {
+                        gameState = loaded;
+                        gameState.inMiniGame = false; // Ensure not starting in mini-game
+                        gameState.currentRandomEvent = null; // Ensure no stale event
+                        return true;
+                    }
+                }
+            } catch (e) {
+                console.error("Failed to load game state:", e);
+                localStorage.removeItem('virtualPetGame'); // Clear corrupted state
+            }
+            return false;
+        }
+
+        // --- Event Handlers ---
+        function onCanvasClick(event) {
+            event.preventDefault();
+
+            const rect = renderer.domElement.getBoundingClientRect();
+            mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+            mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(scene.children, true); // true for recursive
+
+            for (let i = 0; i < intersects.length; i++) {
+                let obj = intersects[i].object;
+                // Traverse up to find the group with userData if clicking a part of a composite object
+                while (obj.parent && !obj.userData.type) {
+                    obj = obj.parent;
+                }
+
+                if (obj.userData.type === 'button' && obj.visible) {
+                    obj.userData.callback();
+                    return; 
+                }
+                if (obj.userData.type === 'poop') {
+                    const poopInstance = poops.find(p => p.id === obj.userData.id);
+                    if (poopInstance) cleanPoop(poopInstance);
+                    return;
+                }
+                if (obj === pet.group && gameState.currentRandomEvent && grabberState === 'idle') { // Clicked on pet
+                    handleRandomEventResponse();
+                    return;
+                }
+            }
+        }
+
+        function onCanvasMouseMove(event) {
+            const rect = renderer.domElement.getBoundingClientRect();
+            // Normalize mouse position for Three.js coordinate system if needed for other interactions
+            // For mini-game, we use mouse.x directly, scaled to game width later.
+            mouse.x = ((event.clientX - rect.left) / rect.width); // 0 to 1 for game width
+            mouse.y = ((event.clientY - rect.top) / rect.height); // 0 to 1 for game height
+        }
+
+        // --- Animation Loop ---
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            if (grabberState !== 'idle') {
+                updateGrabberAnimation();
+            }
+            
+            if (gameState.inMiniGame) {
+                updateMiniGame();
+            }
+
+            // Example pet animation: slight bobbing
+            if (pet && pet.group && grabberState === 'idle' && !gameState.inMiniGame) {
+                pet.group.position.y = PET_START_Y + Math.sin(Date.now() * 0.002) * 5;
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        // --- Start Game ---
+        init();
+
+    </script>
+</body>
+</html>
