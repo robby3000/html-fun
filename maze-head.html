@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Spider Head Maze</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+            background-color: #333;
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        #game-area {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            max-width: 600px; /* Max width for desktop, scales down on mobile */
+            height: 90%; /* Adjust as needed */
+            position: relative;
+        }
+        #game-canvas {
+            border: 2px solid #555;
+            background-color: #444;
+            touch-action: none; /* Prevent default touch actions like scrolling */
+            display: block; /* Remove extra space below SVG */
+        }
+        #ui-panel {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            width: 100%;
+            max-width: 600px;
+            padding: 10px 0;
+            height: 10%;
+            min-height: 70px; /* Ensure biscuit tin is visible */
+        }
+        #biscuit-tin-container {
+            width: 60px;
+            height: 60px;
+            cursor: grab;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        #message-area {
+            font-size: 1.2em;
+            text-align: center;
+            flex-grow: 1;
+        }
+        .game-over-message, .win-message {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(0,0,0,0.8);
+            padding: 20px;
+            border-radius: 10px;
+            font-size: 1.5em;
+            text-align: center;
+            z-index: 100;
+        }
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="game-area">
+        <svg id="game-canvas"></svg>
+        <div id="ui-panel">
+            <div id="biscuit-tin-container" title="Drag a biscuit!">
+                </div>
+            <div id="message-area">Biscuits Eaten: <span id="biscuit-count">0</span>/<span id="biscuit-limit">?</span></div>
+        </div>
+    </div>
+
+    <div id="game-over-screen" class="hidden game-over-message">
+        <h2>Game Over!</h2>
+        <p id="game-over-text">The head exploded!</p>
+        <button onclick="startGame()">Play Again</button>
+    </div>
+
+    <div id="win-screen" class="hidden win-message">
+        <h2>You Win!</h2>
+        <p>The head is happy with its new hat!</p>
+        <button onclick="startGame()">Play Again</button>
+    </div>
+
+    <script>
+        const svgNS = "http://www.w3.org/2000/svg";
+        const gameCanvas = document.getElementById('game-canvas');
+        const biscuitTinContainer = document.getElementById('biscuit-tin-container');
+        const messageArea = document.getElementById('message-area');
+        const biscuitCountSpan = document.getElementById('biscuit-count');
+        const biscuitLimitSpan = document.getElementById('biscuit-limit');
+        const gameOverScreen = document.getElementById('game-over-screen');
+        const winScreen = document.getElementById('win-screen');
+        const gameOverText = document.getElementById('game-over-text');
+
+        let MAZE_COLS = 10; // Adjust for difficulty
+        let MAZE_ROWS = 10; // Adjust for difficulty
+        let CELL_SIZE; // Will be calculated based on canvas size
+        let STROKE_WIDTH = 2;
+
+        let maze = [];
+        let head = {
+            x: 0, // grid col
+            y: 0, // grid row
+            pixelX: 0,
+            pixelY: 0,
+            svgElement: null,
+            legs: [],
+            legPhase: 0,
+            isMoving: false,
+            targetCell: null, // {x, y} grid coords
+            path: [], // path to target
+            scary: true,
+            hatSVG: null
+        };
+        let currentBiscuit = null; // {svgElement, x, y (grid), isPlaced}
+        let placedBiscuits = [];
+
+        let biscuitsEaten = 0;
+        let biscuitExplosionLimit = 0;
+
+        let isDraggingBiscuit = false;
+        let dragOffsetX, dragOffsetY;
+        let gameLoopTimeout;
+        let centerCell;
+
+        // --- SVG Graphics Definitions ---
+
+        function createHeadSVG(cx, cy, radius) {
+            const group = document.createElementNS(svgNS, "g");
+            // Head
+            const headCircle = document.createElementNS(svgNS, "circle");
+            headCircle.setAttribute("cx", cx);
+            headCircle.setAttribute("cy", cy);
+            headCircle.setAttribute("r", radius * 0.8);
+            headCircle.setAttribute("fill", "lightcoral");
+            headCircle.setAttribute("stroke", "darkred");
+            headCircle.setAttribute("stroke-width", "2");
+            group.appendChild(headCircle);
+
+            // Scary Eyes (initially)
+            const eyeGroup = document.createElementNS(svgNS, "g");
+            eyeGroup.setAttribute("id", "head-eyes");
+            const eyeLeft = document.createElementNS(svgNS, "circle");
+            eyeLeft.setAttribute("cx", cx - radius * 0.3);
+            eyeLeft.setAttribute("cy", cy - radius * 0.2);
+            eyeLeft.setAttribute("r", radius * 0.15);
+            eyeLeft.setAttribute("fill", "yellow");
+            eyeGroup.appendChild(eyeLeft);
+            const pupilLeft = document.createElementNS(svgNS, "circle");
+            pupilLeft.setAttribute("cx", cx - radius * 0.3);
+            pupilLeft.setAttribute("cy", cy - radius * 0.2);
+            pupilLeft.setAttribute("r", radius * 0.07);
+            pupilLeft.setAttribute("fill", "black");
+            eyeGroup.appendChild(pupilLeft);
+
+            const eyeRight = document.createElementNS(svgNS, "circle");
+            eyeRight.setAttribute("cx", cx + radius * 0.3);
+            eyeRight.setAttribute("cy", cy - radius * 0.2);
+            eyeRight.setAttribute("r", radius * 0.15);
+            eyeRight.setAttribute("fill", "yellow");
+            eyeGroup.appendChild(eyeRight);
+            const pupilRight = document.createElementNS(svgNS, "circle");
+            pupilRight.setAttribute("cx", cx + radius * 0.3);
+            pupilRight.setAttribute("cy", cy - radius * 0.2);
+            pupilRight.setAttribute("r", radius * 0.07);
+            pupilRight.setAttribute("fill", "black");
+            eyeGroup.appendChild(pupilRight);
+            group.appendChild(eyeGroup);
+
+            // Scary Mouth (initially)
+            const mouthPath = document.createElementNS(svgNS, "path");
+            mouthPath.setAttribute("id", "head-mouth");
+            mouthPath.setAttribute("d", `M ${cx - radius * 0.4} ${cy + radius * 0.3} Q ${cx} ${cy + radius * 0.5} ${cx + radius * 0.4} ${cy + radius * 0.3}`);
+            mouthPath.setAttribute("stroke", "darkred");
+            mouthPath.setAttribute("stroke-width", "2");
+            mouthPath.setAttribute("fill", "none");
+            group.appendChild(mouthPath);
+
+            // Spider Legs (8 legs)
+            head.legs = [];
+            for (let i = 0; i < 8; i++) {
+                const angle = (Math.PI / 4) * i;
+                const leg = document.createElementNS(svgNS, "line");
+                const x1 = cx;
+                const y1 = cy;
+                const x2 = cx + Math.cos(angle) * radius * 1.5;
+                const y2 = cy + Math.sin(angle) * radius * 1.5;
+                leg.setAttribute("x1", x1);
+                leg.setAttribute("y1", y1);
+                leg.setAttribute("x2", x2);
+                leg.setAttribute("y2", y2);
+                leg.setAttribute("stroke", "black");
+                leg.setAttribute("stroke-width", "3");
+                group.appendChild(leg);
+                head.legs.push(leg);
+            }
+            return group;
+        }
+
+        function updateHeadExpression(happy) {
+            const headSVG = head.svgElement;
+            const eyes = headSVG.querySelector("#head-eyes");
+            const mouth = headSVG.querySelector("#head-mouth");
+            const radius = CELL_SIZE / 2; // base radius for calculations
+            const cx = 0; // Relative to group's transform
+            const cy = 0;
+
+            if (happy) {
+                head.scary = false;
+                // Happy Eyes (e.g., upward arcs or closed happy eyes)
+                eyes.innerHTML = `
+                    <path d="M ${cx - radius * 0.4} ${cy - radius * 0.15} Q ${cx - radius * 0.3} ${cy - radius * 0.3} ${cx - radius * 0.2} ${cy - radius * 0.15}" stroke="black" fill="none" stroke-width="1.5"/>
+                    <path d="M ${cx + radius * 0.2} ${cy - radius * 0.15} Q ${cx + radius * 0.3} ${cy - radius * 0.3} ${cx + radius * 0.4} ${cy - radius * 0.15}" stroke="black" fill="none" stroke-width="1.5"/>
+                `;
+                // Happy Mouth (smile)
+                mouth.setAttribute("d", `M ${cx - radius * 0.4} ${cy + radius * 0.2} Q ${cx} ${cy + radius * 0.5} ${cx + radius * 0.4} ${cy + radius * 0.2}`);
+            } else { // Scary (reset to original scary if needed, though typically only goes one way)
+                head.scary = true;
+                const headCircleR = parseFloat(head.svgElement.firstChild.getAttribute("r")); // actual head radius
+                eyes.innerHTML = `
+                    <circle cx="${cx - headCircleR * 0.3 / (radius*0.8) * radius}" cy="${cy - headCircleR * 0.2 / (radius*0.8) * radius}" r="${headCircleR * 0.15 / (radius*0.8) * radius}" fill="yellow"/>
+                    <circle cx="${cx - headCircleR * 0.3 / (radius*0.8) * radius}" cy="${cy - headCircleR * 0.2 / (radius*0.8) * radius}" r="${headCircleR * 0.07 / (radius*0.8) * radius}" fill="black"/>
+                    <circle cx="${cx + headCircleR * 0.3 / (radius*0.8) * radius}" cy="${cy - headCircleR * 0.2 / (radius*0.8) * radius}" r="${headCircleR * 0.15 / (radius*0.8) * radius}" fill="yellow"/>
+                    <circle cx="${cx + headCircleR * 0.3 / (radius*0.8) * radius}" cy="${cy - headCircleR * 0.2 / (radius*0.8) * radius}" r="${headCircleR * 0.07 / (radius*0.8) * radius}" fill="black"/>
+                `;
+                mouth.setAttribute("d", `M ${cx - headCircleR * 0.4 / (radius*0.8) * radius} ${cy + headCircleR * 0.3 / (radius*0.8) * radius} Q ${cx} ${cy + headCircleR * 0.5 / (radius*0.8) * radius} ${cx + headCircleR * 0.4 / (radius*0.8) * radius} ${cy + headCircleR * 0.3 / (radius*0.8) * radius}`);
+            }
+        }
+
+        function createHatSVG(cx, cy, width) {
+            const hat = document.createElementNS(svgNS, "g");
+            const brim = document.createElementNS(svgNS, "ellipse");
+            brim.setAttribute("cx", cx);
+            brim.setAttribute("cy", cy);
+            brim.setAttribute("rx", width * 0.6);
+            brim.setAttribute("ry", width * 0.15);
+            brim.setAttribute("fill", "black");
+            hat.appendChild(brim);
+
+            const top = document.createElementNS(svgNS, "path");
+            const topH = width * 0.8;
+            const topW = width * 0.4;
+            top.setAttribute("d", `M ${cx - topW/2} ${cy} L ${cx - topW/2} ${cy - topH} Q ${cx} ${cy - topH - topW*0.2} ${cx + topW/2} ${cy - topH} L ${cx + topW/2} ${cy} Z`);
+            top.setAttribute("fill", "black");
+            hat.appendChild(top);
+            return hat;
+        }
+
+
+        function createBiscuitSVG(cx, cy, radius) {
+            const biscuit = document.createElementNS(svgNS, "g");
+            const biscuitBase = document.createElementNS(svgNS, "circle");
+            biscuitBase.setAttribute("cx", cx);
+            biscuitBase.setAttribute("cy", cy);
+            biscuitBase.setAttribute("r", radius);
+            biscuitBase.setAttribute("fill", "sandybrown");
+            biscuitBase.setAttribute("stroke", "saddlebrown");
+            biscuitBase.setAttribute("stroke-width", "1");
+            biscuit.appendChild(biscuitBase);
+
+            // Chocolate chips
+            for (let i = 0; i < 5; i++) {
+                const chip = document.createElementNS(svgNS, "circle");
+                const angle = Math.random() * Math.PI * 2;
+                const dist = Math.random() * radius * 0.6;
+                chip.setAttribute("cx", cx + Math.cos(angle) * dist);
+                chip.setAttribute("cy", cy + Math.sin(angle) * dist);
+                chip.setAttribute("r", radius * 0.15);
+                chip.setAttribute("fill", "darkred");
+                biscuit.appendChild(chip);
+            }
+            return biscuit;
+        }
+
+        function createBiscuitTinSVG(size) {
+            const tinSVG = document.createElementNS(svgNS, "svg");
+            tinSVG.setAttribute("width", size);
+            tinSVG.setAttribute("height", size);
+            tinSVG.setAttribute("viewBox", `0 0 50 50`);
+
+            const tinBody = document.createElementNS(svgNS, "rect");
+            tinBody.setAttribute("x", 5);
+            tinBody.setAttribute("y", 15);
+            tinBody.setAttribute("width", 40);
+            tinBody.setAttribute("height", 30);
+            tinBody.setAttribute("fill", "silver");
+            tinBody.setAttribute("stroke", "gray");
+            tinBody.setAttribute("stroke-width", "1");
+            tinSVG.appendChild(tinBody);
+
+            const tinLid = document.createElementNS(svgNS, "ellipse");
+            tinLid.setAttribute("cx", 25);
+            tinLid.setAttribute("cy", 15);
+            tinLid.setAttribute("rx", 20);
+            tinLid.setAttribute("ry", 5);
+            tinLid.setAttribute("fill", "lightgray");
+            tinLid.setAttribute("stroke", "gray");
+            tinSVG.appendChild(tinLid);
+
+            // A sample biscuit inside
+            const sampleBiscuit = createBiscuitSVG(25, 30, 8); // smaller biscuit
+            tinSVG.appendChild(sampleBiscuit);
+
+            return tinSVG;
+        }
+
+
+        // --- Maze Generation (Recursive Backtracker) ---
+        function generateMaze() {
+            maze = Array(MAZE_ROWS).fill(null).map(() => Array(MAZE_COLS).fill(null).map(() => ({
+                n: true, s: true, e: true, w: true, visited: false
+            })));
+
+            let stack = [];
+            let currentX = Math.floor(Math.random() * MAZE_COLS);
+            let currentY = Math.floor(Math.random() * MAZE_ROWS);
+            maze[currentY][currentX].visited = true;
+            stack.push({ x: currentX, y: currentY });
+
+            while (stack.length > 0) {
+                let { x, y } = stack[stack.length - 1];
+                let neighbors = [];
+
+                // North
+                if (y > 0 && !maze[y - 1][x].visited) neighbors.push({ x: x, y: y - 1, wall: 'n', opposite: 's' });
+                // South
+                if (y < MAZE_ROWS - 1 && !maze[y + 1][x].visited) neighbors.push({ x: x, y: y + 1, wall: 's', opposite: 'n' });
+                // East
+                if (x < MAZE_COLS - 1 && !maze[y][x + 1].visited) neighbors.push({ x: x + 1, y: y, wall: 'e', opposite: 'w' });
+                // West
+                if (x > 0 && !maze[y][x - 1].visited) neighbors.push({ x: x - 1, y: y, wall: 'w', opposite: 'e' });
+
+                if (neighbors.length > 0) {
+                    let next = neighbors[Math.floor(Math.random() * neighbors.length)];
+                    maze[y][x][next.wall] = false;
+                    maze[next.y][next.x][next.opposite] = false;
+                    maze[next.y][next.x].visited = true;
+                    stack.push({ x: next.x, y: next.y });
+                } else {
+                    stack.pop();
+                }
+            }
+        }
+
+        function drawMaze() {
+            gameCanvas.innerHTML = ''; // Clear previous maze, head, biscuits
+
+            // Draw Target Zone (Center)
+            centerCell = { x: Math.floor(MAZE_COLS / 2), y: Math.floor(MAZE_ROWS / 2) };
+            const targetRect = document.createElementNS(svgNS, "rect");
+            targetRect.setAttribute("x", centerCell.x * CELL_SIZE + STROKE_WIDTH);
+            targetRect.setAttribute("y", centerCell.y * CELL_SIZE + STROKE_WIDTH);
+            targetRect.setAttribute("width", CELL_SIZE - STROKE_WIDTH*2);
+            targetRect.setAttribute("height", CELL_SIZE - STROKE_WIDTH*2);
+            targetRect.setAttribute("fill", "rgba(0, 255, 0, 0.3)");
+            gameCanvas.appendChild(targetRect);
+
+
+            for (let r = 0; r < MAZE_ROWS; r++) {
+                for (let c = 0; c < MAZE_COLS; c++) {
+                    const x = c * CELL_SIZE;
+                    const y = r * CELL_SIZE;
+                    if (maze[r][c].n) {
+                        const line = document.createElementNS(svgNS, "line");
+                        line.setAttribute("x1", x); line.setAttribute("y1", y);
+                        line.setAttribute("x2", x + CELL_SIZE); line.setAttribute("y2", y);
+                        line.setAttribute("stroke", "#ccc"); line.setAttribute("stroke-width", STROKE_WIDTH);
+                        gameCanvas.appendChild(line);
+                    }
+                    if (maze[r][c].s) {
+                        const line = document.createElementNS(svgNS, "line");
+                        line.setAttribute("x1", x); line.setAttribute("y1", y + CELL_SIZE);
+                        line.setAttribute("x2", x + CELL_SIZE); line.setAttribute("y2", y + CELL_SIZE);
+                        line.setAttribute("stroke", "#ccc"); line.setAttribute("stroke-width", STROKE_WIDTH);
+                        gameCanvas.appendChild(line);
+                    }
+                    if (maze[r][c].e) {
+                        const line = document.createElementNS(svgNS, "line");
+                        line.setAttribute("x1", x + CELL_SIZE); line.setAttribute("y1", y);
+                        line.setAttribute("x2", x + CELL_SIZE); line.setAttribute("y2", y + CELL_SIZE);
+                        line.setAttribute("stroke", "#ccc"); line.setAttribute("stroke-width", STROKE_WIDTH);
+                        gameCanvas.appendChild(line);
+                    }
+                    if (maze[r][c].w) {
+                        const line = document.createElementNS(svgNS, "line");
+                        line.setAttribute("x1", x); line.setAttribute("y1", y);
+                        line.setAttribute("x2", x); line.setAttribute("y2", y + CELL_SIZE);
+                        line.setAttribute("stroke", "#ccc"); line.setAttribute("stroke-width", STROKE_WIDTH);
+                        gameCanvas.appendChild(line);
+                    }
+                }
+            }
+        }
+
+        // --- Head Logic ---
+        function placeHead() {
+            do {
+                head.x = Math.floor(Math.random() * MAZE_COLS);
+                head.y = Math.floor(Math.random() * MAZE_ROWS);
+            } while (head.x === centerCell.x && head.y === centerCell.y); // Avoid starting at center
+
+            head.pixelX = head.x * CELL_SIZE + CELL_SIZE / 2;
+            head.pixelY = head.y * CELL_SIZE + CELL_SIZE / 2;
+
+            if (head.svgElement) head.svgElement.remove(); // remove old if any
+            head.svgElement = createHeadSVG(0, 0, CELL_SIZE / 2.5); // Create at 0,0 then transform
+            head.svgElement.setAttribute("transform", `translate(${head.pixelX}, ${head.pixelY})`);
+            updateHeadExpression(false); // Ensure scary
+            gameCanvas.appendChild(head.svgElement);
+        }
+
+        function animateHeadLegs() {
+            if (!head.svgElement || !head.isMoving) return;
+            head.legPhase += 0.3;
+            const radius = CELL_SIZE / 2.5;
+            head.legs.forEach((leg, i) => {
+                const angle = (Math.PI / 4) * i + (i % 2 === 0 ? Math.sin(head.legPhase) * 0.4 : Math.cos(head.legPhase) * 0.4);
+                const len = radius * 1.5 + (i % 2 === 0 ? Math.sin(head.legPhase) * 5 : -Math.sin(head.legPhase) * 5);
+                leg.setAttribute("x2", Math.cos(angle) * len);
+                leg.setAttribute("y2", Math.sin(angle) * len);
+            });
+        }
+
+        function findPath(startX, startY, endX, endY) {
+            let queue = [[{x: startX, y: startY, path: []}]];
+            let visited = new Set();
+            visited.add(`${startX},${startY}`);
+
+            while (queue.length > 0) {
+                let currentPath = queue.shift();
+                let {x, y, path} = currentPath[currentPath.length-1];
+
+                if (x === endX && y === endY) {
+                    return path.concat([{x,y}]); // Return the path of cells
+                }
+
+                // Neighbors: N, S, E, W
+                const dirs = [ {dx:0, dy:-1, wall:'n'}, {dx:0, dy:1, wall:'s'}, {dx:1, dy:0, wall:'e'}, {dx:-1, dy:0, wall:'w'} ];
+                for (const dir of dirs) {
+                    const nextX = x + dir.dx;
+                    const nextY = y + dir.dy;
+
+                    if (nextX >= 0 && nextX < MAZE_COLS && nextY >= 0 && nextY < MAZE_ROWS &&
+                        !maze[y][x][dir.wall] && !visited.has(`${nextX},${nextY}`)) {
+                        visited.add(`${nextX},${nextY}`);
+                        let newPath = [...path, {x,y}];
+                        queue.push(newPath.concat([{x: nextX, y: nextY, path:newPath}]));
+                    }
+                }
+            }
+            return []; // No path found
+        }
+
+
+        function moveHead() {
+            if (head.isMoving && head.path.length > 0) {
+                const nextCell = head.path[0];
+                const targetPixelX = nextCell.x * CELL_SIZE + CELL_SIZE / 2;
+                const targetPixelY = nextCell.y * CELL_SIZE + CELL_SIZE / 2;
+
+                const speed = 2; // pixels per frame
+                let dx = targetPixelX - head.pixelX;
+                let dy = targetPixelY - head.pixelY;
+                let dist = Math.sqrt(dx*dx + dy*dy);
+
+                if (dist < speed) {
+                    head.pixelX = targetPixelX;
+                    head.pixelY = targetPixelY;
+                    head.x = nextCell.x;
+                    head.y = nextCell.y;
+                    head.path.shift(); // Move to next step in path
+                    if (head.path.length === 0) {
+                        head.isMoving = false;
+                        // Check if arrived at biscuit or center
+                        if (head.targetCell && head.x === head.targetCell.x && head.y === head.targetCell.y) {
+                            if (head.targetCell.isBiscuit) {
+                                eatBiscuitAt(head.x, head.y);
+                                head.targetCell = null; // Clear target
+                            } else if (head.targetCell.isCenter) {
+                                winGame();
+                            }
+                        }
+                    }
+                } else {
+                    head.pixelX += (dx / dist) * speed;
+                    head.pixelY += (dy / dist) * speed;
+                }
+                head.svgElement.setAttribute("transform", `translate(${head.pixelX}, ${head.pixelY})`);
+            } else { // Random movement or new target
+                head.isMoving = false;
+                // 1. Check for nearby biscuits
+                let closestBiscuit = null;
+                let minDistance = Infinity;
+                placedBiscuits.forEach(b => {
+                    const dist = Math.sqrt(Math.pow(head.x - b.x, 2) + Math.pow(head.y - b.y, 2));
+                    if (dist < minDistance && dist < 4) { // Proximity check (e.g., 4 cells)
+                        minDistance = dist;
+                        closestBiscuit = b;
+                    }
+                });
+
+                if (closestBiscuit) {
+                    head.path = findPath(head.x, head.y, closestBiscuit.x, closestBiscuit.y);
+                    if (head.path.length > 0) {
+                        head.path.shift(); // remove current pos
+                        head.isMoving = true;
+                        head.targetCell = {x: closestBiscuit.x, y: closestBiscuit.y, isBiscuit: true};
+                    }
+                } else if (head.targetCell && head.targetCell.isCenter) { // Continue towards center if that was the goal
+                     head.path = findPath(head.x, head.y, head.targetCell.x, head.targetCell.y);
+                     if (head.path.length > 0) {
+                        head.path.shift();
+                        head.isMoving = true;
+                    }
+                } else { // Random move
+                    let possibleMoves = [];
+                    if (head.y > 0 && !maze[head.y][head.x].n) possibleMoves.push({ x: head.x, y: head.y - 1 });
+                    if (head.y < MAZE_ROWS - 1 && !maze[head.y][head.x].s) possibleMoves.push({ x: head.x, y: head.y + 1 });
+                    if (head.x < MAZE_COLS - 1 && !maze[head.y][head.x].e) possibleMoves.push({ x: head.x + 1, y: head.y });
+                    if (head.x > 0 && !maze[head.y][head.x].w) possibleMoves.push({ x: head.x - 1, y: head.y });
+
+                    if (possibleMoves.length > 0) {
+                        const randomMove = possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
+                        head.path = [randomMove]; // Path is just one step
+                        head.isMoving = true;
+                        head.targetCell = null;
+                    }
+                }
+            }
+        }
+
+        // --- Biscuit Logic ---
+        function startDragBiscuit(e) {
+            e.preventDefault();
+            if (currentBiscuit && currentBiscuit.isPlaced) return; // Don't pick up already placed one by clicking tin
+
+            const biscuitRadius = CELL_SIZE / 3;
+            const svgRect = gameCanvas.getBoundingClientRect();
+
+            currentBiscuit = {
+                svgElement: createBiscuitSVG(0, 0, biscuitRadius),
+                x: 0, y: 0, // grid coords, will be set on drop
+                isPlaced: false
+            };
+            // Add to canvas temporarily for dragging visualization
+            gameCanvas.appendChild(currentBiscuit.svgElement);
+
+            updateDragPosition(e); // Initial position
+            isDraggingBiscuit = true;
+
+            document.addEventListener('mousemove', dragBiscuit);
+            document.addEventListener('mouseup', dropBiscuit);
+            document.addEventListener('touchmove', dragBiscuit, { passive: false });
+            document.addEventListener('touchend', dropBiscuit);
+        }
+
+        function getPointerPosition(e) {
+            const svgRect = gameCanvas.getBoundingClientRect();
+            let clientX, clientY;
+            if (e.touches) {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            } else {
+                clientX = e.clientX;
+                clientY = e.clientY;
+            }
+            return {
+                x: clientX - svgRect.left,
+                y: clientY - svgRect.top
+            };
+        }
+
+
+        function dragBiscuit(e) {
+            e.preventDefault();
+            if (!isDraggingBiscuit || !currentBiscuit) return;
+            updateDragPosition(e);
+        }
+
+        function updateDragPosition(e) {
+            if(!currentBiscuit || !currentBiscuit.svgElement) return;
+            const pos = getPointerPosition(e);
+            currentBiscuit.svgElement.setAttribute("transform", `translate(${pos.x}, ${pos.y})`);
+        }
+
+        function dropBiscuit(e) {
+            if (!isDraggingBiscuit || !currentBiscuit) return;
+            isDraggingBiscuit = false;
+            document.removeEventListener('mousemove', dragBiscuit);
+            document.removeEventListener('mouseup', dropBiscuit);
+            document.removeEventListener('touchmove', dragBiscuit);
+            document.removeEventListener('touchend', dropBiscuit);
+
+            const pos = getPointerPosition(e);
+            const gridX = Math.floor(pos.x / CELL_SIZE);
+            const gridY = Math.floor(pos.y / CELL_SIZE);
+
+            if (gridX >= 0 && gridX < MAZE_COLS && gridY >= 0 && gridY < MAZE_ROWS) {
+                currentBiscuit.x = gridX;
+                currentBiscuit.y = gridY;
+                currentBiscuit.isPlaced = true;
+
+                // Snap to cell center
+                const cellCenterX = gridX * CELL_SIZE + CELL_SIZE / 2;
+                const cellCenterY = gridY * CELL_SIZE + CELL_SIZE / 2;
+                currentBiscuit.svgElement.setAttribute("transform", `translate(${cellCenterX}, ${cellCenterY})`);
+
+                placedBiscuits.push(currentBiscuit);
+                currentBiscuit = null; // Ready for next biscuit
+            } else {
+                // Dropped outside maze, remove it
+                currentBiscuit.svgElement.remove();
+                currentBiscuit = null;
+            }
+        }
+
+        function eatBiscuitAt(gridX, gridY) {
+            const biscuitIndex = placedBiscuits.findIndex(b => b.x === gridX && b.y === gridY);
+            if (biscuitIndex > -1) {
+                const eaten = placedBiscuits.splice(biscuitIndex, 1)[0];
+                eaten.svgElement.remove();
+                biscuitsEaten++;
+                biscuitCountSpan.textContent = biscuitsEaten;
+                // Sound effect placeholder: playSound('eat');
+
+                if (biscuitsEaten > biscuitExplosionLimit) {
+                    explodeHead();
+                }
+            }
+        }
+
+        function explodeHead() {
+            // Visual: Make head "explode" - e.g., scale up and fade, show particles
+            if (head.svgElement) {
+                head.svgElement.style.transition = "transform 0.5s ease-out, opacity 0.5s ease-out";
+                head.svgElement.style.transform += " scale(3)";
+                head.svgElement.style.opacity = "0";
+            }
+            setTimeout(() => {
+                gameOverText.textContent = `The head ate ${biscuitsEaten} biscuits and exploded! (Limit was ${biscuitExplosionLimit})`;
+                gameOverScreen.classList.remove('hidden');
+                clearTimeout(gameLoopTimeout);
+            }, 500);
+        }
+
+        function winGame() {
+            if (head.hatSVG) return; // Already won
+
+            updateHeadExpression(true); // Happy face
+
+            // Add hat
+            const headRadius = CELL_SIZE / 2.5;
+            head.hatSVG = createHatSVG(0, -headRadius * 0.7, headRadius * 1.2); // Position relative to head center
+            head.svgElement.appendChild(head.hatSVG);
+
+            winScreen.classList.remove('hidden');
+            clearTimeout(gameLoopTimeout);
+        }
+
+
+        // --- Game Flow & Loop ---
+        function resizeGame() {
+            const gameAreaWidth = document.getElementById('game-area').clientWidth;
+            const gameAreaHeight = document.getElementById('game-area').clientHeight * 0.9; // 90% for canvas, 10% for UI
+
+            // Determine cell size based on the smaller dimension to fit the maze
+            const availableWidth = gameAreaWidth - STROKE_WIDTH * 2;
+            const availableHeight = gameAreaHeight - STROKE_WIDTH * 2;
+
+            CELL_SIZE = Math.min(availableWidth / MAZE_COLS, availableHeight / MAZE_ROWS);
+
+            const canvasWidth = MAZE_COLS * CELL_SIZE + STROKE_WIDTH;
+            const canvasHeight = MAZE_ROWS * CELL_SIZE + STROKE_WIDTH;
+
+            gameCanvas.setAttribute('width', canvasWidth);
+            gameCanvas.setAttribute('height', canvasHeight);
+            gameCanvas.setAttribute('viewBox', `0 0 ${canvasWidth} ${canvasHeight}`);
+
+            // Update biscuit tin size
+            const tinSize = Math.min(60, CELL_SIZE * 1.5);
+            biscuitTinContainer.innerHTML = ''; // Clear old tin
+            biscuitTinContainer.appendChild(createBiscuitTinSVG(tinSize));
+
+
+            // If game elements exist, redraw them (or reposition)
+            if (maze.length > 0) {
+                drawMaze(); // Redraws maze lines & target
+                 // Re-add biscuits to canvas if they exist
+                placedBiscuits.forEach(b => {
+                    if (b.svgElement.parentNode !== gameCanvas) gameCanvas.appendChild(b.svgElement);
+                    const cellCenterX = b.x * CELL_SIZE + CELL_SIZE / 2;
+                    const cellCenterY = b.y * CELL_SIZE + CELL_SIZE / 2;
+                    b.svgElement.setAttribute("transform", `translate(${cellCenterX}, ${cellCenterY})`);
+                    // Re-scale biscuit itself if needed (more complex)
+                });
+
+                if (head.svgElement) { // Reposition and rescale head
+                    if(head.svgElement.parentNode !== gameCanvas) gameCanvas.appendChild(head.svgElement);
+
+                    // Recalculate pixel positions based on new CELL_SIZE
+                    head.pixelX = head.x * CELL_SIZE + CELL_SIZE / 2;
+                    head.pixelY = head.y * CELL_SIZE + CELL_SIZE / 2;
+
+                    // Remove old head and recreate for new size, or try to scale elements
+                    const oldHeadTransform = head.svgElement.getAttribute("transform");
+                    head.svgElement.remove();
+                    head.svgElement = createHeadSVG(0, 0, CELL_SIZE / 2.5);
+                    head.svgElement.setAttribute("transform", `translate(${head.pixelX}, ${head.pixelY})`);
+                    updateHeadExpression(head.scary === false); // Update expression based on state
+                    if (head.hatSVG) { // Re-add hat if won
+                        const headRadius = CELL_SIZE / 2.5;
+                        head.hatSVG = createHatSVG(0, -headRadius * 0.7, headRadius * 1.2);
+                        head.svgElement.appendChild(head.hatSVG);
+                    }
+                    gameCanvas.appendChild(head.svgElement);
+                }
+            }
+        }
+
+
+        function gameLoop() {
+            if (gameOverScreen.classList.contains('hidden') && winScreen.classList.contains('hidden')) {
+                moveHead();
+                animateHeadLegs();
+
+                // Check win condition (if head not actively moving to center via path)
+                if (!head.isMoving && head.x === centerCell.x && head.y === centerCell.y) {
+                    if (!head.targetCell || !head.targetCell.isCenter) { // If not already pathing to center
+                        // Initiate move to center if just arrived randomly or after eating biscuit at center.
+                        // This might be redundant if winGame() is called directly when path ends at center.
+                        // For now, win condition is primarily checked when path to center completes.
+                        winGame(); // Or set target to center for an animation
+                    }
+                }
+                gameLoopTimeout = requestAnimationFrame(gameLoop);
+            }
+        }
+
+        function startGame() {
+            gameOverScreen.classList.add('hidden');
+            winScreen.classList.add('hidden');
+
+            MAZE_COLS = parseInt(prompt("Maze Columns (e.g., 8-15):", "10")) || 10;
+            MAZE_ROWS = parseInt(prompt("Maze Rows (e.g., 8-15):", "10")) || 10;
+            MAZE_COLS = Math.max(5, Math.min(20, MAZE_COLS)); // Clamp values
+            MAZE_ROWS = Math.max(5, Math.min(20, MAZE_ROWS));
+
+
+            biscuitExplosionLimit = Math.floor(Math.random() * 6) + 5; // 5 to 10
+            biscuitsEaten = 0;
+            biscuitCountSpan.textContent = biscuitsEaten;
+            biscuitLimitSpan.textContent = biscuitExplosionLimit;
+
+            placedBiscuits.forEach(b => b.svgElement.remove());
+            placedBiscuits = [];
+            if(currentBiscuit && currentBiscuit.svgElement) currentBiscuit.svgElement.remove();
+            currentBiscuit = null;
+
+            head.targetCell = null;
+            head.path = [];
+            head.isMoving = false;
+            head.scary = true; // Reset scariness
+            head.hatSVG = null; // Remove hat
+
+
+            generateMaze();
+            resizeGame(); // This will draw maze and place head
+            drawMaze(); // Ensure maze is drawn first
+            placeHead(); // Places head after maze and sizing
+
+            // Set up the head's explicit target to the center for the player to guide it
+            // No, player guides it with biscuits. Head moves randomly or to biscuit.
+            // Objective is for PLAYER to guide it.
+
+            clearTimeout(gameLoopTimeout);
+            gameLoop();
+        }
+
+        // Event Listeners
+        biscuitTinContainer.addEventListener('mousedown', startDragBiscuit);
+        biscuitTinContainer.addEventListener('touchstart', startDragBiscuit, { passive: false });
+        window.addEventListener('resize', resizeGame);
+
+        // Initial Setup
+        startGame();
+
+    </script>
+</body>
+</html>
