@@ -403,11 +403,9 @@
                 ant.setAttribute('transform', `translate(${antX}, ${antY}) rotate(${degrees}) scale(0.5)`);
             }
             
-           function animateLegs() {
-    // Animate legs to create walking motion with obvious tripod gait
-    stepCount += speed * 0.4; // Much faster animation (4x the original speed)
-    
-    // Get leg elements
+         
+function animateLegs() {
+    // Get all leg elements
     const leftFrontLeg = document.getElementById('leftFrontLeg');
     const leftMiddleLeg = document.getElementById('leftMiddleLeg');
     const leftRearLeg = document.getElementById('leftRearLeg');
@@ -415,23 +413,43 @@
     const rightMiddleLeg = document.getElementById('rightMiddleLeg');
     const rightRearLeg = document.getElementById('rightRearLeg');
     
-    // Create clearly defined tripod gait animation
+    // Much faster animation speed
+    stepCount += speed * 0.5;
+    
+    // Calculate phase for each leg in the tripod gait (0 to 2π)
+    const phase = stepCount % (2 * Math.PI);
+    
+    // Define two distinct positions for each leg
+    // Forward position (positive angle) and backward position (negative angle)
+    const forwardAngle = 30;  // Exaggerated for visibility
+    const backwardAngle = -15;
+    
+    // For tripod 1: Left front, right middle, left rear
+    let tripod1Angle;
+    // For tripod 2: Right front, left middle, right rear
+    let tripod2Angle;
+    
+    // Create a clear step function between two positions
+    // When phase is in first half of cycle, tripod 1 is forward, tripod 2 is backward
+    // When phase is in second half of cycle, tripod 1 is backward, tripod 2 is forward
+    if (phase < Math.PI) {
+        tripod1Angle = forwardAngle;
+        tripod2Angle = backwardAngle;
+    } else {
+        tripod1Angle = backwardAngle;
+        tripod2Angle = forwardAngle;
+    }
+    
+    // Apply the calculated angles directly to each leg
     // Tripod 1: Left front, right middle, left rear
+    leftFrontLeg.setAttribute('transform', `rotate(${tripod1Angle}, 8, -5)`);
+    rightMiddleLeg.setAttribute('transform', `rotate(${tripod1Angle}, 2, 5)`);
+    leftRearLeg.setAttribute('transform', `rotate(${tripod1Angle}, -5, -5)`);
+    
     // Tripod 2: Right front, left middle, right rear
-    
-    // Using square wave pattern for more distinct movement (Math.sin > 0 ? 1 : -1)
-    const tripod1Position = Math.sin(stepCount) > 0 ? 25 : -10;
-    const tripod2Position = Math.sin(stepCount) < 0 ? 25 : -10;
-    
-    // Apply rotations for tripod 1
-    leftFrontLeg.setAttribute('transform', `rotate(${tripod1Position}, 8, -5)`);
-    rightMiddleLeg.setAttribute('transform', `rotate(${tripod1Position}, 2, 5)`);
-    leftRearLeg.setAttribute('transform', `rotate(${tripod1Position}, -5, -5)`);
-    
-    // Apply rotations for tripod 2
-    rightFrontLeg.setAttribute('transform', `rotate(${tripod2Position}, 8, 5)`);
-    leftMiddleLeg.setAttribute('transform', `rotate(${tripod2Position}, 2, -5)`);
-    rightRearLeg.setAttribute('transform', `rotate(${tripod2Position}, -5, 5)`);
+    rightFrontLeg.setAttribute('transform', `rotate(${tripod2Angle}, 8, 5)`);
+    leftMiddleLeg.setAttribute('transform', `rotate(${tripod2Angle}, 2, -5)`);
+    rightRearLeg.setAttribute('transform', `rotate(${tripod2Angle}, -5, 5)`);
 }
             
             function setNewTarget() {
