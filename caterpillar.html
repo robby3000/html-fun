@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Caterpillar Leaf Game</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #8BC34A;
+        }
+        #gameContainer {
+            position: relative;
+            width: 600px;
+            height: 600px;
+            background-color: #A5D6A7;
+            border-radius: 50%;
+            border: 2px solid #388E3C;
+        }
+        .caterpillar {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background-color: #795548;
+            border-radius: 50%;
+        }
+        .blocker {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background-color: #FF5722;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+        .cherry {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            background-color: red;
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <div class="cherry"></div>
+    </div>
+    <script>
+        let gameContainer = document.getElementById("gameContainer");
+        let caterpillar = document.createElement("div");
+        caterpillar.className = "caterpillar";
+        gameContainer.appendChild(caterpillar);
+        
+        let posX = Math.random() * 600;
+        let posY = Math.random() * 600;
+        caterpillar.style.left = posX + "px";
+        caterpillar.style.top = posY + "px";
+
+        let blockers = [];
+        let directions = ["left", "right", "up", "down"];
+
+        function moveCaterpillar() {
+            let direction = directions[Math.floor(Math.random() * directions.length)];
+            switch(direction) {
+                case "left":
+                    posX -= 10;
+                    break;
+                case "right":
+                    posX += 10;
+                    break;
+                case "up":
+                    posY -= 10;
+                    break;
+                case "down":
+                    posY += 10;
+                    break;
+            }
+            posX = Math.max(0, Math.min(posX, 580));
+            posY = Math.max(0, Math.min(posY, 580));
+            
+            caterpillar.style.left = posX + "px";
+            caterpillar.style.top = posY + "px";
+            
+            blockers.forEach(blocker => {
+                if (Math.abs(posX - blocker.x) < 20 && Math.abs(posY - blocker.y) < 20) {
+                    moveCaterpillar();
+                }
+            });
+
+            let cherry = document.querySelector(".cherry");
+            if (Math.abs(posX - 300) < 20 && Math.abs(posY - 300) < 20) {
+                alert("The caterpillar reached the cherry!");
+                window.location.reload();
+            }
+        }
+
+        setInterval(moveCaterpillar, 500);
+
+        gameContainer.addEventListener("click", function(event) {
+            if (blockers.length < 5) {
+                let blocker = document.createElement("div");
+                blocker.className = "blocker";
+                blocker.style.left = event.offsetX + "px";
+                blocker.style.top = event.offsetY + "px";
+                gameContainer.appendChild(blocker);
+                blockers.push({x: event.offsetX, y: event.offsetY});
+            }
+        });
+    </script>
+</body>
+</html>
