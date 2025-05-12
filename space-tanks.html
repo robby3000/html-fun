@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Space Tank Battle</title>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/examples/js/controls/OrbitControls.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background: #000;
+            touch-action: none;
+            font-family: Arial, sans-serif;
+        }
+        #game-container {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+        }
+        #ui {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: white;
+            font-size: 18px;
+            pointer-events: none;
+        }
+        #health {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 100px;
+            height: 20px;
+            border: 2px solid white;
+        }
+        #health-bar {
+            height: 100%;
+            width: 100%;
+            background: red;
+        }
+        #controls {
+            position: absolute;
+            bottom: 20px;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 20px;
+            box-sizing: border-box;
+        }
+        .control-btn {
+            width: 80px;
+            height: 80px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-size: 24px;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+        }
+        #game-over {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            color: white;
+            font-size: 36px;
+        }
+        #restart-btn {
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 24px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        @media (min-width: 768px) {
+            .control-btn {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container"></div>
+    <div id="ui">
+        <div>Enemies: <span id="enemy-count">0</span></div>
+        <div>Score: <span id="score">0</span></div>
+    </div>
+    <div id="health">
+        <div id="health-bar"></div>
+    </div>
+    <div id="controls">
+        <div class="control-btn" id="left-btn">←</div>
+        <div class="control-btn" id="fire-btn">FIRE</div>
+        <div class="control-btn" id="right-btn">→</div>
+    </div>
+    <div id="game-over">
+        <div>GAME OVER</div>
+        <div>Final Score: <span id="final-score">0</span></div>
+        <button id="restart-btn">Play Again</button>
+    </div>
+
+    <script>
+        // Game variables
+        let score = 0;
+        let health = 3;
+        let enemies = [];
+        let bullets = [];
+        let enemyBullets = [];
+        let gameOver = false;
+        let moveLeft = false;
+        let moveRight = false;
+        let lastEnemySpawnTime = 0;
+        const enemySpawnInterval = 2000; // ms
+
+        // Initialize Three.js
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setClearColor(0x000033);
+        document.getElementById('game-container').appendChild(renderer.domElement);
+
+        // Add stars background
+        const starsGeometry = new THREE.BufferGeometry();
+        const starsMaterial = new THREE.PointsMaterial({
+            color: 0xFFFFFF,
+            size: 0.1,
+            transparent: true
+        });
+
+        const starsVertices = [];
+        for (let i = 0; i < 1000; i++) {
+            const x = (Math.random() - 0.5) * 2000;
+            const y = (Math.random() - 0.5) * 2000;
+            const z = (Math.random() - 0.5) * 2000;
+            starsVertices.push(x, y, z);
+        }
+
+        starsGeometry.setAttribute('position', new THREE.Float32BufferAttribute(starsVertices, 3));
+        const stars = new THREE.Points(starsGeometry, starsMaterial);
+        scene.add(stars);
+
+        // Create player tank (spaceship)
+        const playerGeometry = new THREE.BoxGeometry(1, 0.5, 2);
+        const playerMaterial = new THREE.MeshPhongMaterial({ color: 0x00AAFF });
+        const player = new THREE.Mesh(playerGeometry, playerMaterial);
+        player.position.z = -5;
+        player.position.y = -1;
+        scene.add(player);
+
+        // Add cannon to player
+        const cannonGeometry = new THREE.CylinderGeometry(0.1, 0.1, 1, 16);
+        const cannonMaterial = new THREE.MeshPhongMaterial({ color: 0x888888 });
+        const cannon = new THREE.Mesh(cannonGeometry, cannonMaterial);
+        cannon.rotation.x = Math.PI / 2;
+        cannon.position.y = 0.2;
+        cannon.position.z = -1;
+        player.add(cannon);
+
+        // Add lights
+        const ambientLight = new THREE.AmbientLight(0x404040);
+        scene.add(ambientLight);
+
+        const directionalLight = new THREE.DirectionalLight(0xFFFFFF, 0.5);
+        directionalLight.position.set(0, 1, 1);
+        scene.add(directionalLight);
+
+        // Set camera position
+        camera.position.set(0, 2, 5);
+        camera.lookAt(0, 0, -10);
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // Mobile controls
+        document.getElementById('left-btn').addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            moveLeft = true;
+        });
+        document.getElementById('left-btn').addEventListener('touchend', (e) => {
+            e.preventDefault();
+            moveLeft = false;
+        });
+        document.getElementById('right-btn').addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            moveRight = true;
+        });
+        document.getElementById('right-btn').addEventListener('touchend', (e) => {
+            e.preventDefault();
+            moveRight = false;
+        });
+        document.getElementById('fire-btn').addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            fireBullet();
+        });
+
+        // Desktop controls
+        document.addEventListener('keydown', (e) => {
+            if (gameOver) return;
+            
+            if (e.key === 'ArrowLeft') {
+                moveLeft = true;
+            } else if (e.key === 'ArrowRight') {
+                moveRight = true;
+            } else if (e.key === ' ' || e.key === 'Spacebar') {
+                fireBullet();
+            }
+        });
+
+        document.addEventListener('keyup', (e) => {
+            if (e.key === 'ArrowLeft') {
+                moveLeft = false;
+            } else if (e.key === 'ArrowRight') {
+                moveRight = false;
+            }
+        });
+
+        // Game over and restart
+        document.getElementById('restart-btn').addEventListener('click', restartGame);
+
+        function restartGame() {
+            // Remove all enemies and bullets
+            enemies.forEach(enemy => scene.remove(enemy));
+            bullets.forEach(bullet => scene.remove(bullet));
+            enemyBullets.forEach(bullet => scene.remove(bullet));
+            
+            // Reset game state
+            enemies = [];
+            bullets = [];
+            enemyBullets = [];
+            score = 0;
+            health = 3;
+            gameOver = false;
+            
+            // Reset UI
+            document.getElementById('score').textContent = score;
+            document.getElementById('enemy-count').textContent = enemies.length;
+            document.getElementById('health-bar').style.width = '100%';
+            document.getElementById('game-over').style.display = 'none';
+            
+            // Reset player position
+            player.position.x = 0;
+        }
+
+        function fireBullet() {
+            if (gameOver) return;
+            
+            const bulletGeometry = new THREE.SphereGeometry(0.1, 16, 16);
+            const bulletMaterial = new THREE.MeshPhongMaterial({ color: 0xFFFF00 });
+            const bullet = new THREE.Mesh(bulletGeometry, bulletMaterial);
+            
+            // Position bullet at the end of the cannon
+            bullet.position.copy(player.position);
+            bullet.position.z -= 2;
+            
+            // Set bullet velocity (forward)
+            bullet.userData.velocity = new THREE.Vector3(0, 0, -0.5);
+            
+            scene.add(bullet);
+            bullets.push(bullet);
+        }
+
+        function createEnemy() {
+            const enemyGeometry = new THREE.BoxGeometry(1, 0.5, 2);
+            const enemyMaterial = new THREE.MeshPhongMaterial({ color: 0xFF0000 });
+            const enemy = new THREE.Mesh(enemyGeometry, enemyMaterial);
+            
+            // Random position at the top of the screen
+            enemy.position.x = (Math.random() - 0.5) * 10;
+            enemy.position.y = -1;
+            enemy.position.z = -20 - Math.random() * 10;
+            
+            // Add cannon to enemy
+            const enemyCannon = new THREE.Mesh(cannonGeometry, cannonMaterial);
+            enemyCannon.rotation.x = Math.PI / 2;
+            enemyCannon.position.y = 0.2;
+            enemyCannon.position.z = -1;
+            enemy.add(enemyCannon);
+            
+            enemy.userData.speed = 0.02 + Math.random() * 0.03;
+            enemy.userData.lastShotTime = 0;
+            enemy.userData.shotInterval = 2000 + Math.random() * 2000; // ms
+            
+            scene.add(enemy);
+            enemies.push(enemy);
+            document.getElementById('enemy-count').textContent = enemies.length;
+        }
+
+        function enemyFire(enemy) {
+            const bulletGeometry = new THREE.SphereGeometry(0.1, 16, 16);
+            const bulletMaterial = new THREE.MeshPhongMaterial({ color: 0xFF00FF });
+            const bullet = new THREE.Mesh(bulletGeometry, bulletMaterial);
+            
+            // Position bullet at the enemy's position
+            const worldPosition = new THREE.Vector3();
+            enemy.getWorldPosition(worldPosition);
+            bullet.position.copy(worldPosition);
+            bullet.position.z += 2;
+            
+            // Calculate direction to player
+            const direction = new THREE.Vector3();
+            direction.subVectors(player.position, bullet.position).normalize();
+            bullet.userData.velocity = direction.multiplyScalar(0.3);
+            
+            scene.add(bullet);
+            enemyBullets.push(bullet);
+        }
+
+        function updateHealth() {
+            const healthPercent = (health / 3) * 100;
+            document.getElementById('health-bar').style.width = `${healthPercent}%`;
+            
+            if (health <= 0) {
+                gameOver = true;
+                document.getElementById('final-score').textContent = score;
+                document.getElementById('game-over').style.display = 'flex';
+            }
+        }
+
+        function checkCollisions() {
+            // Check player bullets hitting enemies
+            for (let i = bullets.length - 1; i >= 0; i--) {
+                const bullet = bullets[i];
+                
+                for (let j = enemies.length - 1; j >= 0; j--) {
+                    const enemy = enemies[j];
+                    
+                    if (bullet.position.distanceTo(enemy.position) < 1) {
+                        // Hit!
+                        scene.remove(bullet);
+                        bullets.splice(i, 1);
+                        
+                        scene.remove(enemy);
+                        enemies.splice(j, 1);
+                        
+                        score += 10;
+                        document.getElementById('score').textContent = score;
+                        document.getElementById('enemy-count').textContent = enemies.length;
+                        break;
+                    }
+                }
+            }
+            
+            // Check enemy bullets hitting player
+            for (let i = enemyBullets.length - 1; i >= 0; i--) {
+                const bullet = enemyBullets[i];
+                
+                if (bullet.position.distanceTo(player.position) < 1) {
+                    // Hit player!
+                    scene.remove(bullet);
+                    enemyBullets.splice(i, 1);
+                    
+                    health--;
+                    updateHealth();
+                }
+            }
+        }
+
+        // Game loop
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            if (gameOver) return;
+            
+            // Move player
+            if (moveLeft && player.position.x > -5) {
+                player.position.x -= 0.1;
+            }
+            if (moveRight && player.position.x < 5) {
+                player.position.x += 0.1;
+            }
+            
+            // Move bullets
+            for (let i = bullets.length - 1; i >= 0; i--) {
+                const bullet = bullets[i];
+                bullet.position.add(bullet.userData.velocity);
+                
+                // Remove bullets that are too far away
+                if (bullet.position.z < -30) {
+                    scene.remove(bullet);
+                    bullets.splice(i, 1);
+                }
+            }
+            
+            // Move enemy bullets
+            for (let i = enemyBullets.length - 1; i >= 0; i--) {
+                const bullet = enemyBullets[i];
+                bullet.position.add(bullet.userData.velocity);
+                
+                // Remove bullets that are too far away
+                if (bullet.position.z > 10) {
+                    scene.remove(bullet);
+                    enemyBullets.splice(i, 1);
+                }
+            }
+            
+            // Move enemies and make them shoot
+            const currentTime = Date.now();
+            for (let i = enemies.length - 1; i >= 0; i--) {
+                const enemy = enemies[i];
+                enemy.position.z += enemy.userData.speed;
+                
+                // Remove enemies that are too close
+                if (enemy.position.z > 5) {
+                    scene.remove(enemy);
+                    enemies.splice(i, 1);
+                    document.getElementById('enemy-count').textContent = enemies.length;
+                    continue;
+                }
+                
+                // Enemy shooting logic
+                if (currentTime - enemy.userData.lastShotTime > enemy.userData.shotInterval) {
+                    enemyFire(enemy);
+                    enemy.userData.lastShotTime = currentTime;
+                }
+            }
+            
+            // Spawn new enemies
+            if (currentTime - lastEnemySpawnTime > enemySpawnInterval) {
+                createEnemy();
+                lastEnemySpawnTime = currentTime;
+            }
+            
+            // Check collisions
+            checkCollisions();
+            
+            // Rotate stars for background effect
+            stars.rotation.y += 0.0005;
+            
+            renderer.render(scene, camera);
+        }
+
+        // Start the game
+        animate();
+    </script>
+</body>
+</html>
