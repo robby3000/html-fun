@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dog Ball Game</title>
+  <style>
+    body, html {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      background-color: #a7f3d0;
+      overflow: hidden;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    #gameCanvas {
+      width: 100%;
+      height: 100%;
+      position: relative;
+    }
+
+    .dog {
+      position: absolute;
+      bottom: 0;
+      left: 30%;
+      width: 150px;
+      height: 150px;
+      z-index: 10;
+    }
+
+    .dog svg {
+      width: 100%;
+      height: 100%;
+    }
+
+    .ball {
+      position: absolute;
+      width: 40px;
+      height: 40px;
+      background-color: #FFB6C1;
+      border-radius: 50%;
+      z-index: 5;
+    }
+
+    #timer {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      font-size: 24px;
+      color: black;
+    }
+
+    #score {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      font-size: 24px;
+      color: black;
+    }
+
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div id="gameCanvas">
+    <div id="score">Score: 0</div>
+    <div id="timer">Time: 60</div>
+    <div class="dog">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+        <circle cx="50" cy="50" r="40" fill="#ffb6c1" />
+        <circle cx="35" cy="40" r="5" fill="#000" />
+        <circle cx="65" cy="40" r="5" fill="#000" />
+        <path d="M 50 60 Q 35 75 50 80 Q 65 75 50 60" fill="#fff" />
+        <path d="M 50 75 Q 45 80 55 80 Q 50 75 50 75" fill="#ff4d4d"/>
+      </svg>
+    </div>
+    <div class="ball hidden" id="ball"></div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const scoreElement = document.getElementById('score');
+    const timerElement = document.getElementById('timer');
+    const dogElement = document.querySelector('.dog');
+    const ballElement = document.getElementById('ball');
+    let score = 0;
+    let timeLeft = 60;
+    let interval;
+    let ballThrown = false;
+    let ballCatch = false;
+    
+    const ballSpeed = 5;
+    const gravity = 0.2;
+    let ballPosition = { x: 0, y: 0, vx: 0, vy: 0 };
+    const dogPosition = { x: 35, y: 10 };
+
+    // Timer countdown
+    function startTimer() {
+      interval = setInterval(() => {
+        timeLeft--;
+        timerElement.innerHTML = `Time: ${timeLeft}`;
+        if (timeLeft <= 0) {
+          clearInterval(interval);
+          alert(`Game Over! Your score is ${score}`);
+          resetGame();
+        }
+      }, 1000);
+    }
+
+    // Update score and reset game
+    function resetGame() {
+      score = 0;
+      scoreElement.innerHTML = `Score: ${score}`;
+      timeLeft = 60;
+      ballThrown = false;
+      ballCatch = false;
+      timerElement.innerHTML = `Time: ${timeLeft}`;
+    }
+
+    // Swipe event for mobile or mouse throw
+    let touchStart = null;
+    canvas.addEventListener('mousedown', (e) => {
+      touchStart = { x: e.clientX, y: e.clientY };
+    });
+
+    canvas.addEventListener('mouseup', (e) => {
+      if (touchStart) {
+        const touchEnd = { x: e.clientX, y: e.clientY };
+        const deltaX = touchEnd.x - touchStart.x;
+        const deltaY = touchEnd.y - touchStart.y;
+        
+        if (Math.abs(deltaY) > Math.abs(deltaX)) {
+          startThrow(deltaX, deltaY);
+        }
+      }
+      touchStart = null;
+    });
+
+    // Throw ball physics
+    function startThrow(dx, dy) {
+      if (ballThrown) return;
+      
+      ballPosition.x = 50;
+      ballPosition.y = 60;
+      ballPosition.vx = dx / 10;
+      ballPosition.vy = dy / 10;
+      ballThrown = true;
+      ballCatch = false;
+      ballElement.classList.remove('hidden');
+      ballElement.style.left = `${ballPosition.x}px`;
+      ballElement.style.bottom = `${ballPosition.y}px`;
+
+      // Animate ball arc
+      animateBall();
+    }
+
+    // Animation for ball motion
+    function animateBall() {
+      if (!ballThrown) return;
+
+      ballPosition.x += ballPosition.vx;
+      ballPosition.y += ballPosition.vy;
+
+      ballPosition.vy -= gravity;
+
+      // Check if ball catches the dog
+      if (
+        ballPosition.x >= dogPosition.x - 10 &&
+        ballPosition.x <= dogPosition.x + 60 &&
+        ballPosition.y <= 60
+      ) {
+        ballCatch = true;
+        score++;
+        scoreElement.innerHTML = `Score: ${score}`;
+        ballThrown = false;
+        ballElement.classList.add('hidden');
+      }
+
+      if (ballPosition.y <= 0 || ballPosition.x < 0 || ballPosition.x > window.innerWidth) {
+        ballThrown = false;
+        ballElement.classList.add('hidden');
+      } else {
+        ballElement.style.left = `${ballPosition.x}px`;
+        ballElement.style.bottom = `${ballPosition.y}px`;
+        requestAnimationFrame(animateBall);
+      }
+    }
+
+    // Start the game
+    startTimer();
+
+  </script>
+</body>
+</html>
