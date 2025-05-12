@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive SVG Aquarium</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #f0f8ff; /* Light background outside SVG */
+            font-family: sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column; /* Stack title and SVG */
+        }
+        h1 {
+            color: #005073;
+            margin-bottom: 10px;
+            font-size: 1.5em;
+        }
+        #aquarium-container {
+            width: 95%;
+            max-width: 800px; /* Max width for large screens */
+            aspect-ratio: 16 / 9; /* Maintain aspect ratio */
+            background: #e0f0ff;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            overflow: hidden; /* Ensure nothing spills out */
+        }
+        #aquarium {
+            display: block; /* Remove extra space below SVG */
+            width: 100%;
+            height: 100%;
+            cursor: default; /* Default cursor for the tank */
+        }
+
+        /* Creature Styles */
+        .creature {
+            cursor: pointer;
+            transition: filter 0.2s ease-out; /* Smooth glow effect */
+        }
+        .creature.stroking {
+            filter: drop-shadow(0 0 5px yellow);
+        }
+        .happiness-indicator {
+            transition: fill 0.5s ease;
+            stroke: #555;
+            stroke-width: 0.5;
+        }
+        .light-circle {
+            fill: none;
+            stroke: gold;
+            stroke-width: 1.5;
+            opacity: 0.8;
+            pointer-events: none; /* Don't interfere with clicks */
+        }
+        .food {
+            fill: #e0a030; /* Brownish food color */
+            stroke: #a07020;
+            stroke-width: 0.3;
+            pointer-events: none;
+        }
+
+        /* Specific Creature Fills */
+        #fish1 .body { fill: #ff8c00; } /* Orange */
+        #fish2 .body { fill: #4682b4; } /* Steel Blue */
+        #jellyfish1 .body { fill: rgba(255, 105, 180, 0.7); } /* Pink, semi-transparent */
+        #jellyfish1 .tentacle { stroke: rgba(255, 105, 180, 0.9); stroke-width: 1; fill: none; }
+        #crab1 .body { fill: #dc143c; } /* Crimson */
+        #crab1 .leg { stroke: #a00020; stroke-width: 1; }
+        #crab1 .claw { fill: #b22222; }
+
+        /* Plant Styles */
+        .plant {
+            fill: #228b22; /* Forest Green */
+            stroke: #1a681a;
+            stroke-width: 0.5;
+        }
+        .plant-light {
+            fill: #55c555; /* Lighter Green */
+             stroke: #3b8b3b;
+            stroke-width: 0.5;
+        }
+
+    </style>
+</head>
+<body>
+    <h1>Happy Aquarium</h1>
+    <div id="aquarium-container">
+        <svg id="aquarium" viewBox="0 0 400 225" preserveAspectRatio="xMidYMid meet">
+            <defs>
+                <linearGradient id="waterGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" style="stop-color:#add8e6;stop-opacity:1" />
+                    <stop offset="100%" style="stop-color:#6495ed;stop-opacity:1" />
+                </linearGradient>
+                <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+                    <feGaussianBlur stdDeviation="2.5" result="coloredBlur"/>
+                    <feMerge>
+                        <feMergeNode in="coloredBlur"/>
+                        <feMergeNode in="SourceGraphic"/>
+                    </feMerge>
+                </filter>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#waterGradient)" />
+
+            <path d="M0 225 L0 200 Q 50 180 100 205 T 200 195 T 300 210 T 400 200 L400 225 Z" fill="#d2b48c" /> <g class="plant" transform="translate(50 180) scale(1.2)">
+                 <path d="M0 25 Q 5 15 0 0 Q -5 15 0 25 Z" />
+                 <path d="M5 25 Q 10 10 5 -5 Q 0 10 5 25 Z" transform="rotate(20)" />
+                 <path d="M-5 25 Q -10 10 -5 -5 Q 0 10 -5 25 Z" transform="rotate(-20)" />
+            </g>
+             <g class="plant-light" transform="translate(320 165) scale(1.5)">
+                 <path d="M0 25 Q 2 15 0 0 Q -2 15 0 25 Z" />
+                 <path d="M3 25 Q 5 10 3 -5 Q 1 10 3 25 Z" transform="rotate(15)" />
+                 <path d="M-3 25 Q -5 10 -3 -5 Q -1 10 -3 25 Z" transform="rotate(-15)" />
+                 <path d="M5 20 Q 7 5 5 -10 Q 3 5 5 20 Z" transform="rotate(35)" />
+                 <path d="M-5 20 Q -7 5 -5 -10 Q -3 5 -5 20 Z" transform="rotate(-35)" />
+            </g>
+             <g class="plant" transform="translate(150 190) scale(0.8)">
+                 <path d="M0 25 Q 5 15 0 0 Q -5 15 0 25 Z" />
+                 <path d="M5 25 Q 10 10 5 -5 Q 0 10 5 25 Z" transform="rotate(25)" />
+                 <path d="M-5 25 Q -10 10 -5 -5 Q 0 10 -5 25 Z" transform="rotate(-25)" />
+            </g>
+
+
+            <g id="fish1" class="creature">
+                <ellipse class="body" cx="0" cy="0" rx="15" ry="8"/>
+                <path class="tail" d="M -15 0 L -25 8 L -25 -8 Z" fill="#ffae42" />
+                <circle cx="10" cy="-2" r="1.5" fill="black" />
+                <circle class="happiness-indicator" cx="0" cy="12" r="3" fill="grey" />
+            </g>
+            <g id="fish2" class="creature">
+                 <ellipse class="body" cx="0" cy="0" rx="12" ry="6"/>
+                 <path class="tail" d="M -12 0 L -20 6 L -20 -6 Z" fill="#5a9bdc" />
+                 <circle cx="8" cy="-1.5" r="1.2" fill="black" />
+                 <circle class="happiness-indicator" cx="0" cy="10" r="3" fill="grey" />
+            </g>
+            <g id="jellyfish1" class="creature">
+                 <path class="body" d="M -10 0 Q 0 -15 10 0 Z" />
+                 <path class="tentacle" d="M -7 0 Q -10 5 -8 10 Q -12 15 -10 20" />
+                 <path class="tentacle" d="M 0 0 Q 0 5 -2 10 Q 2 15 0 20" />
+                 <path class="tentacle" d="M 7 0 Q 10 5 8 10 Q 12 15 10 20" />
+                 <circle class="happiness-indicator" cx="0" cy="-15" r="3" fill="grey" />
+            </g>
+            <g id="crab1" class="creature">
+                <ellipse class="body" cx="0" cy="0" rx="10" ry="7"/>
+                <path class="leg" d="M -8 2 L -15 8" /> <path class="leg" d="M -6 4 L -10 12" />
+                <path class="leg" d="M 8 2 L 15 8" /> <path class="leg" d="M 6 4 L 10 12" />
+                <path class="claw" d="M -8 -2 L -15 -5 L -12 -8 Z" />
+                <path class="claw" d="M 8 -2 L 15 -5 L 12 -8 Z" />
+                 <circle cx="0" cy="-10" r="3" fill="grey" />
+                 <circle class="happiness-indicator" cx="0" cy="-10" r="3" fill="grey" />
+            </g>
+
+            <g id="dynamic-elements"></g>
+
+        </svg>
+    </div>
+
+    <script>
+        const svg = document.getElementById('aquarium');
+        const dynamicElements = document.getElementById('dynamic-elements');
+        const svgNS = 'http://www.w3.org/2000/svg';
+        const viewBox = svg.viewBox.baseVal;
+        const aquariumWidth = viewBox.width;
+        const aquariumHeight = viewBox.height;
+        const groundLevel = 205; // Approximate y-level of the sand top
+
+        let creatures = [];
+        let foodParticles = [];
+        let gameWon = false;
+        let lastTime = 0;
+        let strokingCreature = null;
+        let interactionPos = { x: 0, y: 0 };
+
+        const HAPPINESS_THRESHOLD = 100;
+        const HAPPINESS_DECAY_RATE = 0.1; // points per second
+        const STROKE_HAPPINESS_RATE = 15; // points per second
+        const LIGHT_CIRCLE_HAPPINESS_BONUS = 40;
+
+        function createCreature(id, type, x, y) {
+            const element = document.getElementById(id);
+            const happinessIndicator = element.querySelector('.happiness-indicator');
+            const creature = {
+                id: id,
+                element: element,
+                happinessIndicator: happinessIndicator,
+                type: type,
+                x: x,
+                y: y,
+                vx: (Math.random() - 0.5) * 20, // pixels per second
+                vy: (Math.random() - 0.5) * 10,
+                happiness: 0,
+                state: 'swimming', // swimming, paused, eating, happy (visual state)
+                pauseTimer: Math.random() * 5 + 2, // seconds until next pause check
+                pausedDuration: 0, // How long it has been paused
+                targetFood: null,
+                scaleX: 1 // For flipping direction
+            };
+
+            // Adjust initial speeds/behavior per type
+            if (type === 'jellyfish') {
+                creature.vx = (Math.random() - 0.5) * 5;
+                creature.vy = (Math.random() * 10 + 5) * (Math.random() < 0.5 ? 1 : -1); // Start moving up or down
+            } else if (type === 'crab') {
+                creature.y = groundLevel - 5; // Start on the ground
+                creature.vy = 0;
+                creature.vx = (Math.random() < 0.5 ? 1 : -1) * 15;
+                creature.pauseTimer = Math.random() * 4 + 3;
+            }
+
+            element.setAttribute('transform', `translate(${creature.x}, ${creature.y}) scale(${creature.scaleX}, 1)`);
+            updateHappinessIndicator(creature);
+
+             // Add interaction listeners
+            element.addEventListener('mousedown', (e) => handleInteractionStart(e, creature));
+            element.addEventListener('touchstart', (e) => handleInteractionStart(e, creature), { passive: false }); // Prevent scroll on touch
+
+            return creature;
+        }
+
+        function updateHappinessIndicator(creature) {
+            const happinessRatio = Math.max(0, Math.min(1, creature.happiness / HAPPINESS_THRESHOLD));
+            let color = 'grey';
+            if (happinessRatio > 0.8) {
+                color = '#90ee90'; // Light Green
+            } else if (happinessRatio > 0.4) {
+                color = '#fafad2'; // Light Goldenrod Yellow
+            }
+            creature.happinessIndicator.setAttribute('fill', color);
+        }
+
+        function moveCreature(creature, dt) {
+            // State-based movement
+            switch (creature.state) {
+                case 'swimming':
+                    moveSwimming(creature, dt);
+                    break;
+                case 'paused':
+                    // Do nothing, wait for timer or interaction
+                    creature.pausedDuration += dt;
+                    if (creature.pausedDuration > 2.0) { // Stay paused for 2 seconds
+                       creature.state = 'swimming';
+                       creature.pauseTimer = Math.random() * 5 + 3; // Reset pause check timer
+                    }
+                    break;
+                case 'eating':
+                     moveEating(creature, dt);
+                    break;
+            }
+
+             // Apply transform
+             creature.element.setAttribute('transform', `translate(${creature.x}, ${creature.y}) scale(${creature.scaleX}, 1)`);
+        }
+
+        function moveSwimming(creature, dt) {
+             // Decrease happiness slowly
+             creature.happiness = Math.max(0, creature.happiness - HAPPINESS_DECAY_RATE * dt);
+
+             // Pause logic
+             creature.pauseTimer -= dt;
+             if (creature.pauseTimer <= 0 && Math.random() < 0.1) { // Chance to pause
+                 creature.state = 'paused';
+                 creature.pausedDuration = 0;
+                 return; // Skip movement this frame
+             }
+
+            // Movement specific to type
+            if (creature.type === 'fish') {
+                creature.x += creature.vx * dt;
+                creature.y += creature.vy * dt;
+
+                // Bounce off walls
+                if (creature.x < 15 || creature.x > aquariumWidth - 15) {
+                    creature.vx *= -1;
+                    creature.x = Math.max(15, Math.min(aquariumWidth - 15, creature.x)); // Clamp position
+                    creature.scaleX *= -1; // Flip fish graphic
+                }
+                 if (creature.y < 15 || creature.y > groundLevel - 20) { // Keep off floor
+                    creature.vy *= -1;
+                    creature.y = Math.max(15, Math.min(groundLevel - 20, creature.y));
+                }
+                // Randomly change vertical direction slightly
+                if (Math.random() < 0.01) {
+                    creature.vy += (Math.random() - 0.5) * 5;
+                    creature.vy = Math.max(-15, Math.min(15, creature.vy)); // Limit vertical speed
+                }
+
+            } else if (creature.type === 'jellyfish') {
+                creature.x += creature.vx * dt;
+                creature.y += creature.vy * dt;
+
+                 // Bounce off top/bottom more significantly
+                if (creature.y < 20 || creature.y > groundLevel - 30) {
+                    creature.vy *= -1;
+                     creature.y = Math.max(20, Math.min(groundLevel - 30, creature.y));
+                }
+                 // Bounce off sides gently
+                if (creature.x < 15 || creature.x > aquariumWidth - 15) {
+                    creature.vx *= -1;
+                    creature.x = Math.max(15, Math.min(aquariumWidth - 15, creature.x));
+                }
+                 // Gentle drift
+                 creature.vx += (Math.random() - 0.5) * 0.5 * dt;
+                 creature.vx = Math.max(-5, Math.min(5, creature.vx));
+
+            } else if (creature.type === 'crab') {
+                 creature.x += creature.vx * dt;
+                 creature.y = groundLevel - 5; // Keep on ground
+                 creature.vy = 0;
+
+                // Bounce off walls
+                 if (creature.x < 15 || creature.x > aquariumWidth - 15) {
+                    creature.vx *= -1;
+                    creature.x = Math.max(15, Math.min(aquariumWidth - 15, creature.x));
+                    creature.scaleX *= -1; // Flip crab graphic
+                 }
+            }
+        }
+
+        function moveEating(creature, dt) {
+             if (!creature.targetFood || creature.targetFood.consumed) {
+                 findNearestFood(creature);
+                 if (!creature.targetFood) { // No food left? Back to swimming
+                     creature.state = 'swimming';
+                     creature.happiness = HAPPINESS_THRESHOLD; // Stay happy
+                     return;
+                 }
+             }
+
+             const target = creature.targetFood;
+             const dx = target.x - creature.x;
+             const dy = target.y - creature.y;
+             const dist = Math.sqrt(dx * dx + dy * dy);
+
+             const eatDistance = (creature.type === 'crab') ? 10 : 15; // Crabs are smaller
+
+             if (dist < eatDistance) {
+                 target.consumed = true; // Mark food for removal
+                 creature.targetFood = null;
+                  // Small happiness boost for eating? Optional.
+             } else {
+                 // Move towards food - faster than normal swimming
+                 const speed = (creature.type === 'crab' ? 25 : 40);
+                 creature.vx = (dx / dist) * speed;
+                 creature.vy = (dy / dist) * speed;
+
+                 // Flip graphic if needed
+                 if (creature.vx !== 0) {
+                    creature.scaleX = creature.vx > 0 ? 1 : -1;
+                 }
+
+                 creature.x += creature.vx * dt;
+                 // Prevent crab from flying
+                 creature.y = (creature.type === 'crab') ? groundLevel - 5 : creature.y + creature.vy * dt;
+
+                 // Clamp position to stay within bounds
+                 creature.x = Math.max(15, Math.min(aquariumWidth - 15, creature.x));
+                 if (creature.type !== 'crab') {
+                    creature.y = Math.max(15, Math.min(groundLevel - 20, creature.y));
+                 }
+             }
+        }
+
+        function findNearestFood(creature) {
+            let minDist = Infinity;
+            let nearestFood = null;
+            for (const food of foodParticles) {
+                if (!food.consumed) {
+                    const dx = food.x - creature.x;
+                    const dy = food.y - creature.y;
+                    const distSq = dx*dx + dy*dy;
+                    if (distSq < minDist) {
+                        minDist = distSq;
+                        nearestFood = food;
+                    }
+                }
+            }
+            creature.targetFood = nearestFood;
+        }
+
+
+        function createLightCircle(x, y) {
+            const circle = document.createElementNS(svgNS, 'circle');
+            circle.setAttribute('class', 'light-circle');
+            circle.setAttribute('cx', x);
+            circle.setAttribute('cy', y);
+            circle.setAttribute('r', 5); // Start small
+            dynamicElements.appendChild(circle);
+
+            let radius = 5;
+            let opacity = 0.8;
+            const duration = 0.5; // seconds
+            let elapsed = 0;
+
+            function animateCircle(timestamp) {
+                if (!animateCircle.startTime) animateCircle.startTime = timestamp;
+                const frameDt = (timestamp - animateCircle.startTime) / 1000;
+                animateCircle.startTime = timestamp; // Use delta time between frames
+
+                 if (elapsed >= duration) {
+                     dynamicElements.removeChild(circle);
+                     return;
+                 }
+
+                elapsed += frameDt;
+                const progress = elapsed / duration;
+
+                radius = 5 + progress * 25; // Expand radius
+                opacity = 0.8 * (1 - progress); // Fade out
+
+                circle.setAttribute('r', radius);
+                circle.setAttribute('opacity', opacity);
+
+                requestAnimationFrame(animateCircle);
+            }
+            requestAnimationFrame(animateCircle);
+        }
+
+
+        function triggerFoodBounty() {
+            if (gameWon) return; // Prevent multiple bounties
+            console.log("WIN! Food Bounty!");
+            gameWon = true;
+            foodParticles = []; // Clear any old food
+
+            const foodCount = 30;
+            for (let i = 0; i < foodCount; i++) {
+                const food = {
+                    element: document.createElementNS(svgNS, 'circle'),
+                    x: Math.random() * (aquariumWidth - 40) + 20, // Random x, avoiding edges
+                    y: -10 - Math.random() * 30, // Start above screen
+                    vy: Math.random() * 10 + 10, // Falling speed
+                    consumed: false
+                };
+                food.element.setAttribute('class', 'food');
+                food.element.setAttribute('cx', food.x);
+                food.element.setAttribute('cy', food.y);
+                food.element.setAttribute('r', 1.5 + Math.random()); // Vary size slightly
+                dynamicElements.appendChild(food.element);
+                foodParticles.push(food);
+            }
+
+            // Set all creatures to eating state
+            creatures.forEach(c => {
+                c.state = 'eating';
+                c.targetFood = null; // Will find food on next update
+            });
+        }
+
+        function updateFood(dt) {
+             const newFoodParticles = [];
+             for (let i = foodParticles.length - 1; i >= 0; i--) {
+                const food = foodParticles[i];
+                if (food.consumed) {
+                    if (food.element.parentNode === dynamicElements) {
+                       dynamicElements.removeChild(food.element);
+                    }
+                    continue; // Skip consumed food
+                }
+
+                food.y += food.vy * dt;
+                food.element.setAttribute('cy', food.y);
+
+                // Keep food if it's still falling and above ground
+                if (food.y < groundLevel) {
+                   newFoodParticles.push(food);
+                } else {
+                     // Food hit the ground, remove it visually
+                     if (food.element.parentNode === dynamicElements) {
+                         dynamicElements.removeChild(food.element);
+                     }
+                }
+             }
+             // Efficiently replace the array
+             foodParticles = newFoodParticles.reverse(); // Keep original order (optional)
+
+             // Check if all food is gone
+             if (gameWon && foodParticles.length === 0) {
+                 // Maybe transition back to swimming after a delay?
+                 // For now, they just stop trying to eat.
+                  creatures.forEach(c => {
+                    if (c.state === 'eating') {
+                         c.state = 'swimming'; // Or a happy idle state?
+                         c.happiness = HAPPINESS_THRESHOLD; // Keep them happy
+                    }
+                  });
+                  // Reset gameWon if you want the game to be replayable without reload
+                  // gameWon = false; // But this might instantly re-trigger win condition
+             }
+        }
+
+        function checkWinCondition() {
+            if (gameWon) return; // Don't check if already won
+
+            let allHappy = true;
+            for (const creature of creatures) {
+                if (creature.happiness < HAPPINESS_THRESHOLD) {
+                    allHappy = false;
+                    break;
+                }
+            }
+
+            if (allHappy) {
+                triggerFoodBounty();
+            }
+        }
+
+        // --- Interaction Handling ---
+
+         function getSVGPoint(event) {
+            const pt = svg.createSVGPoint();
+            if (event.touches && event.touches.length > 0) {
+                pt.x = event.touches[0].clientX;
+                pt.y = event.touches[0].clientY;
+            } else {
+                pt.x = event.clientX;
+                pt.y = event.clientY;
+            }
+            // Transform screen coordinates to SVG coordinates
+            return pt.matrixTransform(svg.getScreenCTM().inverse());
+         }
+
+        function handleInteractionStart(event, creature) {
+             event.preventDefault(); // Prevent default browser actions like drag/scroll
+             event.stopPropagation(); // Stop event bubbling
+
+             interactionPos = getSVGPoint(event); // Store initial pos
+             strokingCreature = creature;
+             strokingCreature.element.classList.add('stroking');
+
+             // Attach move/end listeners to the window/document to capture events
+             // even if the cursor moves off the creature briefly.
+             window.addEventListener('mousemove', handleInteractionMove);
+             window.addEventListener('mouseup', handleInteractionEnd);
+             window.addEventListener('touchmove', handleInteractionMove, { passive: false });
+             window.addEventListener('touchend', handleInteractionEnd);
+        }
+
+         function handleInteractionMove(event) {
+            if (!strokingCreature) return;
+             event.preventDefault();
+
+            const currentPos = getSVGPoint(event);
+            const dx = currentPos.x - interactionPos.x;
+            const dy = currentPos.y - interactionPos.y;
+            const distanceMoved = Math.sqrt(dx*dx + dy*dy);
+
+             // Check if pointer is still over the creature (approx check using bounding box)
+             // More accurate check would use isPointInFill/isPointInStroke if needed
+             const bbox = strokingCreature.element.getBBox();
+             const creatureCTM = strokingCreature.element.getCTM();
+             const transformedBBox = { // Approximate transformed bounding box
+                x: bbox.x * creatureCTM.a + creatureCTM.e,
+                y: bbox.y * creatureCTM.d + creatureCTM.f,
+                width: bbox.width * creatureCTM.a,
+                height: bbox.height * creatureCTM.d
+             };
+
+             // Simple check if currentPos is roughly within the bounding box area
+             // This isn't perfect for rotated/scaled elements but good enough here
+             const creatureScreenPos = svg.createSVGPoint();
+             creatureScreenPos.x = strokingCreature.x;
+             creatureScreenPos.y = strokingCreature.y;
+             const screenPos = creatureScreenPos.matrixTransform(svg.getScreenCTM());
+
+             // Use a radius around the creature center for hit detection during move
+             const hitRadius = Math.max(bbox.width, bbox.height) * 1.2; // Generous hit radius
+             const distToCenterSq = (currentPos.x - strokingCreature.x)**2 + (currentPos.y - strokingCreature.y)**2;
+
+
+            // Add happiness only if moving and still near the creature
+            if (distanceMoved > 1 && distToCenterSq < (hitRadius * hitRadius)) { // Moved slightly & still close
+                const now = performance.now();
+                const moveDt = (now - (handleInteractionMove.lastTime || now)) / 1000;
+                handleInteractionMove.lastTime = now;
+
+                if (moveDt > 0) { // Avoid division by zero or huge values on first move
+                     strokingCreature.happiness = Math.min(HAPPINESS_THRESHOLD, strokingCreature.happiness + STROKE_HAPPINESS_RATE * moveDt);
+                     updateHappinessIndicator(strokingCreature);
+                     checkWinCondition(); // Check win after happiness change
+                }
+                 // Update interactionPos only when actively stroking
+                interactionPos = currentPos;
+            } else {
+                 // Optional: Stop glow if cursor moves too far away while holding?
+                 // strokingCreature.element.classList.remove('stroking');
+            }
+
+
+         }
+
+        function handleInteractionEnd(event) {
+             if (!strokingCreature) return;
+              event.preventDefault(); // Might be needed for touchend
+
+             const endPos = getSVGPoint(event.changedTouches ? event.changedTouches[0] : event);
+             const dx = endPos.x - interactionPos.x;
+             const dy = endPos.y - interactionPos.y;
+             const distanceMoved = Math.sqrt(dx*dx + dy*dy);
+
+
+             // Check for a "tap" (minimal movement) on a paused creature
+             if (distanceMoved < 5 && strokingCreature.state === 'paused') {
+                 console.log(`Light Circle on ${strokingCreature.id}!`);
+                 strokingCreature.happiness = Math.min(HAPPINESS_THRESHOLD, strokingCreature.happiness + LIGHT_CIRCLE_HAPPINESS_BONUS);
+                 updateHappinessIndicator(strokingCreature);
+                 createLightCircle(strokingCreature.x, strokingCreature.y);
+                 // Make the creature happy and start swimming again
+                 strokingCreature.state = 'swimming';
+                 strokingCreature.pauseTimer = Math.random() * 5 + 3; // Reset pause timer
+                 checkWinCondition();
+             }
+
+
+             strokingCreature.element.classList.remove('stroking');
+             strokingCreature = null;
+
+             // Remove global listeners
+             window.removeEventListener('mousemove', handleInteractionMove);
+             window.removeEventListener('mouseup', handleInteractionEnd);
+             window.removeEventListener('touchmove', handleInteractionMove);
+             window.removeEventListener('touchend', handleInteractionEnd);
+             delete handleInteractionMove.lastTime; // Reset last move time
+         }
+
+
+        // --- Game Loop ---
+        function gameLoop(timestamp) {
+            const dt = (timestamp - lastTime) / 1000; // Delta time in seconds
+            lastTime = timestamp;
+
+            if (dt > 0.1) { // Avoid large jumps if tab was inactive
+                 requestAnimationFrame(gameLoop);
+                 return;
+            }
+
+            // Update Creatures
+            creatures.forEach(creature => {
+                if (!gameWon || creature.state === 'eating') { // Only update movement if not won, or if eating
+                   moveCreature(creature, dt);
+                }
+                 // Always update happiness indicator and decay (unless eating/won)
+                 if (!gameWon && creature.state !== 'eating') {
+                    creature.happiness = Math.max(0, creature.happiness - HAPPINESS_DECAY_RATE * dt);
+                 }
+                 updateHappinessIndicator(creature);
+            });
+
+            // Update Food (if any)
+            if (foodParticles.length > 0) {
+                updateFood(dt);
+            }
+
+             // Check win condition (only if not already won)
+             if (!gameWon) {
+                checkWinCondition();
+             }
+
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        // --- Initialization ---
+        function init() {
+            creatures.push(createCreature('fish1', 'fish', 100, 80));
+            creatures.push(createCreature('fish2', 'fish', 250, 150));
+            creatures.push(createCreature('jellyfish1', 'jellyfish', 200, 50));
+            creatures.push(createCreature('crab1', 'crab', 100, groundLevel - 5)); // Start crab on ground
+
+             // Prevent default drag behavior on the SVG itself (e.g., ghost image)
+             svg.addEventListener('dragstart', (e) => e.preventDefault());
+
+            lastTime = performance.now();
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Start the game when the DOM is ready
+        document.addEventListener('DOMContentLoaded', init);
+
+    </script>
+</body>
+</html>
