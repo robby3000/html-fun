@@ -2,198 +2,164 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dog Ball Game</title>
+  <title>Cartoon Dog Ball Catch Game</title>
   <style>
-    body, html {
+    html, body {
       margin: 0;
       padding: 0;
-      height: 100%;
-      background-color: #a7f3d0;
       overflow: hidden;
-      display: flex;
-      justify-content: center;
-      align-items: center;
+      background: #8fd694;
+      font-family: sans-serif;
     }
-
-    #gameCanvas {
-      width: 100%;
-      height: 100%;
+    #gameArea {
       position: relative;
+      width: 100vw;
+      height: 100vh;
     }
-
     .dog {
       position: absolute;
-      bottom: 0;
-      left: 30%;
-      width: 150px;
-      height: 150px;
+      bottom: 50px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 180px;
+      height: 180px;
       z-index: 10;
     }
-
-    .dog svg {
-      width: 100%;
-      height: 100%;
-    }
-
     .ball {
       position: absolute;
-      width: 40px;
-      height: 40px;
-      background-color: #FFB6C1;
+      width: 30px;
+      height: 30px;
+      background: pink;
       border-radius: 50%;
-      z-index: 5;
+      display: none;
     }
-
+    #scoreboard {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      font-size: 24px;
+      background: rgba(255,255,255,0.7);
+      padding: 8px;
+      border-radius: 6px;
+    }
     #timer {
       position: absolute;
-      top: 20px;
-      left: 20px;
+      top: 10px;
+      right: 10px;
       font-size: 24px;
-      color: black;
-    }
-
-    #score {
-      position: absolute;
-      top: 20px;
-      right: 20px;
-      font-size: 24px;
-      color: black;
-    }
-
-    .hidden {
-      display: none;
+      background: rgba(255,255,255,0.7);
+      padding: 8px;
+      border-radius: 6px;
     }
   </style>
 </head>
 <body>
-  <div id="gameCanvas">
-    <div id="score">Score: 0</div>
-    <div id="timer">Time: 60</div>
+  <div id="gameArea">
     <div class="dog">
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
-        <circle cx="50" cy="50" r="40" fill="#ffb6c1" />
-        <circle cx="35" cy="40" r="5" fill="#000" />
-        <circle cx="65" cy="40" r="5" fill="#000" />
-        <path d="M 50 60 Q 35 75 50 80 Q 65 75 50 60" fill="#fff" />
-        <path d="M 50 75 Q 45 80 55 80 Q 50 75 50 75" fill="#ff4d4d"/>
+      <svg viewBox="0 0 200 200">
+        <circle cx="100" cy="100" r="80" fill="#fcb" />
+        <polygon points="60,40 70,10 80,40" fill="#fcb" />
+        <polygon points="120,40 130,10 140,40" fill="#fcb" />
+        <circle cx="75" cy="90" r="10" fill="black"/>
+        <circle cx="125" cy="90" r="10" fill="black"/>
+        <path d="M70,130 Q100,160 130,130" fill="white"/>
+        <path d="M85,135 Q100,150 115,135" fill="pink"/>
+        <rect x="90" y="135" width="5" height="10" fill="black"/>
+        <rect x="105" y="135" width="5" height="10" fill="black"/>
       </svg>
     </div>
-    <div class="ball hidden" id="ball"></div>
+    <div id="ball" class="ball"></div>
+    <div id="scoreboard">Score: 0</div>
+    <div id="timer">Time: 60</div>
   </div>
 
   <script>
-    const canvas = document.getElementById('gameCanvas');
-    const scoreElement = document.getElementById('score');
-    const timerElement = document.getElementById('timer');
-    const dogElement = document.querySelector('.dog');
-    const ballElement = document.getElementById('ball');
+    const dog = document.querySelector('.dog');
+    const ball = document.getElementById('ball');
+    const scoreDisplay = document.getElementById('scoreboard');
+    const timerDisplay = document.getElementById('timer');
+    const gameArea = document.getElementById('gameArea');
+
     let score = 0;
     let timeLeft = 60;
-    let interval;
-    let ballThrown = false;
-    let ballCatch = false;
-    
-    const ballSpeed = 5;
-    const gravity = 0.2;
-    let ballPosition = { x: 0, y: 0, vx: 0, vy: 0 };
-    const dogPosition = { x: 35, y: 10 };
+    let gameInterval;
 
-    // Timer countdown
-    function startTimer() {
-      interval = setInterval(() => {
+    let throwing = false;
+    let startX, startY;
+
+    function startGame() {
+      gameInterval = setInterval(() => {
         timeLeft--;
-        timerElement.innerHTML = `Time: ${timeLeft}`;
+        timerDisplay.textContent = `Time: ${timeLeft}`;
         if (timeLeft <= 0) {
-          clearInterval(interval);
-          alert(`Game Over! Your score is ${score}`);
-          resetGame();
+          clearInterval(gameInterval);
+          alert(`Game over! Final Score: ${score}`);
+          location.reload();
         }
       }, 1000);
     }
 
-    // Update score and reset game
-    function resetGame() {
-      score = 0;
-      scoreElement.innerHTML = `Score: ${score}`;
-      timeLeft = 60;
-      ballThrown = false;
-      ballCatch = false;
-      timerElement.innerHTML = `Time: ${timeLeft}`;
-    }
+    function throwBall(vx, vy) {
+      let x = 50, y = window.innerHeight - 80;
+      ball.style.left = x + 'px';
+      ball.style.top = y + 'px';
+      ball.style.display = 'block';
 
-    // Swipe event for mobile or mouse throw
-    let touchStart = null;
-    canvas.addEventListener('mousedown', (e) => {
-      touchStart = { x: e.clientX, y: e.clientY };
-    });
+      let gravity = 0.5;
+      let interval = setInterval(() => {
+        x += vx;
+        y += vy;
+        vy += gravity;
+        ball.style.left = x + 'px';
+        ball.style.top = y + 'px';
 
-    canvas.addEventListener('mouseup', (e) => {
-      if (touchStart) {
-        const touchEnd = { x: e.clientX, y: e.clientY };
-        const deltaX = touchEnd.x - touchStart.x;
-        const deltaY = touchEnd.y - touchStart.y;
-        
-        if (Math.abs(deltaY) > Math.abs(deltaX)) {
-          startThrow(deltaX, deltaY);
+        // Get dog bounding box
+        const dogRect = dog.getBoundingClientRect();
+        const ballRect = ball.getBoundingClientRect();
+
+        if (
+          ballRect.left < dogRect.right &&
+          ballRect.right > dogRect.left &&
+          ballRect.top < dogRect.bottom &&
+          ballRect.bottom > dogRect.top
+        ) {
+          score++;
+          scoreDisplay.textContent = `Score: ${score}`;
+          clearInterval(interval);
+          ball.style.display = 'none';
+
+          if (score >= 10) {
+            clearInterval(gameInterval);
+            alert('You won! Dog caught 10 balls!');
+            location.reload();
+          }
         }
-      }
-      touchStart = null;
+
+        if (x > window.innerWidth || y > window.innerHeight) {
+          clearInterval(interval);
+          ball.style.display = 'none';
+        }
+      }, 20);
+    }
+
+    gameArea.addEventListener('mousedown', (e) => {
+      if (e.clientX > window.innerWidth * 0.3) return; // bottom-left only
+      throwing = true;
+      startX = e.clientX;
+      startY = e.clientY;
     });
 
-    // Throw ball physics
-    function startThrow(dx, dy) {
-      if (ballThrown) return;
-      
-      ballPosition.x = 50;
-      ballPosition.y = 60;
-      ballPosition.vx = dx / 10;
-      ballPosition.vy = dy / 10;
-      ballThrown = true;
-      ballCatch = false;
-      ballElement.classList.remove('hidden');
-      ballElement.style.left = `${ballPosition.x}px`;
-      ballElement.style.bottom = `${ballPosition.y}px`;
-
-      // Animate ball arc
-      animateBall();
-    }
-
-    // Animation for ball motion
-    function animateBall() {
-      if (!ballThrown) return;
-
-      ballPosition.x += ballPosition.vx;
-      ballPosition.y += ballPosition.vy;
-
-      ballPosition.vy -= gravity;
-
-      // Check if ball catches the dog
-      if (
-        ballPosition.x >= dogPosition.x - 10 &&
-        ballPosition.x <= dogPosition.x + 60 &&
-        ballPosition.y <= 60
-      ) {
-        ballCatch = true;
-        score++;
-        scoreElement.innerHTML = `Score: ${score}`;
-        ballThrown = false;
-        ballElement.classList.add('hidden');
+    gameArea.addEventListener('mouseup', (e) => {
+      if (!throwing) return;
+      const dx = e.clientX - startX;
+      const dy = e.clientY - startY;
+      if (dy < -30) { // Upward swipe
+        throwBall(dx * 0.2, dy * 0.2);
       }
+      throwing = false;
+    });
 
-      if (ballPosition.y <= 0 || ballPosition.x < 0 || ballPosition.x > window.innerWidth) {
-        ballThrown = false;
-        ballElement.classList.add('hidden');
-      } else {
-        ballElement.style.left = `${ballPosition.x}px`;
-        ballElement.style.bottom = `${ballPosition.y}px`;
-        requestAnimationFrame(animateBall);
-      }
-    }
-
-    // Start the game
-    startTimer();
-
+    startGame();
   </script>
 </body>
 </html>
