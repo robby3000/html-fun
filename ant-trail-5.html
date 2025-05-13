@@ -38,7 +38,6 @@
         
         .path-line {
             fill: none;
-            stroke: black;
             stroke-linecap: round;
             stroke-linejoin: round;
         }
@@ -932,10 +931,21 @@ function animateLegs() {
             // Trail color picker
             trailColor.addEventListener('input', function() {
                 trailColorPreview.style.backgroundColor = this.value;
-                // Update current path color
-                if (currentPath) {
-                    currentPath.setAttribute("stroke", this.value);
-                }
+                
+                // Start a new path with the new color
+                // Save current position
+                const currentX = antX;
+                const currentY = antY;
+                
+                // End current path
+                currentPath = null;
+                currentPathPoints = [];
+                currentPathSegments = [];
+                
+                // Start new path at current position with new color
+                antX = currentX;
+                antY = currentY;
+                startNewPath(); // This will use the new color value
             });
             
             // Palette selector
