@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rich Text Editor</title>
+  <style>
+    /* Mobile-first styling */
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background: #fafafa;
+    }
+    .editor-container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    /* Title area */
+    #pageTitle {
+      font-size: 1.5em;
+      padding: 5px 10px;
+      margin: 0;
+      border: none;
+      outline: none;
+      color: #888;
+    }
+    #pageTitle:empty::before {
+      content: attr(data-placeholder);
+      color: #888;
+    }
+    hr {
+      border: none;
+      height: 1px;
+      background: #ccc;
+      margin: 10px 0;
+    }
+    /* Toolbar styling */
+    #toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      margin-bottom: 10px;
+    }
+    #toolbar button {
+      padding: 10px;
+      background: #fff;
+      border: 1px solid #ccc;
+      cursor: pointer;
+      font-size: 0.9em;
+    }
+    .dropdown-button {
+      position: relative;
+      display: inline-block;
+    }
+    .dropdown-button > button {
+      min-width: 100px;
+    }
+    .dropdown-content {
+      display: none;
+      position: absolute;
+      background-color: #f9f9f9;
+      min-width: 120px;
+      box-shadow: 0px 8px 16px rgba(0,0,0,0.2);
+      z-index: 1;
+    }
+    .dropdown-content button {
+      width: 100%;
+      padding: 8px 10px;
+      border: none;
+      background: none;
+      text-align: left;
+      cursor: pointer;
+    }
+    .dropdown-button:hover .dropdown-content {
+      display: block;
+    }
+    /* Editor area */
+    #editor {
+      border: 1px solid #ccc;
+      min-height: 300px;
+      padding: 10px;
+      background: #fff;
+    }
+    @media (min-width: 768px) {
+      #editor {
+        min-height: 400px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="editor-container">
+    <!-- Page Title (contenteditable with a placeholder) -->
+    <div id="pageTitle" contenteditable="true" data-placeholder="Add Page Title Here"></div>
+    <hr>
+    <!-- Toolbar with editor tools -->
+    <div id="toolbar">
+      <!-- Text Size options -->
+      <div class="dropdown-button">
+        <button type="button">Text Size</button>
+        <div class="dropdown-content">
+          <button onclick="setFontSize('2')">S</button>
+          <button onclick="setFontSize('3')">M</button>
+          <button onclick="setFontSize('5')">L</button>
+          <button onclick="setFontSize('7')">XL</button>
+        </div>
+      </div>
+      <!-- Text Color options -->
+      <div class="dropdown-button">
+        <button type="button">Text Color</button>
+        <div class="dropdown-content">
+          <button style="color:black;" onclick="setTextColor('black')">Black</button>
+          <button style="color:red;" onclick="setTextColor('red')">Red</button>
+          <button style="color:blue;" onclick="setTextColor('blue')">Blue</button>
+          <button style="color:green;" onclick="setTextColor('green')">Green</button>
+          <button style="color:orange;" onclick="setTextColor('orange')">Orange</button>
+          <button style="color:purple;" onclick="setTextColor('purple')">Purple</button>
+        </div>
+      </div>
+      <!-- Bold, Italic, Underline -->
+      <button type="button" onclick="execCmd('bold')"><b>B</b></button>
+      <button type="button" onclick="execCmd('italic')"><i>I</i></button>
+      <button type="button" onclick="execCmd('underline')"><u>U</u></button>
+      <!-- Highlight options -->
+      <div class="dropdown-button">
+        <button type="button">Highlight</button>
+        <div class="dropdown-content">
+          <button style="background:yellow;" onclick="setHighlightColor('yellow')">Yellow</button>
+          <button style="background:lightgreen;" onclick="setHighlightColor('lightgreen')">Light Green</button>
+          <button style="background:lightblue;" onclick="setHighlightColor('lightblue')">Light Blue</button>
+          <button style="background:pink;" onclick="setHighlightColor('pink')">Pink</button>
+          <button style="background:orange;" onclick="setHighlightColor('orange')">Orange</button>
+          <button style="background:lightgray;" onclick="setHighlightColor('lightgray')">Gray</button>
+        </div>
+      </div>
+      <!-- Hyperlink -->
+      <button type="button" onclick="addLink()">Hyperlink</button>
+      <!-- Image insertion -->
+      <button type="button" onclick="triggerImageUpload()">Image</button>
+      <input type="file" id="imageInput" accept="image/*" style="display:none" onchange="insertImage(this)" />
+      <!-- Save Options -->
+      <div class="dropdown-button">
+        <button type="button">Save</button>
+        <div class="dropdown-content">
+          <button onclick="saveDocument(false)">Save with Tools</button>
+          <button onclick="saveDocument(true)">Save as Read Only</button>
+        </div>
+      </div>
+      <!-- Share Options -->
+      <div class="dropdown-button">
+        <button type="button">Share</button>
+        <div class="dropdown-content">
+          <button onclick="shareDocument(false)">Share with Tools</button>
+          <button onclick="shareDocument(true)">Share as Read Only</button>
+        </div>
+      </div>
+    </div>
+    <!-- Editable content area -->
+    <div id="editor" contenteditable="true"></div>
+  </div>
+
+  <script>
+    // When the page loads, ensure title shows placeholder text if empty
+    document.addEventListener("DOMContentLoaded", function() {
+      const titleDiv = document.getElementById("pageTitle");
+      if (!titleDiv.innerText.trim()) {
+        titleDiv.innerText = "Add Page Title Here";
+      }
+      titleDiv.addEventListener("focus", function() {
+        if (titleDiv.innerText === "Add Page Title Here") {
+          titleDiv.innerText = "";
+          titleDiv.style.color = "#000";
+        }
+      });
+      titleDiv.addEventListener("blur", function() {
+        if (titleDiv.innerText.trim() === "") {
+          titleDiv.innerText = "Add Page Title Here";
+          titleDiv.style.color = "#888";
+        }
+      });
+      // Enable CSS styling with execCommand
+      document.execCommand("styleWithCSS", false, true);
+    });
+    
+    // Basic execCommand wrapper for formatting actions
+    function execCmd(command) {
+      document.execCommand(command, false, null);
+    }
+    
+    // Text Size: mapping sizes (using fontSize values 2,3,5,7)
+    function setFontSize(size) {
+      document.execCommand("fontSize", false, size);
+    }
+    
+    // Set text (foreground) color
+    function setTextColor(color) {
+      document.execCommand("foreColor", false, color);
+    }
+    
+    // Set background (highlight) color for selected text
+    function setHighlightColor(color) {
+      // Note: 'hiliteColor' works in most browsers when styleWithCSS is enabled.
+      document.execCommand("hiliteColor", false, color);
+    }
+    
+    // Create hyperlink on the selected text
+    function addLink() {
+      let url = prompt("Enter the URL", "https://");
+      if (url) {
+        document.execCommand("createLink", false, url);
+      }
+    }
+    
+    // Trigger the hidden file input to upload an image
+    function triggerImageUpload() {
+      document.getElementById("imageInput").click();
+    }
+    
+    // Read the image file and insert it as a data URL
+    function insertImage(input) {
+      if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function (e) {
+          document.execCommand("insertImage", false, e.target.result);
+        }
+        reader.readAsDataURL(input.files[0]);
+      }
+    }
+    
+    // Save document function creates a new HTML file based on the current content.
+    // If readOnly is true, the saved file does not include the editing toolbar.
+    function saveDocument(readOnly) {
+      const titleDiv = document.getElementById("pageTitle");
+      const titleText = titleDiv.innerText.trim();
+      if (titleText === "" || titleText === "Add Page Title Here") {
+        alert("Please provide a page title.");
+        return;
+      }
+      const editorContent = document.getElementById("editor").innerHTML;
+      let html = "<!DOCTYPE html><html><head><meta charset='UTF-8'><meta name='viewport' content='width=device-width, initial-scale=1.0'>";
+      html += "<title>" + titleText + "</title>";
+      html += "<style>body { font-family: Arial, sans-serif; margin: 20px; padding: 0; } hr { border: 0; height: 1px; background: #ccc; }</style></head><body>";
+      html += "<h1>" + titleText + "</h1><hr>" + editorContent;
+      if (!readOnly) {
+        // If saving with tools, include the toolbar (for further editing)
+        html += document.getElementById("toolbar").outerHTML;
+      }
+      html += "</body></html>";
+      
+      const blob = new Blob([html], { type: "text/html" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = titleText + (readOnly ? "_readonly.html" : ".html");
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+    
+    // Share document function.
+    // If navigator.share is available, it will attempt to share the generated document URL.
+    // Otherwise, it opens the generated document in a new window.
+    function shareDocument(readOnly) {
+      const titleDiv = document.getElementById("pageTitle");
+      const titleText = titleDiv.innerText.trim();
+      if (titleText === "" || titleText === "Add Page Title Here") {
+        alert("Please provide a page title.");
+        return;
+      }
+      const editorContent = document.getElementById("editor").innerHTML;
+      let html = "<!DOCTYPE html><html><head><meta charset='UTF-8'><meta name='viewport' content='width=device-width, initial-scale=1.0'>";
+      html += "<title>" + titleText + "</title>";
+      html += "<style>body { font-family: Arial, sans-serif; margin: 20px; padding: 0; } hr { border: 0; height: 1px; background: #ccc; }</style></head><body>";
+      html += "<h1>" + titleText + "</h1><hr>" + editorContent;
+      if (!readOnly) {
+        html += document.getElementById("toolbar").outerHTML;
+      }
+      html += "</body></html>";
+      
+      if (navigator.share) {
+        const blob = new Blob([html], { type: "text/html" });
+        const shareUrl = URL.createObjectURL(blob);
+        navigator.share({
+          title: titleText,
+          url: shareUrl
+        }).catch(console.error);
+      } else {
+        const newWindow = window.open();
+        newWindow.document.write(html);
+        newWindow.document.close();
+      }
+    }
+  </script>
+</body>
+</html>
