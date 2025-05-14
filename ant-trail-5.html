@@ -344,16 +344,13 @@
             let svgWidth = viewBox.width;
             let svgHeight;
             
-            // Check if mobile and adjust height accordingly
+            // Set SVG height based on viewBox aspect ratio, regardless of device
+            const viewportWidth = window.innerWidth;
+            const viewportHeight = window.innerHeight;
             const isMobileCheck = window.innerWidth <= 600;
-            if (isMobileCheck) {
-                // For mobile, constrain by vertical viewport
-                const viewportWidth = window.innerWidth;
-                const viewportHeight = window.innerHeight;
-                svgHeight = viewportHeight * (viewBox.width / viewportWidth);
-            } else {
-                svgHeight = viewBox.height;
-            }
+            
+            // Always use the full height of the SVG viewBox
+            svgHeight = viewBox.height;
             
             // Animation variables
             let antX = -50; // Start off-screen
@@ -579,9 +576,9 @@
                     svgPoint.y = centerScreenY + svgRect.top;
                     const centerSvgPoint = svgPoint.matrixTransform(inverse);
                     
-                    // Set target with some randomness
-                    targetX = centerSvgPoint.x + (Math.random() - 0.5) * svgWidth * 0.4;
-                    targetY = centerSvgPoint.y + (Math.random() - 0.5) * svgHeight * 0.4;
+                    // Set target with some randomness - use full SVG dimensions
+                    targetX = centerSvgPoint.x + (Math.random() - 0.5) * svgWidth * 0.8;
+                    targetY = centerSvgPoint.y + (Math.random() - 0.5) * svgHeight * 0.8;
                     
                     // Make direction change faster when near edges
                     directionChangeSpeed = 0.08;
@@ -642,15 +639,17 @@ function animateLegs() {
 }
             
             function setNewTarget() {
-                // Set a new random target
+                // Set a new random target using the full SVG dimensions
                 targetX = Math.random() * svgWidth;
                 targetY = Math.random() * svgHeight;
                 
                 // Add some randomness to make path more interesting
                 if (Math.random() > 0.7) {
                     // Sometimes make a more dramatic turn
-                    targetX = antX + (Math.random() - 0.5) * 200;
-                    targetY = antY + (Math.random() - 0.5) * 200;
+                    // Use proportional values based on SVG dimensions for consistent behavior
+                    const turnDistance = Math.min(svgWidth, svgHeight) * 0.3;
+                    targetX = antX + (Math.random() - 0.5) * turnDistance;
+                    targetY = antY + (Math.random() - 0.5) * turnDistance;
                 }
                 
                 // Reset curve parameters for new direction - more gentle values for smoother movement
@@ -977,13 +976,9 @@ function animateLegs() {
                 // This ensures the ant moves within the visible area
                 svgWidth = viewBox.width;
                 
-                // For mobile, constrain by vertical viewport
-                if (isMobile) {
-                    // Set height based on actual viewport height to constrain the ant
-                    svgHeight = viewportHeight * (viewBox.width / viewportWidth);
-                } else {
-                    svgHeight = viewBox.height * (viewportHeight / viewportWidth);
-                }
+                // Always use the full height of the SVG viewBox
+                // This ensures the ant can travel throughout the entire SVG area
+                svgHeight = viewBox.height;
                 
                 // If ant is near an edge after resize, move it toward center
                 const margin = 50;
