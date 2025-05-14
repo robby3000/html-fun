@@ -233,31 +233,64 @@
             <g id="filledAreas"></g>
             <!-- Path lines will be added here -->
             <g id="pathLines"></g>
-            <!-- Ant SVG -->
-            <g id="ant" class="ant" transform="translate(0, 0) rotate(0)">
-                <!-- Ant abdomen (rear part) -->
-                <ellipse cx="-8" cy="0" rx="10" ry="8" fill="#222222" />
-                <!-- Ant thorax (middle part) -->
-                <ellipse cx="5" cy="0" rx="7" ry="6" fill="#333333" />
-                <!-- Ant head -->
-                <circle cx="15" cy="0" r="5" fill="#444444" />
-                <!-- Antennae -->
-                <path d="M18,-2 Q25,-10 30,-8" stroke="#333333" stroke-width="1" fill="none" />
-                <path d="M18,2 Q25,10 30,8" stroke="#333333" stroke-width="1" fill="none" />
-                <!-- Mandibles -->
-                <path d="M20,-2 Q23,-4 24,-3" stroke="#333333" stroke-width="1" fill="none" />
-                <path d="M20,2 Q23,4 24,3" stroke="#333333" stroke-width="1" fill="none" />
-                <!-- Legs (left side) -->
-                <g id="leftLegs">
-                    <path id="leftFrontLeg" class="leg" d="M8,-5 Q2,-15 -5,-18" stroke="#333333" stroke-width="1.5" fill="none" />
-                    <path id="leftMiddleLeg" class="leg" d="M2,-5 Q-3,-12 -8,-10" stroke="#333333" stroke-width="1.5" fill="none" />
-                    <path id="leftRearLeg" class="leg" d="M-5,-5 Q-12,-15 -18,-18" stroke="#333333" stroke-width="1.5" fill="none" />
+            <!-- Creatures -->
+            <g id="creatures">
+                <!-- Ant SVG -->
+                <g id="ant" class="creature" transform="translate(0, 0) rotate(0)">
+                    <!-- Ant abdomen (rear part) -->
+                    <ellipse cx="-8" cy="0" rx="10" ry="8" fill="#222222" />
+                    <!-- Ant thorax (middle part) -->
+                    <ellipse cx="5" cy="0" rx="7" ry="6" fill="#333333" />
+                    <!-- Ant head -->
+                    <circle cx="15" cy="0" r="5" fill="#444444" />
+                    <!-- Antennae -->
+                    <path d="M18,-2 Q25,-10 30,-8" stroke="#333333" stroke-width="1" fill="none" />
+                    <path d="M18,2 Q25,10 30,8" stroke="#333333" stroke-width="1" fill="none" />
+                    <!-- Mandibles -->
+                    <path d="M20,-2 Q23,-4 24,-3" stroke="#333333" stroke-width="1" fill="none" />
+                    <path d="M20,2 Q23,4 24,3" stroke="#333333" stroke-width="1" fill="none" />
+                    <!-- Legs (left side) -->
+                    <g id="leftLegs">
+                        <path id="leftFrontLeg" class="leg" d="M8,-5 Q2,-15 -5,-18" stroke="#333333" stroke-width="1.5" fill="none" />
+                        <path id="leftMiddleLeg" class="leg" d="M2,-5 Q-3,-12 -8,-10" stroke="#333333" stroke-width="1.5" fill="none" />
+                        <path id="leftRearLeg" class="leg" d="M-5,-5 Q-12,-15 -18,-18" stroke="#333333" stroke-width="1.5" fill="none" />
+                    </g>
+                    <!-- Legs (right side) -->
+                    <g id="rightLegs">
+                        <path id="rightFrontLeg" class="leg" d="M8,5 Q2,15 -5,18" stroke="#333333" stroke-width="1.5" fill="none" />
+                        <path id="rightMiddleLeg" class="leg" d="M2,5 Q-3,12 -8,10" stroke="#333333" stroke-width="1.5" fill="none" />
+                        <path id="rightRearLeg" class="leg" d="M-5,5 Q-12,15 -18,18" stroke="#333333" stroke-width="1.5" fill="none" />
+                    </g>
                 </g>
-                <!-- Legs (right side) -->
-                <g id="rightLegs">
-                    <path id="rightFrontLeg" class="leg" d="M8,5 Q2,15 -5,18" stroke="#333333" stroke-width="1.5" fill="none" />
-                    <path id="rightMiddleLeg" class="leg" d="M2,5 Q-3,12 -8,10" stroke="#333333" stroke-width="1.5" fill="none" />
-                    <path id="rightRearLeg" class="leg" d="M-5,5 Q-12,15 -18,18" stroke="#333333" stroke-width="1.5" fill="none" />
+                
+                <!-- Ladybird SVG -->
+                <g id="ladybird" class="creature" transform="translate(0, 0) rotate(0)" style="display: none;">
+                    <!-- Body (main shell) -->
+                    <ellipse cx="0" cy="0" rx="15" ry="12" fill="#E53935" />
+                    <!-- Head -->
+                    <circle cx="15" cy="0" r="5" fill="#111111" />
+                    <!-- Spots -->
+                    <circle cx="-8" cy="-5" r="2.5" fill="#111111" />
+                    <circle cx="-2" cy="2" r="2.5" fill="#111111" />
+                    <circle cx="5" cy="-6" r="2.5" fill="#111111" />
+                    <circle cx="8" cy="4" r="2.5" fill="#111111" />
+                    <!-- Center line -->
+                    <path d="M0,-12 L0,12" stroke="#111111" stroke-width="1" />
+                    <!-- Antennae -->
+                    <path d="M17,-2 Q22,-8 25,-6" stroke="#111111" stroke-width="1" fill="none" />
+                    <path d="M17,2 Q22,8 25,6" stroke="#111111" stroke-width="1" fill="none" />
+                    <!-- Legs (left side) -->
+                    <g id="ladybirdLeftLegs">
+                        <path class="leg" d="M8,-8 Q2,-15 -5,-18" stroke="#111111" stroke-width="1.5" fill="none" />
+                        <path class="leg" d="M0,-8 Q-5,-15 -10,-18" stroke="#111111" stroke-width="1.5" fill="none" />
+                        <path class="leg" d="M-8,-8 Q-12,-15 -18,-18" stroke="#111111" stroke-width="1.5" fill="none" />
+                    </g>
+                    <!-- Legs (right side) -->
+                    <g id="ladybirdRightLegs">
+                        <path class="leg" d="M8,8 Q2,15 -5,18" stroke="#111111" stroke-width="1.5" fill="none" />
+                        <path class="leg" d="M0,8 Q-5,15 -10,18" stroke="#111111" stroke-width="1.5" fill="none" />
+                        <path class="leg" d="M-8,8 Q-12,15 -18,18" stroke="#111111" stroke-width="1.5" fill="none" />
+                    </g>
                 </g>
             </g>
         </svg>
@@ -292,7 +325,13 @@
                 <input type="range" id="maxPathLength" min="100" max="5000" step="100" value="1000">
             </div>
             <div class="control">
+                <button id="pausePlay">Pause</button>
+            </div>
+            <div class="control">
                 <button id="reset">Reset Art</button>
+            </div>
+            <div class="control">
+                <button id="exportButton">Export JPEG</button>
             </div>
         </div>
 
@@ -316,13 +355,23 @@
                 <option value="random">Random Colors</option>
             </select>
         </div>
+
+        <div class="settings-section">
+            <h4>Creature</h4>
+            <select id="creatureSelector" class="palette-selector">
+                <option value="ant">Ant</option>
+                <option value="ladybird">Ladybird</option>
+            </select>
+        </div>
     </div>
     
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // Get elements
             const canvas = document.getElementById('canvas');
+            const creatures = document.getElementById('creatures');
             const ant = document.getElementById('ant');
+            const ladybird = document.getElementById('ladybird');
             const pathLines = document.getElementById('pathLines');
             const settingsIcon = document.getElementById('settingsIcon');
             const settingsPanel = document.getElementById('settingsPanel');
@@ -330,12 +379,17 @@
             const trailColor = document.getElementById('trailColor');
             const trailColorPreview = document.getElementById('trailColorPreview');
             const paletteSelector = document.getElementById('paletteSelector');
+            const creatureSelector = document.getElementById('creatureSelector');
             const filledAreas = document.getElementById('filledAreas');
+            
+            // Current active creature
+            let activeCreature = ant;
             
             // Controls
             const speedControl = document.getElementById('speed');
             const lineWidthControl = document.getElementById('lineWidth');
             const maxPathLengthControl = document.getElementById('maxPathLength');
+            const pausePlayButton = document.getElementById('pausePlay');
             const resetButton = document.getElementById('reset');
             
             // Get SVG dimensions
@@ -369,6 +423,7 @@
             let curveFrequency = 0.02;
             let curveAmplitude = 20;
             let areaCount = 0;
+            let isPaused = false;
             
             // Path data
             let currentPath = null;
@@ -443,6 +498,11 @@
             
             // Animation functions
             function animate() {
+                // Skip animation if paused
+                if (isPaused) {
+                    animationId = requestAnimationFrame(animate);
+                    return;
+                }
                 // Entry animation
                 if (!entryComplete) {
                     if (antX < 50) {
@@ -497,7 +557,11 @@
                     antY += Math.sin(antAngle) * moveStep;
                     
                     // Animate legs based on movement
-                    animateLegs();
+                    if (activeCreature === ant) {
+                        animateLegs();
+                    } else if (activeCreature === ladybird) {
+                        animateLadybirdLegs();
+                    }
                     
                     // Update path
                     updatePath(prevX, prevY, antX, antY);
@@ -584,9 +648,9 @@
                     directionChangeSpeed = 0.08;
                 }
                 
-                // Update ant position and rotation
+                // Update creature position and rotation
                 const degrees = antAngle * 180 / Math.PI;
-                ant.setAttribute('transform', `translate(${antX}, ${antY}) rotate(${degrees}) scale(0.5)`);
+                activeCreature.setAttribute('transform', `translate(${antX}, ${antY}) rotate(${degrees}) scale(0.5)`);
             }
             
          
@@ -636,6 +700,47 @@ function animateLegs() {
     rightFrontLeg.setAttribute('transform', `rotate(${tripod2Angle}, 8, 5)`);
     leftMiddleLeg.setAttribute('transform', `rotate(${tripod2Angle}, 2, -5)`);
     rightRearLeg.setAttribute('transform', `rotate(${tripod2Angle}, -5, 5)`);
+}
+
+function animateLadybirdLegs() {
+    // Get all ladybird leg elements
+    const leftLegs = document.getElementById('ladybirdLeftLegs').children;
+    const rightLegs = document.getElementById('ladybirdRightLegs').children;
+    
+    // Increment step count
+    stepCount += speed * 0.5;
+    
+    // Calculate phase (0 to 2π)
+    const phase = stepCount % (2 * Math.PI);
+    
+    // Define leg movement angles
+    const forwardAngle = 20;
+    const backwardAngle = -10;
+    
+    // Determine leg positions based on phase
+    let leftLegsAngle, rightLegsAngle;
+    
+    if (phase < Math.PI) {
+        leftLegsAngle = forwardAngle;
+        rightLegsAngle = backwardAngle;
+    } else {
+        leftLegsAngle = backwardAngle;
+        rightLegsAngle = forwardAngle;
+    }
+    
+    // Apply transformations to left legs
+    for (let i = 0; i < leftLegs.length; i++) {
+        const leg = leftLegs[i];
+        const pivotX = 8 - i * 8; // Adjust pivot point based on leg position
+        leg.setAttribute('transform', `rotate(${leftLegsAngle}, ${pivotX}, -8)`);
+    }
+    
+    // Apply transformations to right legs
+    for (let i = 0; i < rightLegs.length; i++) {
+        const leg = rightLegs[i];
+        const pivotX = 8 - i * 8; // Adjust pivot point based on leg position
+        leg.setAttribute('transform', `rotate(${rightLegsAngle}, ${pivotX}, 8)`);
+    }
 }
             
             function setNewTarget() {
@@ -917,6 +1022,12 @@ function animateLegs() {
             
             resetButton.addEventListener('click', resetArt);
             
+            // Pause/Play button event listener
+            pausePlayButton.addEventListener('click', function() {
+                isPaused = !isPaused;
+                this.textContent = isPaused ? 'Resume' : 'Pause';
+            });
+            
             // Settings panel event listeners
             settingsIcon.addEventListener('click', function() {
                 settingsPanel.classList.toggle('open');
@@ -957,6 +1068,22 @@ function animateLegs() {
                 }
             });
             
+            // Creature selector
+            creatureSelector.addEventListener('change', function() {
+                // Hide all creatures first
+                ant.style.display = 'none';
+                ladybird.style.display = 'none';
+                
+                // Show the selected creature
+                if (this.value === 'ant') {
+                    ant.style.display = '';
+                    activeCreature = ant;
+                } else if (this.value === 'ladybird') {
+                    ladybird.style.display = '';
+                    activeCreature = ladybird;
+                }
+            });
+            
             // Handle window resize
             window.addEventListener('resize', function() {
                 // Update mobile status
@@ -993,6 +1120,63 @@ function animateLegs() {
             // Clean up on page unload to prevent memory leaks
             window.addEventListener('beforeunload', function() {
                 cancelAnimationFrame(animationId);
+            });
+            
+            // Export functionality
+            document.getElementById('exportButton').addEventListener('click', function() {
+                // Pause animation during export
+                const wasPaused = isPaused;
+                isPaused = true;
+                pausePlayButton.textContent = 'Resume';
+                
+                // Create a new canvas element
+                const exportCanvas = document.createElement('canvas');
+                const ctx = exportCanvas.getContext('2d');
+                
+                // Set high resolution
+                const scale = 3; // 3x resolution for high quality
+                exportCanvas.width = window.innerWidth * scale;
+                exportCanvas.height = window.innerHeight * scale;
+                
+                // Draw white background
+                ctx.fillStyle = 'white';
+                ctx.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
+                
+                // Convert SVG to data URL
+                const svgData = new XMLSerializer().serializeToString(canvas);
+                const svgBlob = new Blob([svgData], {type: 'image/svg+xml;charset=utf-8'});
+                const url = URL.createObjectURL(svgBlob);
+                
+                // Create image from SVG
+                const img = new Image();
+                img.onload = function() {
+                    // Draw the SVG to the canvas with proper scaling
+                    ctx.drawImage(img, 0, 0, exportCanvas.width, exportCanvas.height);
+                    
+                    // Convert to JPEG data URL
+                    const jpegUrl = exportCanvas.toDataURL('image/jpeg', 0.95);
+                    
+                    // Create download link
+                    const downloadLink = document.createElement('a');
+                    downloadLink.href = jpegUrl;
+                    downloadLink.download = 'ant-art-' + new Date().toISOString().replace(/[:.]/g, '-') + '.jpg';
+                    
+                    // Trigger download
+                    document.body.appendChild(downloadLink);
+                    downloadLink.click();
+                    document.body.removeChild(downloadLink);
+                    
+                    // Clean up
+                    URL.revokeObjectURL(url);
+                    
+                    // Restore animation state
+                    if (!wasPaused) {
+                        isPaused = false;
+                        pausePlayButton.textContent = 'Pause';
+                    }
+                };
+                
+                img.src = url;
             });
         });
     </script>
