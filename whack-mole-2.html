@@ -499,7 +499,7 @@ try {
             score = 0;
             timer = 60;
             level = 'Easy';
-            moleAppearanceDuration = 800;
+            moleAppearanceDuration = 1000;
             nextMoleDelay = 1000;
             gameActive = true;
             
@@ -603,11 +603,11 @@ try {
             
             if (score >= 25 && level !== 'Hard') {
                 newLevel = 'Hard';
-                moleAppearanceDuration = 200;
+                moleAppearanceDuration = 500;
                 nextMoleDelay = 800;
             } else if (score >= 10 && level === 'Easy') {
                 newLevel = 'Medium';
-                moleAppearanceDuration = 300;
+                moleAppearanceDuration = 650;
                 nextMoleDelay = 900;
             }
             
