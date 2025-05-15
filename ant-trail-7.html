@@ -604,7 +604,7 @@
                 }
                 
                 // Move in spiral pattern
-                const moveStep = speed * 0.3; // Slightly slower movement for spiral
+                const moveStep = speed * 0.15; // Reduced speed for ladybird (was 0.3)
                 
                 // Update spiral angle
                 spiralAngle += moveStep * 0.05;
@@ -628,8 +628,11 @@
                 antX = spiralCenterX + Math.cos(spiralAngle) * spiralRadius;
                 antY = spiralCenterY + Math.sin(spiralAngle) * spiralRadius;
                 
-                // Set angle to follow the spiral direction
-                antAngle = spiralAngle + (spiralDirection === -1 ? Math.PI : 0);
+                // Set angle to point in the direction of travel
+                // Calculate the direction of movement based on the change in position
+                const nextX = spiralCenterX + Math.cos(spiralAngle + moveStep * 0.05) * (spiralRadius + spiralDirection * moveStep * 0.3);
+                const nextY = spiralCenterY + Math.sin(spiralAngle + moveStep * 0.05) * (spiralRadius + spiralDirection * moveStep * 0.3);
+                antAngle = Math.atan2(nextY - antY, nextX - antX);
             }
             
             function initializeNewSpiral() {
@@ -637,8 +640,8 @@
                 spiralCenterX = Math.random() * (svgWidth * 0.7) + (svgWidth * 0.15);
                 spiralCenterY = Math.random() * (svgHeight * 0.7) + (svgHeight * 0.15);
                 
-                // Set a random max radius between 100 and 600 pixels
-                spiralMaxRadius = 100 + Math.random() * 500;
+                // Set a random max radius between 50 and 300 pixels (reduced by ~50%)
+                spiralMaxRadius = 50 + Math.random() * 250;
                 
                 // Start at the outside and spiral inward
                 spiralDirection = 1; // Start spiraling outward
