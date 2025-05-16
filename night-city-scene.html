@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Night City Scene</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            overflow: hidden;
+            background-color: #0a1929;
+            color: white;
+        }
+        
+        .background-scene {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            overflow: hidden;
+            z-index: -110; /* Use a negative z-index to ensure it stays behind other elements */
+        }
+        
+        .content {
+            position: relative;
+            z-index: 10;
+            padding: 2rem;
+            max-width: 800px;
+            margin: 0 auto;
+            text-align: center;
+        }
+        
+        h1 {
+            margin-bottom: 1rem;
+            text-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+        }
+        
+        p {
+            line-height: 1.6;
+            margin-bottom: 1rem;
+            text-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+        }
+        
+        @media (max-width: 768px) {
+            .content {
+                padding: 1.5rem;
+            }
+            
+            /* Adjust SVG viewBox for mobile to crop appropriately */
+            #city-scene {
+                transform: scale(1.5);
+                transform-origin: center center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="background-scene">
+        <svg id="city-scene" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 600" preserveAspectRatio="xMidYMid slice">
+            <!-- Definitions for gradients and patterns -->
+            <defs>
+                <!-- Sky gradient -->
+                <linearGradient id="sky-gradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" stop-color="#0a1929" />
+                    <stop offset="100%" stop-color="#102942" />
+                </linearGradient>
+                
+                <!-- Moon gradient -->
+                <radialGradient id="moon-gradient" cx="50%" cy="50%" r="50%" fx="50%" fy="50%">
+                    <stop offset="0%" stop-color="#ffd280" />
+                    <stop offset="90%" stop-color="#ffb84d" />
+                    <stop offset="100%" stop-color="#ffa31a" />
+                </radialGradient>
+                
+                <!-- Building gradient -->
+                <linearGradient id="building-gradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" stop-color="#102942" />
+                    <stop offset="100%" stop-color="#0a1929" />
+                </linearGradient>
+                
+                <!-- Street building gradient -->
+                <linearGradient id="street-building-gradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" stop-color="#8B4513" />
+                    <stop offset="100%" stop-color="#6B3100" />
+                </linearGradient>
+                
+                <!-- Window light gradient -->
+                <radialGradient id="window-light" cx="50%" cy="50%" r="50%" fx="50%" fy="50%">
+                    <stop offset="0%" stop-color="#ffd280" />
+                    <stop offset="100%" stop-color="#ff9900" />
+                </radialGradient>
+                
+                <!-- Street gradient -->
+                <linearGradient id="street-gradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" stop-color="#1a3347" />
+                    <stop offset="100%" stop-color="#0f2133" />
+                </linearGradient>
+                
+                <!-- Car light gradient -->
+                <radialGradient id="car-light" cx="50%" cy="50%" r="50%" fx="50%" fy="50%">
+                    <stop offset="0%" stop-color="#ffcc00" />
+                    <stop offset="100%" stop-color="#ff6600" />
+                </radialGradient>
+            </defs>
+            
+            <!-- Background sky -->
+            <rect width="1000" height="600" fill="url(#sky-gradient)" />
+            
+            <!-- Moon -->
+            <circle id="moon" cx="720" cy="120" r="50" fill="url(#moon-gradient)" />
+            
+            <!-- Distant city skyline -->
+            <g id="distant-skyline">
+                <!-- Tall buildings in background -->
+                <rect x="50" y="150" width="40" height="200" fill="url(#building-gradient)" />
+                <rect x="100" y="120" width="30" height="230" fill="url(#building-gradient)" />
+                <rect x="140" y="180" width="50" height="170" fill="url(#building-gradient)" />
+                <rect x="200" y="100" width="20" height="250" fill="url(#building-gradient)" />
+                <rect x="230" y="150" width="40" height="200" fill="url(#building-gradient)" />
+                <rect x="280" y="170" width="30" height="180" fill="url(#building-gradient)" />
+                <rect x="320" y="140" width="25" height="210" fill="url(#building-gradient)" />
+                <rect x="355" y="190" width="45" height="160" fill="url(#building-gradient)" />
+                <rect x="410" y="110" width="15" height="240" fill="url(#building-gradient)" />
+                <rect x="435" y="160" width="35" height="190" fill="url(#building-gradient)" />
+                <rect x="480" y="130" width="25" height="220" fill="url(#building-gradient)" />
+                <rect x="515" y="180" width="40" height="170" fill="url(#building-gradient)" />
+                <rect x="565" y="150" width="30" height="200" fill="url(#building-gradient)" />
+                <rect x="605" y="120" width="20" height="230" fill="url(#building-gradient)" />
+                <rect x="635" y="170" width="45" height="180" fill="url(#building-gradient)" />
+                <rect x="690" y="140" width="30" height="210" fill="url(#building-gradient)" />
+                <rect x="730" y="160" width="25" height="190" fill="url(#building-gradient)" />
+                <rect x="765" y="130" width="35" height="220" fill="url(#building-gradient)" />
+                <rect x="810" y="150" width="40" height="200" fill="url(#building-gradient)" />
+                <rect x="860" y="120" width="30" height="230" fill="url(#building-gradient)" />
+                <rect x="900" y="140" width="45" height="210" fill="url(#building-gradient)" />
+                <rect x="955" y="170" width="35" height="180" fill="url(#building-gradient)" />
+            </g>
+            
+            <!-- Windows in distant buildings (some will be animated) -->
+            <g id="distant-windows">
+                <!-- Building 1 -->
+                <rect class="window" x="60" y="170" width="5" height="8" fill="url(#window-light)" />
+                <rect class="window" x="75" y="190" width="5" height="8" fill="url(#window-light)" />
+                <rect class="window" x="60" y="210" width="5" height="8" fill="url(#window-light)" />
+                <rect class="window" x="75" y="230" width="5" height="8" fill="url(#window-light)" />
+                <rect class="window" x="60" y="250" width="5" height="8" fill="url(#window-light)" />
+                <rect class="window" x="75" y="270" width="5" height="8" fill="url(#window-light)" />
+                <rect class="window" x="60" y="290" width="5" height="8" fill="url(#window-light)" />
+                
+                <!-- Building 2 -->
+                <rect class="window" x="105" y="140" width="5" height="8" fill="url(#window-light)" />
+                <rect class="window" x="120" y="160" width="5" height="8" fill="url(#window-light)" />
+                <rect class="window" x="105" y="180" width="5" height="8" fill="url(#window-light)" />
+                <rect class="window" x="120" y="200" width="5" height="8" fill="url(#window-light)" />
+                <rect class="window" x="105" y="220" width="5" height="8" fill="url(#window-light)" />
+                <rect class="window" x="120" y="240" width="5" height="8" fill="url(#window-light)" />
+                <rect class="window" x="105" y="260" width="5" height="8" fill="url(#window-light)" />
+                
+                <!-- More windows for other buildings -->
+                <rect class="window animate-window" x="205" y="150" width="5" height="8" fill="url(#window-light)" opacity="0.8" />
+                <rect class="window animate-window" x="235" y="200" width="5" height="8" fill="url(#window-light)" opacity="0.8" />
+                <rect class="window animate-window" x="285" y="220" width="5" height="8" fill="url(#window-light)" opacity="0.8" />
+                <rect class="window animate-window" x="325" y="190" width="5" height="8" fill="url(#window-light)" opacity="0.8" />
+                <rect class="window animate-window" x="415" y="160" width="5" height="8" fill="url(#window-light)" opacity="0.8" />
+                <rect class="window animate-window" x="485" y="180" width="5" height="8" fill="url(#window-light)" opacity="0.8" />
+                <rect class="window animate-window" x="570" y="200" width="5" height="8" fill="url(#window-light)" opacity="0.8" />
+                <rect class="window animate-window" x="610" y="170" width="5" height="8" fill="url(#window-light)" opacity="0.8" />
+                <rect class="window animate-window" x="695" y="190" width="5" height="8" fill="url(#window-light)" opacity="0.8" />
+                <rect class="window animate-window" x="735" y="210" width="5" height="8" fill="url(#window-light)" opacity="0.8" />
+                <rect class="window animate-window" x="815" y="180" width="5" height="8" fill="url(#window-light)" opacity="0.8" />
+                <rect class="window animate-window" x="865" y="160" width="5" height="8" fill="url(#window-light)" opacity="0.8" />
+                <rect class="window animate-window" x="905" y="190" width="5" height="8" fill="url(#window-light)" opacity="0.8" />
+                <rect class="window animate-window" x="960" y="220" width="5" height="8" fill="url(#window-light)" opacity="0.8" />
+            </g>
+            
+            <!-- Street level buildings -->
+            <g id="street-buildings">
+                <!-- Left side buildings -->
+                <rect x="0" y="400" width="150" height="100" fill="url(#street-building-gradient)" />
+                <rect x="160" y="400" width="120" height="100" fill="url(#street-building-gradient)" />
+                <rect x="290" y="400" width="100" height="100" fill="url(#street-building-gradient)" />
+                
+                <!-- Right side buildings -->
+                <rect x="600" y="400" width="130" height="100" fill="url(#street-building-gradient)" />
+                <rect x="740" y="400" width="110" height="100" fill="url(#street-building-gradient)" />
+                <rect x="860" y="400" width="140" height="100" fill="url(#street-building-gradient)" />
+            </g>
+            
+            <!-- Street level windows -->
+            <g id="street-windows">
+                <!-- Left building windows -->
+                <rect x="20" y="420" width="30" height="20" fill="url(#window-light)" />
+                <rect x="70" y="420" width="30" height="20" fill="url(#window-light)" />
+                <rect x="20" y="460" width="15" height="25" fill="url(#window-light)" />
+                <rect x="85" y="460" width="15" height="25" fill="url(#window-light)" />
+                
+                <!-- Middle building windows -->
+                <rect x="180" y="420" width="30" height="20" fill="url(#window-light)" />
+                <rect x="230" y="420" width="30" height="20" fill="url(#window-light)" />
+                <rect x="180" y="460" width="15" height="25" fill="url(#window-light)" />
+                <rect x="245" y="460" width="15" height="25" fill="url(#window-light)" />
+                
+                <!-- Right building windows -->
+                <rect x="620" y="420" width="30" height="20" fill="url(#window-light)" />
+                <rect x="670" y="420" width="30" height="20" fill="url(#window-light)" />
+                <rect x="620" y="460" width="15" height="25" fill="url(#window-light)" />
+                <rect x="685" y="460" width="15" height="25" fill="url(#window-light)" />
+                
+                <rect x="760" y="420" width="30" height="20" fill="url(#window-light)" />
+                <rect x="810" y="420" width="30" height="20" fill="url(#window-light)" />
+                <rect x="760" y="460" width="15" height="25" fill="url(#window-light)" />
+                <rect x="825" y="460" width="15" height="25" fill="url(#window-light)" />
+                
+                <rect x="880" y="420" width="30" height="20" fill="url(#window-light)" />
+                <rect x="930" y="420" width="30" height="20" fill="url(#window-light)" />
+                <rect x="880" y="460" width="15" height="25" fill="url(#window-light)" />
+                <rect x="945" y="460" width="15" height="25" fill="url(#window-light)" />
+            </g>
+            
+            <!-- Street -->
+            <path d="M400 400 L600 400 L700 600 L300 600 Z" fill="url(#street-gradient)" />
+            
+            <!-- Street markings -->
+            <g id="street-markings">
+                <rect x="490" y="450" width="20" height="5" fill="white" />
+                <rect x="490" y="480" width="20" height="5" fill="white" />
+                <rect x="490" y="510" width="20" height="5" fill="white" />
+                <rect x="490" y="540" width="20" height="5" fill="white" />
+                <rect x="490" y="570" width="20" height="5" fill="white" />
+            </g>
+            
+            <!-- Cars -->
+            <g id="cars">
+                <!-- Car 1 (moving left to right) -->
+                <g id="car1" class="car">
+                    <rect x="460" y="480" width="30" height="15" rx="5" fill="#1a1a1a" />
+                    <rect x="465" y="475" width="20" height="10" rx="3" fill="#333333" />
+                    <circle cx="465" cy="495" r="5" fill="#0a0a0a" />
+                    <circle cx="485" cy="495" r="5" fill="#0a0a0a" />
+                    <rect x="490" y="485" width="3" height="3" fill="url(#car-light)" />
+                </g>
+                
+                <!-- Car 2 (moving right to left) -->
+                <g id="car2" class="car">
+                    <rect x="510" y="520" width="30" height="15" rx="5" fill="#1a1a1a" />
+                    <rect x="515" y="515" width="20" height="10" rx="3" fill="#333333" />
+                    <circle cx="515" cy="535" r="5" fill="#0a0a0a" />
+                    <circle cx="535" cy="535" r="5" fill="#0a0a0a" />
+                    <rect x="507" y="525" width="3" height="3" fill="url(#car-light)" />
+                </g>
+                
+                <!-- Car 3 (moving left to right) -->
+                <g id="car3" class="car">
+                    <rect x="420" y="550" width="30" height="15" rx="5" fill="#1a1a1a" />
+                    <rect x="425" y="545" width="20" height="10" rx="3" fill="#333333" />
+                    <circle cx="425" cy="565" r="5" fill="#0a0a0a" />
+                    <circle cx="445" cy="565" r="5" fill="#0a0a0a" />
+                    <rect x="450" y="555" width="3" height="3" fill="url(#car-light)" />
+                </g>
+            </g>
+            
+            <!-- People walking -->
+            <g id="people">
+                <circle cx="380" y="520" r="5" fill="#000000" />
+                <rect x="380" y="525" width="2" height="15" fill="#000000" />
+                <rect x="375" y="530" width="12" height="2" fill="#000000" />
+                <rect x="378" y="540" width="2" height="10" fill="#000000" />
+                <rect x="382" y="540" width="2" height="10" fill="#000000" />
+                
+                <circle cx="420" y="500" r="5" fill="#000000" />
+                <rect x="420" y="505" width="2" height="15" fill="#000000" />
+                <rect x="415" y="510" width="12" height="2" fill="#000000" />
+                <rect x="418" y="520" width="2" height="10" fill="#000000" />
+                <rect x="422" y="520" width="2" height="10" fill="#000000" />
+                
+                <circle cx="580" y="520" r="5" fill="#000000" />
+                <rect x="580" y="525" width="2" height="15" fill="#000000" />
+                <rect x="575" y="530" width="12" height="2" fill="#000000" />
+                <rect x="578" y="540" width="2" height="10" fill="#000000" />
+                <rect x="582" y="540" width="2" height="10" fill="#000000" />
+                
+                <circle cx="620" y="500" r="5" fill="#000000" />
+                <rect x="620" y="505" width="2" height="15" fill="#000000" />
+                <rect x="615" y="510" width="12" height="2" fill="#000000" />
+                <rect x="618" y="520" width="2" height="10" fill="#000000" />
+                <rect x="622" y="520" width="2" height="10" fill="#000000" />
+            </g>
+            
+            <!-- Airplane -->
+            <g id="airplane">
+                <path d="M200 100 L230 90 L235 92 L240 90 L235 95 L230 95 L200 105 Z" fill="#CCCCCC" />
+                <rect x="205" y="95" width="20" height="5" fill="#AAAAAA" />
+                <rect x="215" y="90" width="5" height="15" fill="#AAAAAA" />
+            </g>
+            
+            <!-- Airplane trail -->
+            <path id="airplane-trail" d="M200 100 L150 110" stroke="#CCCCCC" stroke-width="1" stroke-dasharray="2,2" opacity="0.6" />
+        </svg>
+    </div>
+    
+    <div class="content">
+        <h1>Night City Scene</h1>
+        <p>A peaceful night in the city with animated elements. Watch as the airplane flies across the sky, cars move along the street, and windows light up and dim throughout the buildings.</p>
+    </div>
+    
+    <script>
+        // Animation for the airplane
+        const airplane = document.getElementById('airplane');
+        const airplaneTrail = document.getElementById('airplane-trail');
+        let planeX = -50;
+        let planeY = 100;
+        
+        // Animation for cars
+        const car1 = document.getElementById('car1');
+        const car2 = document.getElementById('car2');
+        const car3 = document.getElementById('car3');
+        let car1X = 460;
+        let car2X = 510;
+        let car3X = 420;
+        
+        // Get all windows that should be animated
+        const animatedWindows = document.querySelectorAll('.animate-window');
+        
+        // Function to animate a window (turning on/off)
+        function animateWindow(window) {
+            // Random time interval for animation
+            const interval = 3000 + Math.random() * 7000;
+            
+            // Toggle window light
+            setInterval(() => {
+                const currentOpacity = parseFloat(window.getAttribute('opacity') || 0.8);
+                const newOpacity = currentOpacity > 0.5 ? 0.2 : 0.8;
+                window.setAttribute('opacity', newOpacity);
+            }, interval);
+        }
+        
+        // Initialize window animations
+        animatedWindows.forEach(window => {
+            animateWindow(window);
+        });
+        
+        // Main animation loop
+        function animate() {
+            // Animate airplane
+            planeX += 0.5;
+            if (planeX > 1050) {
+                planeX = -50;
+            }
+            airplane.setAttribute('transform', `translate(${planeX}, 0)`);
+            airplaneTrail.setAttribute('d', `M${planeX + 200} 100 L${planeX + 150} 110`);
+            
+            // Animate cars
+            car1X += 0.3;
+            if (car1X > 550) {
+                car1X = 350;
+            }
+            car1.setAttribute('transform', `translate(${car1X - 460}, 0)`);
+            
+            car2X -= 0.25;
+            if (car2X < 350) {
+                car2X = 550;
+            }
+            car2.setAttribute('transform', `translate(${car2X - 510}, 0)`);
+            
+            car3X += 0.2;
+            if (car3X > 550) {
+                car3X = 350;
+            }
+            car3.setAttribute('transform', `translate(${car3X - 420}, 0)`);
+            
+            // Continue animation loop
+            requestAnimationFrame(animate);
+        }
+        
+        // Start animation
+        animate();
+        
+        // Handle responsive adjustments
+        function handleResize() {
+            const cityScene = document.getElementById('city-scene');
+            if (window.innerWidth <= 768) {
+                // Mobile view - focus on the center of the scene
+                cityScene.setAttribute('viewBox', '300 150 400 400');
+            } else {
+                // Desktop view - show full scene
+                cityScene.setAttribute('viewBox', '0 0 1000 600');
+            }
+        }
+        
+        // Initial call and event listener for resize
+        handleResize();
+        window.addEventListener('resize', handleResize);
+    </script>
+</body>
+</html>
