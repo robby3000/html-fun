@@ -197,22 +197,56 @@
         const stars = new THREE.Points(starsGeometry, starsMaterial);
         scene.add(stars);
 
-        // Create player tank (spaceship)
-        const playerGeometry = new THREE.BoxGeometry(1, 0.5, 2);
-        const playerMaterial = new THREE.MeshPhongMaterial({ color: 0x00AAFF });
-        const player = new THREE.Mesh(playerGeometry, playerMaterial);
+        // Create player ship (more detailed sci-fi design)
+        const player = new THREE.Group();
         player.position.z = -5;
         player.position.y = -1;
         scene.add(player);
-
-        // Add cannon to player
-        const cannonGeometry = new THREE.CylinderGeometry(0.1, 0.1, 1, 16);
+        
+        // Main hull (sleek, elongated shape)
+        const hullGeometry = new THREE.CylinderGeometry(0.3, 0.5, 2, 8);
+        const hullMaterial = new THREE.MeshPhongMaterial({ color: 0x0088FF });
+        const hull = new THREE.Mesh(hullGeometry, hullMaterial);
+        hull.rotation.x = Math.PI / 2;
+        player.add(hull);
+        
+        // Cockpit (dome on top)
+        const cockpitGeometry = new THREE.SphereGeometry(0.3, 16, 16, 0, Math.PI * 2, 0, Math.PI / 2);
+        const cockpitMaterial = new THREE.MeshPhongMaterial({ color: 0x66CCFF, transparent: true, opacity: 0.7 });
+        const cockpit = new THREE.Mesh(cockpitGeometry, cockpitMaterial);
+        cockpit.position.y = 0.3;
+        player.add(cockpit);
+        
+        // Wings (flat, angled surfaces on sides)
+        const wingGeometry = new THREE.BoxGeometry(1.8, 0.1, 0.8);
+        const wingMaterial = new THREE.MeshPhongMaterial({ color: 0x0066CC });
+        const wings = new THREE.Mesh(wingGeometry, wingMaterial);
+        wings.position.y = -0.1;
+        player.add(wings);
+        
+        // Engine glow (at the back)
+        const engineGlowGeometry = new THREE.CircleGeometry(0.2, 16);
+        const engineGlowMaterial = new THREE.MeshBasicMaterial({ color: 0x00FFFF });
+        const engineGlow = new THREE.Mesh(engineGlowGeometry, engineGlowMaterial);
+        engineGlow.position.z = 1;
+        engineGlow.rotation.y = Math.PI;
+        player.add(engineGlow);
+        
+        // Weapon mounts (dual cannons)
+        const cannonGeometry = new THREE.CylinderGeometry(0.05, 0.05, 0.6, 8);
         const cannonMaterial = new THREE.MeshPhongMaterial({ color: 0x888888 });
-        const cannon = new THREE.Mesh(cannonGeometry, cannonMaterial);
-        cannon.rotation.x = Math.PI / 2;
-        cannon.position.y = 0.2;
-        cannon.position.z = -1;
-        player.add(cannon);
+        
+        // Left cannon
+        const cannonLeft = new THREE.Mesh(cannonGeometry, cannonMaterial);
+        cannonLeft.position.set(-0.3, 0, -0.8);
+        cannonLeft.rotation.x = Math.PI / 2;
+        player.add(cannonLeft);
+        
+        // Right cannon
+        const cannonRight = new THREE.Mesh(cannonGeometry, cannonMaterial);
+        cannonRight.position.set(0.3, 0, -0.8);
+        cannonRight.rotation.x = Math.PI / 2;
+        player.add(cannonRight);
 
         // Add lights
         const ambientLight = new THREE.AmbientLight(0x404040);
@@ -530,27 +564,110 @@
         }
 
         function spawnEnemy() {
-            const enemyGeometry = new THREE.BoxGeometry(1, 0.5, 1.5);
-            const enemyMaterial = new THREE.MeshPhongMaterial({ color: 0xFF0000 });
-            const enemy = new THREE.Mesh(enemyGeometry, enemyMaterial);
+            // Create enemy ship as a group of objects
+            const enemy = new THREE.Group();
             
             // Position enemy at random x position, far away
             enemy.position.x = (Math.random() - 0.5) * 10;
             enemy.position.y = -1;
             enemy.position.z = -30;
             
-            // Add cannon to enemy
-            const enemyCannonGeometry = new THREE.CylinderGeometry(0.1, 0.1, 0.8, 16);
+            // Randomize enemy type (3 different designs)
+            const enemyType = Math.floor(Math.random() * 3);
+            
+            if (enemyType === 0) {
+                // Type 1: Triangular fighter
+                const hullGeometry = new THREE.ConeGeometry(0.5, 1.5, 3);
+                const hullMaterial = new THREE.MeshPhongMaterial({ color: 0xFF0000 });
+                const hull = new THREE.Mesh(hullGeometry, hullMaterial);
+                hull.rotation.x = Math.PI / 2;
+                hull.rotation.z = Math.PI;
+                enemy.add(hull);
+                
+                // Add wing fins
+                const finGeometry = new THREE.BoxGeometry(1.2, 0.1, 0.5);
+                const finMaterial = new THREE.MeshPhongMaterial({ color: 0xCC0000 });
+                const fins = new THREE.Mesh(finGeometry, finMaterial);
+                fins.position.z = 0.4;
+                enemy.add(fins);
+                
+                // Add weapon
+                const weaponGeometry = new THREE.BoxGeometry(0.7, 0.15, 0.15);
+                const weaponMaterial = new THREE.MeshPhongMaterial({ color: 0x880000 });
+                const weapon = new THREE.Mesh(weaponGeometry, weaponMaterial);
+                weapon.position.z = 0.7;
+                enemy.add(weapon);
+            } else if (enemyType === 1) {
+                // Type 2: Saucer ship
+                const hullGeometry = new THREE.SphereGeometry(0.5, 16, 8, 0, Math.PI * 2, 0, Math.PI * 0.6);
+                const hullMaterial = new THREE.MeshPhongMaterial({ color: 0xFF4400 });
+                const hull = new THREE.Mesh(hullGeometry, hullMaterial);
+                hull.rotation.x = Math.PI;
+                enemy.add(hull);
+                
+                // Add top dome
+                const domeGeometry = new THREE.SphereGeometry(0.25, 16, 8, 0, Math.PI * 2, 0, Math.PI * 0.5);
+                const domeMaterial = new THREE.MeshPhongMaterial({ color: 0xFF8800, transparent: true, opacity: 0.7 });
+                const dome = new THREE.Mesh(domeGeometry, domeMaterial);
+                dome.position.y = 0.2;
+                enemy.add(dome);
+                
+                // Add bottom ring
+                const ringGeometry = new THREE.TorusGeometry(0.6, 0.1, 8, 16);
+                const ringMaterial = new THREE.MeshPhongMaterial({ color: 0xCC4400 });
+                const ring = new THREE.Mesh(ringGeometry, ringMaterial);
+                ring.rotation.x = Math.PI / 2;
+                ring.position.y = -0.1;
+                enemy.add(ring);
+            } else {
+                // Type 3: Rectangular cruiser
+                const hullGeometry = new THREE.BoxGeometry(0.8, 0.3, 1.8);
+                const hullMaterial = new THREE.MeshPhongMaterial({ color: 0xFF0066 });
+                const hull = new THREE.Mesh(hullGeometry, hullMaterial);
+                enemy.add(hull);
+                
+                // Add top structure
+                const topGeometry = new THREE.BoxGeometry(0.4, 0.2, 0.6);
+                const topMaterial = new THREE.MeshPhongMaterial({ color: 0xCC0066 });
+                const top = new THREE.Mesh(topGeometry, topMaterial);
+                top.position.y = 0.25;
+                enemy.add(top);
+                
+                // Add side pods
+                const podGeometry = new THREE.CylinderGeometry(0.15, 0.15, 0.6, 8);
+                const podMaterial = new THREE.MeshPhongMaterial({ color: 0x880044 });
+                
+                const leftPod = new THREE.Mesh(podGeometry, podMaterial);
+                leftPod.rotation.z = Math.PI / 2;
+                leftPod.position.set(-0.5, 0, 0);
+                enemy.add(leftPod);
+                
+                const rightPod = new THREE.Mesh(podGeometry, podMaterial);
+                rightPod.rotation.z = Math.PI / 2;
+                rightPod.position.set(0.5, 0, 0);
+                enemy.add(rightPod);
+            }
+            
+            // Add cannon/weapon to all enemy types
+            const enemyCannonGeometry = new THREE.CylinderGeometry(0.08, 0.08, 0.5, 8);
             const enemyCannonMaterial = new THREE.MeshPhongMaterial({ color: 0x888888 });
             const enemyCannon = new THREE.Mesh(enemyCannonGeometry, enemyCannonMaterial);
             enemyCannon.rotation.x = Math.PI / 2;
-            enemyCannon.position.y = 0.2;
-            enemyCannon.position.z = 1;
+            enemyCannon.position.z = 0.8;
             enemy.add(enemyCannon);
+            
+            // Add engine glow
+            const engineGlowGeometry = new THREE.CircleGeometry(0.15, 16);
+            const engineGlowMaterial = new THREE.MeshBasicMaterial({ color: 0xFF6600 });
+            const engineGlow = new THREE.Mesh(engineGlowGeometry, engineGlowMaterial);
+            engineGlow.position.z = -0.9;
+            engineGlow.rotation.y = Math.PI;
+            enemy.add(engineGlow);
             
             enemy.userData.speed = 0.02 + Math.random() * 0.03;
             enemy.userData.lastShotTime = 0;
             enemy.userData.shotInterval = 2000 + Math.random() * 2000; // ms
+            enemy.userData.type = enemyType; // Store the enemy type for potential future use
             
             scene.add(enemy);
             enemies.push(enemy);
