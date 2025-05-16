@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Haunted Forest</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      overflow: hidden;
+      height: 100%;
+      font-family: 'Cinzel', serif;
+    }
+
+    #forest {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+    }
+
+    svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .button-container {
+      position: absolute;
+      bottom: 20px;
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      z-index: 10;
+    }
+
+    .steampunk-button {
+      background: radial-gradient(#744, #311);
+      border: 3px solid gold;
+      border-radius: 50%;
+      width: 80px;
+      height: 80px;
+      font-size: 12px;
+      color: #ffd;
+      text-align: center;
+      line-height: 80px;
+      box-shadow: 0 0 15px #fa0;
+      font-weight: bold;
+      cursor: pointer;
+      transition: transform 0.1s;
+    }
+
+    .steampunk-button:active {
+      transform: scale(0.95);
+    }
+
+    .optical-flash {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(circle, #fff6 10%, transparent 70%);
+      pointer-events: none;
+      animation: flash 0.3s ease-out;
+      z-index: 5;
+    }
+
+    @keyframes flash {
+      0%   { opacity: 0.8; }
+      100% { opacity: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div id="forest">
+    <svg viewBox="0 0 100 100" preserveAspectRatio="none">
+      <rect width="100" height="100" fill="black" />
+      <circle cx="80" cy="20" r="8" fill="#444" />
+      <g stroke="#0f0" stroke-width="0.2" fill="none">
+        <path d="M20,100 L22,70 L24,100" />
+        <path d="M40,100 L41,60 L42,100" />
+        <path d="M60,100 L62,65 L64,100" />
+        <path d="M75,100 L76,70 L77,100" />
+      </g>
+      <g fill="#222">
+        <rect x="19" y="70" width="2" height="30" />
+        <rect x="40" y="60" width="2" height="40" />
+        <rect x="60" y="65" width="2" height="35" />
+        <rect x="75" y="70" width="2" height="30" />
+      </g>
+    </svg>
+  </div>
+
+  <div class="button-container">
+    <div class="steampunk-button" onclick="triggerAction('shoot')">Shoot</div>
+    <div class="steampunk-button" onclick="triggerAction('explosion')">Boom</div>
+    <div class="steampunk-button" onclick="triggerAction('enemyShoot')">Enemy</div>
+  </div>
+
+  <script>
+    const sounds = {
+      shoot: createSound("data:audio/wav;base64,UklGRiQDAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQADAACBhYqFbF1fdJOnqJF0YFdpeZuopJB0XVNbc4ybnItwXVtyi5OVkYl+dGVYT0xLT1pkcH6FhINzbWBTSkRDRUtWY3F8g4iMkZSVlJGMhoB6dG5oYltWUU5LSkpLTlNZYGhxeYGJkJabn6Kkp6eonp2XkImCe3RtZV9aVlRTU1NUVFVWV1haXF5gYmRmZ2lpampqaWhlYl9cWVZTUE1KR0RCPz4+Pj9BQ0ZJS01PUVNTUVBPT05NTU1OT1BSVFZYWltbW1taWVhWVFNRUE9PUFFTVVdZW11fYGFhYWBfXVtZV1VUUVRTVFVXWV1gY2ZpbG1ubm1sa2poZmVjYmFhYWJjZWdqbG5xcnNzcXBubGtqaGdnZ2hpa25xdHd6fH5/f35+fHp5d3Z1dHR0dXZ4en1/gYOFhoaGhYSCgH59e3p5eHh4eXp8foCChIaIiYqKiomIhoWDgYB/fn19fX5/gIGChIWGh4iJiYmIiIeGhYSEg4OCgoKDg4SFhoaHiImJiYmJiIiHh4aGhYWFhYWFhoaHh4iIiImJiYmJiYiIiIiIiIiIiYmJiYmJiYmJiIiIiIeHh4eHh4eHiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiI"),
+      explosion: createSound("data:audio/wav;base64,UklGRiQDAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQADAACBhYqFbF1fdJOnqJF0YFdpeZuopJB0XVNbc4ybnItwXVtyi5OVkYl+dGVYT0xLT1pkcH6FhINzbWBTSkRDRUtWY3F8g4iMkZSVlJGMhoB6dG5oYltWUU5LSkpLTlNZYGhxeYGJkJabn6Kkp6eonp2XkImCe3RtZV9aVlRTU1NUVFVWV1haXF5gYmRmZ2lpampqaWhlYl9cWVZTUE1KR0RCPz4+Pj9BQ0ZJS01PUVNTUVBPT05NTU1OT1BSVFZYWltbW1taWVhWVFNRUE9PUFFTVVdZW11fYGFhYWBfXVtZV1VUUVRTVFVXWV1gY2ZpbG1ubm1sa2poZmVjYmFhYWJjZWdqbG5xcnNzcXBubGtqaGdnZ2hpa25xdHd6fH5/f35+fHp5d3Z1dHR0dXZ4en1/gYOFhoaGhYSCgH59e3p5eHh4eXp8foCChIaIiYqKiomIhoWDgYB/fn19fX5/gIGChIWGh4iJiYmIiIeGhYSEg4OCgoKDg4SFhoaHiImJiYmJiIiHh4aGhYWFhYWFhoaHh4iIiImJiYmJiYiIiIiIiIiIiYmJiYmJiYmJiIiIiIeHh4eHh4eHiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiI"),
+      enemyShoot: createSound("data:audio/wav;base64,UklGRh4DAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQoDAACamJaUlJOSkpGQkI+Pj4+PkZKUlZeZm52foKKkpKWlpaSjoqGfnp2bmpmYl5aWlZWVlpaXmJmbnJ6foaOlpqipqqqqqqmoqKalpKOioJ+enZybmpqZmZmZmZqbnJ2en6ChoqSlpqeoqaqqqqqpp6alpKOioaCfnp2dnJubm5ubm5ydnp+goaKjpKWmp6ipqqurq6uqqainpqWko6KhoJ+enp2dnJubm5ubm5ydnp+goaKjpKWmp6ipqqurq6uqqainpqWko6KhoJ+enp2dnJubm5ubm5ydnp+goaKjpKWmp6ipqqurq6uqqainpqWko6KhoJ+enp2dnJubm5ubm5ydnp+goaKjpKWmp6ipqqurq6uqqainpqWko6KhoJ+enp2dnJubm5ubm5ydnp+goaKjpKWmp6ipqqurq6uqqainpqWko6KhoJ+enp2dnJubm5ubm5ydnp+goaKjpKWmp6ipqqurq6uqqainpqWko6Ojo6Slpaanp6mqq6ytr6+wsLCwr62sq6qpqKenpqalpaSko6Ojo6Slpaanp6mqq6ytr6+wsLCwr62sq6qpqKenpqalpaSko6Ojo6Slpaanp6mqq6ytr6+wsLCwr62sq6qpqKenpqalpaSko6Ojo6Slpaanp6mqq6ytr6+wsLCwr62sq6qpqKenpqalpaSko6Ojo6Slpaanp6mqq6ytr6+wsLCwr62sq6qpqKenpqalpaSko6OjoA==")
+    };
+
+    function createSound(src) {
+      const audio = new Audio(src);
+      audio.preload = "auto";
+      return audio;
+    }
+
+    function triggerAction(action) {
+      playFlash();
+      if (sounds[action]) {
+        sounds[action].currentTime = 0;
+        sounds[action].play();
+      }
+    }
+
+    function playFlash() {
+      const flash = document.createElement("div");
+      flash.className = "optical-flash";
+      document.body.appendChild(flash);
+      setTimeout(() => flash.remove(), 300);
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Whack-a-Mole</title>
+    <style>
+        :root {
+            --bg-color: #f0f8ff; /* AliceBlue */
+            --game-bg-color: #e6e6fa; /* Lavender */
+            --hole-color: #cdb4db; /* Light Purple */
+            --mole-color: #a28089; /* Dusky Rose */
+            --mole-whacked-color: #8d6e63; /* Brownish */
+            --text-color: #333;
+            --score-color: #ffc0cb; /* Pink */
+            --button-bg: #ffafcc; /* Light Pink */
+            --button-hover-bg: #ff8fab; /* Darker Pink */
+            --notification-bg: #bde0fe; /* Light Blue */
+            --font-family: 'Arial', sans-serif;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .container {
+            background-color: var(--game-bg-color);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        h1 {
+            color: var(--mole-color);
+            margin-bottom: 20px;
+        }
+
+        .info-panel {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 20px;
+            font-size: 1.2em;
+        }
+
+        .info-panel > div {
+            background-color: var(--score-color);
+            padding: 10px 15px;
+            border-radius: 8px;
+            min-width: 120px;
+        }
+
+        .game-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 100px);
+            grid-template-rows: repeat(3, 100px);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .hole {
+            background-color: var(--hole-color);
+            border-radius: 50%; /* Make holes circular */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden; /* Important for mole animation */
+            border: 3px solid darken(var(--hole-color), 10%);
+            transition: background-color 0.2s;
+        }
+
+        .hole:hover {
+            background-color: #bfacc8; /* Slightly darker hole on hover */
+        }
+
+        .mole {
+            width: 70%;
+            height: 70%;
+            fill: var(--mole-color);
+            position: absolute;
+            bottom: -100%; /* Initially hidden below */
+            transition: bottom 0.2s ease-out, transform 0.1s ease-out;
+            pointer-events: none; /* Mole itself is not clickable, the hole is */
+        }
+
+        .hole.up .mole {
+            bottom: 10%; /* Pop up animation */
+        }
+
+        .hole.whacked .mole {
+            transform: scale(0.8) rotate(15deg);
+            fill: var(--mole-whacked-color);
+            bottom: 5%; /* Slight sink after whack */
+            transition: transform 0.1s ease-out, fill 0.1s, bottom 0.1s;
+        }
+
+        button#startGameBtn {
+            background-color: var(--button-bg);
+            color: var(--text-color);
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            margin-top: 10px;
+        }
+
+        button#startGameBtn:hover {
+            background-color: var(--button-hover-bg);
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: var(--notification-bg);
+            color: var(--text-color);
+            padding: 10px 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out;
+            pointer-events: none; /* Don't block clicks */
+        }
+
+        .notification.show {
+            opacity: 1;
+        }
+
+        /* SVG Mole Graphic - embedded for single file */
+        .mole-svg-container {
+            display: none; /* Hide the template */
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Whack-a-Mole!</h1>
+
+        <div class="info-panel">
+            <div>Score: <span id="currentScore">0</span></div>
+            <div>Time Left: <span id="timeLeft">60</span>s</div>
+            <div>Level: <span id="currentLevel">Easy</span></div>
+        </div>
+        <div class="info-panel">
+            <div>High Score: <span id="highScore">0</span></div>
+        </div>
+
+        <div class="game-grid" id="gameGrid" role="grid" aria-label="Whack-a-Mole game grid">
+            </div>
+
+        <button id="startGameBtn" aria-label="Start or Restart Game">Start Game</button>
+    </div>
+
+    <div id="notification" class="notification" aria-live="assertive"></div>
+
+    <div class="mole-svg-container">
+        <svg id="moleSvg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            <ellipse cx="50" cy="70" rx="35" ry="25" /> <circle cx="50" cy="40" r="20" /> <circle cx="40" cy="35" r="4" fill="white"/> <circle cx="41" cy="36" r="2" fill="black"/> <circle cx="60" cy="35" r="4" fill="white"/> <circle cx="61" cy="36" r="2" fill="black"/> <ellipse cx="50" cy="48" rx="5" ry="3" fill="#f7a072"/> <path d="M30 60 Q25 50 30 40" stroke="#806050" stroke-width="3" fill="none" /> <path d="M70 60 Q75 50 70 40" stroke="#806050" stroke-width="3" fill="none" /> </svg>
+    </div>
+
+    <script>
+        // Game Elements
+        const gameGrid = document.getElementById('gameGrid');
+        const currentScoreEl = document.getElementById('currentScore');
+        const highScoreEl = document.getElementById('highScore');
+        const timeLeftEl = document.getElementById('timeLeft');
+        const currentLevelEl = document.getElementById('currentLevel');
+        const startGameBtn = document.getElementById('startGameBtn');
+        const notificationEl = document.getElementById('notification');
+        const moleSvgTemplate = document.getElementById('moleSvg').cloneNode(true); // Clone the SVG template
+
+        // Game State
+        let score = 0;
+        let highScore = localStorage.getItem('whackAMoleHighScore') || 0;
+        let timeLeft = 60;
+        let currentLevel = 'Easy';
+        let gameInterval = null;
+        let moleTimer = null;
+        let holeElements = [];
+        let gameActive = false;
+        let currentMoleHole = null; // To track which hole has an active mole
+
+        // Level Configuration
+        const levels = {
+            Easy: { speed: 1200, nextLevelScore: 10, name: 'Easy' },
+            Medium: { speed: 800, nextLevelScore: 25, name: 'Medium' },
+            Hard: { speed: 500, nextLevelScore: Infinity, name: 'Hard' }
+        };
+
+        // Initialize Game
+        function initGame() {
+            createGrid();
+            updateScoreDisplay();
+            updateHighScoreDisplay();
+            timeLeftEl.textContent = timeLeft;
+            currentLevelEl.textContent = levels[currentLevel].name;
+            startGameBtn.addEventListener('click', startGame);
+            document.addEventListener('keydown', handleKeyPress);
+        }
+
+        function createGrid() {
+            gameGrid.innerHTML = ''; // Clear previous grid
+            holeElements = [];
+            for (let i = 0; i < 9; i++) {
+                const hole = document.createElement('div');
+                hole.classList.add('hole');
+                hole.dataset.index = i;
+                hole.setAttribute('role', 'button');
+                hole.setAttribute('aria-label', `Hole ${i + 1}`);
+                hole.setAttribute('tabindex', '0'); // Make it focusable
+
+                // Add mole SVG to each hole (initially hidden)
+                const moleInstance = moleSvgTemplate.cloneNode(true);
+                moleInstance.classList.add('mole');
+                hole.appendChild(moleInstance);
+
+                hole.addEventListener('click', () => whackMole(hole));
+                hole.addEventListener('keydown', (event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                        whackMole(hole);
+                    }
+                });
+                gameGrid.appendChild(hole);
+                holeElements.push(hole);
+            }
+        }
+
+        function startGame() {
+            if (gameActive) return; // Prevent starting multiple times
+
+            score = 0;
+            timeLeft = 60;
+            currentLevel = 'Easy';
+            gameActive = true;
+            startGameBtn.textContent = 'Playing...';
+            startGameBtn.disabled = true;
+
+            updateScoreDisplay();
+            updateLevelDisplay();
+            clearAllMoles(); // Ensure no moles from previous game are stuck
+
+            gameInterval = setInterval(gameLoop, levels[currentLevel].speed * 1.5); // Moles appear slightly less frequently than they stay
+            moleTimer = setInterval(countdown, 1000);
+
+            showNotification("Game Started! Level: Easy", 2000);
+            spawnMole(); // Spawn the first mole immediately
+        }
+
+        function gameLoop() {
+            if (!gameActive) return;
+            spawnMole();
+        }
+
+        function countdown() {
+            timeLeft--;
+            timeLeftEl.textContent = timeLeft;
+            if (timeLeft <= 0) {
+                endGame();
+            }
+        }
+
+        function spawnMole() {
+            if (!gameActive) return;
+
+            clearAllMoles(); // Clear previous mole if any missed
+
+            const randomIndex = Math.floor(Math.random() * holeElements.length);
+            const hole = holeElements[randomIndex];
+            currentMoleHole = hole; // Track the current mole
+
+            hole.classList.add('up');
+            hole.setAttribute('aria-label', `Hole ${parseInt(hole.dataset.index) + 1} with mole`);
+
+
+            // Mole disappears after level-defined speed
+            setTimeout(() => {
+                if (hole.classList.contains('up') && !hole.classList.contains('whacked')) { // Only remove if not whacked
+                   hideMole(hole);
+                }
+            }, levels[currentLevel].speed);
+        }
+        
+        function hideMole(hole) {
+            if (hole) {
+                hole.classList.remove('up', 'whacked');
+                hole.setAttribute('aria-label', `Hole ${parseInt(hole.dataset.index) + 1}`);
+                if (currentMoleHole === hole) {
+                    currentMoleHole = null;
+                }
+            }
+        }
+
+        function clearAllMoles() {
+            holeElements.forEach(hole => {
+                hideMole(hole);
+            });
+            currentMoleHole = null;
+        }
+
+        function whackMole(hole) {
+            if (!gameActive || !hole.classList.contains('up') || hole.classList.contains('whacked')) {
+                return;
+            }
+
+            score++;
+            updateScoreDisplay();
+
+            hole.classList.add('whacked');
+            // No need to call hideMole explicitly here if 'whacked' animation handles disappearance
+            // Or, ensure that a whacked mole is removed from 'up' state so it doesn't get hidden by the timeout
+            
+            // Short delay to show whacked animation before it might be cleared by spawnMole
+            setTimeout(() => {
+                if (hole.classList.contains('whacked')) { // ensure it's still the whacked one
+                    hideMole(hole);
+                }
+            }, 300); // Duration of whacked visual before reset
+
+
+            // Check for level up
+            checkLevelUp();
+
+            // Immediately spawn a new mole after a successful whack if desired,
+            // or let the gameLoop handle it. For now, let gameLoop handle.
+        }
+
+        function checkLevelUp() {
+            const currentLevelData = levels[currentLevel];
+            if (score >= currentLevelData.nextLevelScore) {
+                if (currentLevel === 'Easy') {
+                    currentLevel = 'Medium';
+                    showNotification("Level Up! Now Medium!", 2500);
+                } else if (currentLevel === 'Medium') {
+                    currentLevel = 'Hard';
+                    showNotification("Level Up! Now Hard!", 2500);
+                }
+                updateLevelDisplay();
+                // Adjust game speed
+                clearInterval(gameInterval);
+                gameInterval = setInterval(gameLoop, levels[currentLevel].speed * 1.5);
+            }
+        }
+
+        function updateScoreDisplay() {
+            currentScoreEl.textContent = score;
+        }
+
+        function updateHighScoreDisplay() {
+            highScoreEl.textContent = highScore;
+        }
+
+        function updateLevelDisplay() {
+            currentLevelEl.textContent = levels[currentLevel].name;
+        }
+
+        function endGame() {
+            gameActive = false;
+            clearInterval(gameInterval);
+            clearInterval(moleTimer);
+            clearAllMoles();
+
+            startGameBtn.textContent = 'Restart Game';
+            startGameBtn.disabled = false;
+
+            let endMessage = `Game Over! Your score: ${score}.`;
+            if (score > highScore) {
+                highScore = score;
+                localStorage.setItem('whackAMoleHighScore', highScore);
+                updateHighScoreDisplay();
+                endMessage += " New High Score!";
+            }
+            showNotification(endMessage, 5000);
+            timeLeft = 60; // Reset for next game
+        }
+
+        function showNotification(message, duration = 3000) {
+            notificationEl.textContent = message;
+            notificationEl.classList.add('show');
+            setTimeout(() => {
+                notificationEl.classList.remove('show');
+            }, duration);
+        }
+
+        function handleKeyPress(event) {
+            if (!gameActive) return;
+
+            const keyNum = parseInt(event.key);
+            if (keyNum >= 1 && keyNum <= 9) {
+                event.preventDefault(); // Prevent default browser action for number keys
+                const holeIndex = keyNum - 1;
+                if (holeElements[holeIndex] && holeElements[holeIndex].classList.contains('up')) {
+                    whackMole(holeElements[holeIndex]);
+                }
+            }
+        }
+
+        // Initialize
+        initGame();
+
+    </script>
+</body>
+</html>
