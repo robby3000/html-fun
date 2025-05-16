@@ -100,7 +100,6 @@
     <div id="ui">
         <div>Enemies: <span id="enemy-count">0</span></div>
         <div>Score: <span id="score">0</span></div>
-        <div><button id="sound-toggle" style="background: rgba(255,255,255,0.2); color: white; border: none; padding: 5px; margin-top: 5px; cursor: pointer;">🔊</button></div>
     </div>
     <div id="health">
         <div id="health-bar"></div>
@@ -154,7 +153,6 @@
         let moveRight = false;
         let lastEnemySpawnTime = 0;
         const enemySpawnInterval = 2000; // ms
-        let soundEnabled = true; // Flag to control sound
         let soundInitialized = false; // Flag to track if sound has been initialized
 
         // Initialize Three.js
@@ -286,16 +284,7 @@
         // Game over and restart
         document.getElementById('restart-btn').addEventListener('click', restartGame);
         
-        // Sound toggle button
-        document.getElementById('sound-toggle').addEventListener('click', function() {
-            soundEnabled = !soundEnabled;
-            this.textContent = soundEnabled ? '🔊' : '🔇';
-            
-            // Initialize sound if this is the first user interaction
-            if (soundEnabled && !soundInitialized) {
-                initializeSound();
-            }
-        });
+
         
         // Initialize sound on first user interaction with the game
         document.addEventListener('click', function initSound() {
@@ -333,7 +322,7 @@
             if (gameOver) return;
             
             // Play laser sound effect
-            if (soundEnabled) {
+            {
                 const laserSound = document.getElementById('laser-sound');
                 laserSound.currentTime = 0; // Reset sound to start
                 
@@ -368,7 +357,7 @@
             if (gameOver) return;
             
             // Play enemy laser sound effect
-            if (soundEnabled) {
+            {
                 const enemyLaserSound = document.getElementById('enemy-laser-sound');
                 enemyLaserSound.currentTime = 0;
                 enemyLaserSound.play().catch(e => console.log('Error playing enemy laser sound:', e));
@@ -418,7 +407,7 @@
                         bullets.splice(i, 1);
                         
                         // Play enemy destroyed sound
-                        if (soundEnabled) {
+                        {
                             const enemyDestroyedSound = document.getElementById('enemy-destroyed-sound');
                             enemyDestroyedSound.currentTime = 0;
                             enemyDestroyedSound.play().catch(e => console.log('Error playing enemy destroyed sound:', e));
@@ -447,7 +436,7 @@
                     health--;
                     
                     // Play appropriate sound based on health
-                    if (soundEnabled) {
+                    {
                         if (health <= 0) {
                             // Game over sound
                             const gameOverSound = document.getElementById('game-over-sound');
