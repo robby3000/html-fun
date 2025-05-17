@@ -104,16 +104,30 @@
     <div id="health">
         <div id="health-bar"></div>
     </div>
-    <div id="bullets-display" style="position: absolute; top: 40px; right: 10px; font-size: 24px; color: #CCCCCC; text-shadow: 0 0 10px #00FF00, 0 0 20px #00FF00; font-weight: bold;">20</div>
+    <div id="bullets-display" style="position: absolute; top: 40px; right: 10px; font-size: 36px; color: #CCCCCC; text-shadow: 0 0 10px #00FF00, 0 0 20px #00FF00; font-weight: bold;">20</div>
     <div id="controls">
         <div class="control-btn" id="left-btn">←</div>
         <div class="control-btn" id="fire-btn">FIRE</div>
         <div class="control-btn" id="right-btn">→</div>
     </div>
+    <div id="start-screen" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.8); display: flex; justify-content: center; align-items: center; flex-direction: column; color: white; font-size: 36px;">
+        <div>SPACE TANK BATTLE</div>
+        <button id="start-btn" style="margin-top: 20px; padding: 10px 20px; font-size: 24px; background: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer;">Start Game</button>
+        <button id="info-btn-start" style="margin-top: 10px; padding: 5px 15px; font-size: 16px; background: rgba(255,255,255,0.2); color: white; border: none; border-radius: 5px; cursor: pointer;">info</button>
+    </div>
+    
     <div id="game-over">
         <div>GAME OVER</div>
         <div>Final Score: <span id="final-score">0</span></div>
         <button id="restart-btn">Play Again</button>
+        <button id="info-btn-gameover" style="margin-top: 10px; padding: 5px 15px; font-size: 16px; background: rgba(255,255,255,0.2); color: white; border: none; border-radius: 5px; cursor: pointer;">info</button>
+    </div>
+    
+    <div id="info-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.9); z-index: 1000; justify-content: center; align-items: center;">
+        <div style="background: rgba(50, 50, 80, 0.9); padding: 30px; border-radius: 10px; max-width: 500px; text-align: center; color: white; position: relative;">
+            <p style="font-size: 18px; line-height: 1.6;">Shoot down the enemy spaceships. Keep an eye on your laser cannon count at the top right, you get 2 more shots with every enemy spaceship that spawns. If you get 3 hits you die. Good luck!</p>
+            <button id="close-modal" style="padding: 5px 15px; background: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer; margin-top: 20px;">Close</button>
+        </div>
     </div>
     
     <!-- Audio elements for sound effects -->
@@ -150,12 +164,14 @@
         let bullets = [];
         let enemyBullets = [];
         let gameOver = false;
+        let gameStarted = false;
         let moveLeft = false;
         let moveRight = false;
         let lastEnemySpawnTime = 0;
         const enemySpawnInterval = 2000; // ms
         let soundInitialized = false; // Flag to track if sound has been initialized
         let bulletCount = 20; // Starting bullet count
+        let lastLifeGainedAtScore = 0; // Track when we last gave an extra life
 
         // Initialize Three.js
         const scene = new THREE.Scene();
@@ -293,7 +309,7 @@
 
         // Desktop controls
         document.addEventListener('keydown', (e) => {
-            if (gameOver) return;
+            if (gameOver || !gameStarted) return;
             
             if (e.code === 'Space') {
                 fireBullet();
@@ -320,6 +336,27 @@
         // Game over and restart
         document.getElementById('restart-btn').addEventListener('click', restartGame);
         
+        // Start game button
+        document.getElementById('start-btn').addEventListener('click', startGame);
+        
+        // Info buttons
+        document.getElementById('info-btn-start').addEventListener('click', showInfoModal);
+        document.getElementById('info-btn-gameover').addEventListener('click', showInfoModal);
+        document.getElementById('close-modal').addEventListener('click', hideInfoModal);
+        
+        function showInfoModal() {
+            document.getElementById('info-modal').style.display = 'flex';
+        }
+        
+        function hideInfoModal() {
+            document.getElementById('info-modal').style.display = 'none';
+        }
+        
+        function startGame() {
+            gameStarted = true;
+            document.getElementById('start-screen').style.display = 'none';
+        }
+        
 
         
         // Initialize sound on first user interaction with the game
@@ -333,159 +370,220 @@
         function restartGame() {
             // Remove all enemies and bullets
             enemies.forEach(enemy => scene.remove(enemy));
-            bullets.forEach(bullet => scene.remove(bullet));
-            enemyBullets.forEach(bullet => scene.remove(bullet));
             
-            // Reset game state
-            enemies = [];
-            bullets = [];
-            enemyBullets = [];
-            score = 0;
-            health = 3;
-            gameOver = false;
-            bulletCount = 20; // Reset bullet count
+    // Reset game state
+    enemies = [];
+    score = 0;
+    health = 3;
+    gameOver = false;
+    gameStarted = true;
+    bulletCount = 20; // Reset bullet count
+    lastLifeGainedAtScore = 0; // Reset life gain tracker
             
-            // Update UI
-            document.getElementById('score').textContent = score;
-            document.getElementById('enemy-count').textContent = enemies.length;
-            document.getElementById('health-bar').style.width = '100%';
-            document.getElementById('game-over').style.display = 'none';
-            updateBulletDisplay();
+    // Update UI
+    document.getElementById('score').textContent = score;
+    document.getElementById('enemy-count').textContent = enemies.length;
+    document.getElementById('health-bar').style.width = '100%';
+    document.getElementById('game-over').style.display = 'none';
+    updateBulletDisplay();
             
-            // Reset player position
-            player.position.x = 0;
-        }
+    // Reset player position
+    player.position.x = 0;
+}
 
-        function fireBullet() {
-            if (gameOver) return;
+function fireBullet() {
+    if (gameOver) return;
             
-            // Check if player has bullets available
-            if (bulletCount <= 0) {
-                // Maybe add a "click" or "empty" sound here
-                return;
-            }
+    // Check if player has bullets available
+    if (bulletCount <= 0) {
+        // Maybe add a "click" or "empty" sound here
+        return;
+    }
             
-            // Decrease bullet count
-            bulletCount--;
-            updateBulletDisplay();
+    // Decrease bullet count
+    bulletCount--;
+    updateBulletDisplay();
             
-            // Play laser sound effect
-            {
-                const laserSound = document.getElementById('laser-sound');
-                laserSound.currentTime = 0; // Reset sound to start
+    // Play laser sound effect
+    {
+        const laserSound = document.getElementById('laser-sound');
+        laserSound.currentTime = 0; // Reset sound to start
                 
-                // Try to play the sound with error handling
-                laserSound.play()
-                    .then(() => {
-                        soundInitialized = true;
-                        console.log('Sound played successfully');
-                    })
-                    .catch(e => {
-                        console.log('Error playing sound:', e);
-                        // If sound failed because of no user interaction, we'll initialize it later
-                    });
-            }
+        // Try to play the sound with error handling
+        laserSound.play()
+            .then(() => {
+                soundInitialized = true;
+                console.log('Sound played successfully');
+            })
+            .catch(e => {
+                console.log('Error playing sound:', e);
+                // If sound failed because of no user interaction, we'll initialize it later
+            });
+    }
             
-            const bulletGeometry = new THREE.SphereGeometry(0.1, 16, 16);
-            const bulletMaterial = new THREE.MeshPhongMaterial({ color: 0xFFFF00 });
-            const bullet = new THREE.Mesh(bulletGeometry, bulletMaterial);
+    const bulletGeometry = new THREE.SphereGeometry(0.1, 16, 16);
+    const bulletMaterial = new THREE.MeshPhongMaterial({ color: 0xFFFF00 });
+    const bullet = new THREE.Mesh(bulletGeometry, bulletMaterial);
             
-            // Position bullet at the end of the cannon
-            bullet.position.copy(player.position);
-            bullet.position.z -= 2;
+    // Position bullet at the end of the cannon
+    bullet.position.copy(player.position);
+    bullet.position.z -= 2;
             
-            // Set bullet velocity (forward)
-            bullet.userData.velocity = new THREE.Vector3(0, 0, -0.5);
+    // Set bullet velocity (forward)
+    bullet.userData.velocity = new THREE.Vector3(0, 0, -0.5);
             
-            scene.add(bullet);
-            bullets.push(bullet);
-        }
+    scene.add(bullet);
+    bullets.push(bullet);
+}
 
-        function enemyFire(enemy) {
-            if (gameOver) return;
+function enemyFire(enemy) {
+    if (gameOver) return;
             
-            // Play enemy laser sound effect
-            {
-                const enemyLaserSound = document.getElementById('enemy-laser-sound');
-                enemyLaserSound.currentTime = 0;
-                enemyLaserSound.play().catch(e => console.log('Error playing enemy laser sound:', e));
-            }
+    // Play enemy laser sound effect
+    {
+        const enemyLaserSound = document.getElementById('enemy-laser-sound');
+        enemyLaserSound.currentTime = 0;
+        enemyLaserSound.play().catch(e => console.log('Error playing enemy laser sound:', e));
+    }
             
-            const bulletGeometry = new THREE.SphereGeometry(0.1, 16, 16);
-            const bulletMaterial = new THREE.MeshPhongMaterial({ color: 0xFF00FF });
-            const bullet = new THREE.Mesh(bulletGeometry, bulletMaterial);
+    const bulletGeometry = new THREE.SphereGeometry(0.1, 16, 16);
+    const bulletMaterial = new THREE.MeshPhongMaterial({ color: 0xFF00FF });
+    const bullet = new THREE.Mesh(bulletGeometry, bulletMaterial);
             
-            // Position bullet at the enemy's position
-            const worldPosition = new THREE.Vector3();
-            enemy.getWorldPosition(worldPosition);
-            bullet.position.copy(worldPosition);
-            bullet.position.z += 2;
+    // Position bullet at the enemy's position
+    const worldPosition = new THREE.Vector3();
+    enemy.getWorldPosition(worldPosition);
+    bullet.position.copy(worldPosition);
+    bullet.position.z += 2;
             
-            // Calculate direction to player
-            const direction = new THREE.Vector3();
-            direction.subVectors(player.position, bullet.position).normalize();
-            bullet.userData.velocity = direction.multiplyScalar(0.3);
+    // Calculate direction to player
+    const direction = new THREE.Vector3();
+    direction.subVectors(player.position, bullet.position).normalize();
+    bullet.userData.velocity = direction.multiplyScalar(0.3);
             
-            scene.add(bullet);
-            enemyBullets.push(bullet);
-        }
+    scene.add(bullet);
+    enemyBullets.push(bullet);
+}
 
-        function updateHealth() {
-            const healthPercent = (health / 3) * 100;
-            document.getElementById('health-bar').style.width = `${healthPercent}%`;
+function updateHealth() {
+    const healthPercent = (health / 3) * 100;
+    document.getElementById('health-bar').style.width = `${healthPercent}%`;
             
-            if (health <= 0) {
-                gameOver = true;
-                document.getElementById('final-score').textContent = score;
-                document.getElementById('game-over').style.display = 'flex';
-            }
-        }
+    if (health <= 0) {
+        gameOver = true;
+        document.getElementById('final-score').textContent = score;
+        document.getElementById('game-over').style.display = 'flex';
+    }
+}
 
-        function updateBulletDisplay() {
-            const bulletDisplay = document.getElementById('bullets-display');
-            bulletDisplay.textContent = bulletCount;
+function updateBulletDisplay() {
+    const bulletDisplay = document.getElementById('bullets-display');
+    bulletDisplay.textContent = bulletCount;
             
-            // Visual feedback - make it pulse when low on bullets
-            if (bulletCount <= 5) {
-                bulletDisplay.style.color = '#FF3333';
-                bulletDisplay.style.textShadow = '0 0 10px #FF0000, 0 0 20px #FF0000';
-            } else {
-                bulletDisplay.style.color = '#CCCCCC';
-                bulletDisplay.style.textShadow = '0 0 10px #00FF00, 0 0 20px #00FF00';
-            }
-        }
+    // Visual feedback - make it pulse when low on bullets
+    if (bulletCount <= 5) {
+        bulletDisplay.style.color = '#FF3333';
+        bulletDisplay.style.textShadow = '0 0 10px #FF0000, 0 0 20px #FF0000';
+    } else {
+        bulletDisplay.style.color = '#CCCCCC';
+        bulletDisplay.style.textShadow = '0 0 10px #00FF00, 0 0 20px #00FF00';
+    }
+}
 
-        function checkCollisions() {
-            // Check player bullets hitting enemies
-            for (let i = bullets.length - 1; i >= 0; i--) {
-                const bullet = bullets[i];
+function updateScore() {
+    score += 10;
+    document.getElementById('score').textContent = score;
+            
+    // Check if player should get an extra life (every 500 points)
+    if (health < 3 && score >= lastLifeGainedAtScore + 500) {
+        health++;
+        lastLifeGainedAtScore = Math.floor(score / 500) * 500;
+        updateHealth();
                 
-                for (let j = enemies.length - 1; j >= 0; j--) {
-                    const enemy = enemies[j];
+        // Maybe add a special sound or visual effect for gaining a life
+        console.log('Extra life gained at score:', score);
+    }
+}
+
+function checkCollisions() {
+    // Check player bullets hitting enemies
+    for (let i = bullets.length - 1; i >= 0; i--) {
+        const bullet = bullets[i];
+                
+        for (let j = enemies.length - 1; j >= 0; j--) {
+            const enemy = enemies[j];
                     
-                    if (bullet.position.distanceTo(enemy.position) < 1) {
-                        // Hit!
-                        scene.remove(bullet);
-                        bullets.splice(i, 1);
+            if (bullet.position.distanceTo(enemy.position) < 1) {
+                // Hit!
+                scene.remove(bullet);
+                bullets.splice(i, 1);
                         
-                        // Play enemy destroyed sound
-                        {
-                            const enemyDestroyedSound = document.getElementById('enemy-destroyed-sound');
-                            enemyDestroyedSound.currentTime = 0;
-                            enemyDestroyedSound.play().catch(e => console.log('Error playing enemy destroyed sound:', e));
-                        }
+                // Play enemy destroyed sound
+                {
+                    const enemyDestroyedSound = document.getElementById('enemy-destroyed-sound');
+                    enemyDestroyedSound.currentTime = 0;
+                    enemyDestroyedSound.play().catch(e => console.log('Error playing enemy destroyed sound:', e));
+                }
                         
-                        scene.remove(enemy);
-                        enemies.splice(j, 1);
+                scene.remove(enemy);
+                enemies.splice(j, 1);
                         
-                        score += 10;
-                        document.getElementById('score').textContent = score;
-                        document.getElementById('enemy-count').textContent = enemies.length;
-                        break;
-                    }
+                updateScore();
+                document.getElementById('enemy-count').textContent = enemies.length;
+                break;
+            }
+        }
+    }
+            
+    // Check enemy bullets hitting player
+    for (let i = enemyBullets.length - 1; i >= 0; i--) {
+        const bullet = enemyBullets[i];
+                
+        if (bullet.position.distanceTo(player.position) < 1) {
+            // Hit player!
+            scene.remove(bullet);
+            enemyBullets.splice(i, 1);
+                    
+            health--;
+                    
+            // Play appropriate sound based on health
+            {
+                if (health <= 0) {
+                    // Game over sound
+                    const gameOverSound = document.getElementById('game-over-sound');
+                    gameOverSound.currentTime = 0;
+                    gameOverSound.play().catch(e => console.log('Error playing game over sound:', e));
+                } else {
+                    // Player hit sound
+                    const playerHitSound = document.getElementById('player-hit-sound');
+                    playerHitSound.currentTime = 0;
+                    playerHitSound.play().catch(e => console.log('Error playing player hit sound:', e));
                 }
             }
+                    
+            updateHealth();
+        }
+    }
+}
+
+// Game loop
+
+
+function spawnEnemy() {
+    // Create enemy ship as a group of objects
+    const enemy = new THREE.Group();
             
+    // Position enemy at random x position, far away
+    enemy.position.x = (Math.random() - 0.5) * 10;
+    enemy.position.y = -1;
+    enemy.position.z = -30;
+            
+    // Add bullets when a new enemy appears
+    bulletCount += 2;
+    updateBulletDisplay();
+            
+    // Randomize enemy type (3 different designs)
+    const enemyType = Math.floor(Math.random() * 3);
             // Check enemy bullets hitting player
             for (let i = enemyBullets.length - 1; i >= 0; i--) {
                 const bullet = enemyBullets[i];
@@ -521,7 +619,7 @@
         function animate() {
             requestAnimationFrame(animate);
             
-            if (gameOver) return;
+            if (gameOver || !gameStarted) return;
             
             // Move player
             if (moveLeft && player.position.x > -5) {
@@ -710,7 +808,12 @@
         updateHealth();
         updateBulletDisplay();
         
-        // Start the game
+        // Show start screen initially
+        gameStarted = false;
+        document.getElementById('start-screen').style.display = 'flex';
+        document.getElementById('game-over').style.display = 'none';
+        
+        // Start the animation loop
         animate();
     </script>
 </body>
