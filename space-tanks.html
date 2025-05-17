@@ -187,7 +187,7 @@
     <script>
         // Game variables
         let score = 0;
-        let health = 3;
+        let health = 10;
         let enemies = [];
         let bullets = [];
         let enemyBullets = [];
@@ -402,7 +402,7 @@
     // Reset game state
     enemies = [];
     score = 0;
-    health = 3;
+    health = 10;
     gameOver = false;
     gameStarted = true;
     bulletCount = 20; // Reset bullet count
@@ -494,7 +494,7 @@ function enemyFire(enemy) {
 }
 
 function updateHealth() {
-    const healthPercent = (health / 3) * 100;
+    const healthPercent = (health / 10) * 100;
     document.getElementById('health-bar').style.width = `${healthPercent}%`;
             
     if (health <= 0) {
@@ -522,10 +522,10 @@ function updateScore() {
     score += 10;
     document.getElementById('score').textContent = score;
             
-    // Check if player should get an extra life (every 500 points)
-    if (health < 3 && score >= lastLifeGainedAtScore + 500) {
+    // Check if player should get an extra life (every 250 points)
+    if (health < 10 && score >= lastLifeGainedAtScore + 250) {
         health++;
-        lastLifeGainedAtScore = Math.floor(score / 500) * 500;
+        lastLifeGainedAtScore = Math.floor(score / 250) * 250;
         updateHealth();
                 
         // Maybe add a special sound or visual effect for gaining a life
