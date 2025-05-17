@@ -495,7 +495,17 @@ function enemyFire(enemy) {
 
 function updateHealth() {
     const healthPercent = (health / 10) * 100;
-    document.getElementById('health-bar').style.width = `${healthPercent}%`;
+    const healthBar = document.getElementById('health-bar');
+    healthBar.style.width = `${healthPercent}%`;
+    
+    // Update health bar color based on remaining lives
+    if (health >= 7) {
+        healthBar.style.background = '#4CAF50'; // Green
+    } else if (health >= 4) {
+        healthBar.style.background = '#FFC107'; // Yellow
+    } else {
+        healthBar.style.background = '#F44336'; // Red
+    }
             
     if (health <= 0) {
         gameOver = true;
