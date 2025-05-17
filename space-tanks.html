@@ -104,6 +104,7 @@
     <div id="health">
         <div id="health-bar"></div>
     </div>
+    <div id="bullets-display" style="position: absolute; top: 40px; right: 10px; font-size: 24px; color: #CCCCCC; text-shadow: 0 0 10px #00FF00, 0 0 20px #00FF00; font-weight: bold;">20</div>
     <div id="controls">
         <div class="control-btn" id="left-btn">←</div>
         <div class="control-btn" id="fire-btn">FIRE</div>
@@ -154,6 +155,7 @@
         let lastEnemySpawnTime = 0;
         const enemySpawnInterval = 2000; // ms
         let soundInitialized = false; // Flag to track if sound has been initialized
+        let bulletCount = 20; // Starting bullet count
 
         // Initialize Three.js
         const scene = new THREE.Scene();
@@ -341,12 +343,14 @@
             score = 0;
             health = 3;
             gameOver = false;
+            bulletCount = 20; // Reset bullet count
             
-            // Reset UI
+            // Update UI
             document.getElementById('score').textContent = score;
             document.getElementById('enemy-count').textContent = enemies.length;
             document.getElementById('health-bar').style.width = '100%';
             document.getElementById('game-over').style.display = 'none';
+            updateBulletDisplay();
             
             // Reset player position
             player.position.x = 0;
@@ -354,6 +358,16 @@
 
         function fireBullet() {
             if (gameOver) return;
+            
+            // Check if player has bullets available
+            if (bulletCount <= 0) {
+                // Maybe add a "click" or "empty" sound here
+                return;
+            }
+            
+            // Decrease bullet count
+            bulletCount--;
+            updateBulletDisplay();
             
             // Play laser sound effect
             {
@@ -424,6 +438,20 @@
                 gameOver = true;
                 document.getElementById('final-score').textContent = score;
                 document.getElementById('game-over').style.display = 'flex';
+            }
+        }
+
+        function updateBulletDisplay() {
+            const bulletDisplay = document.getElementById('bullets-display');
+            bulletDisplay.textContent = bulletCount;
+            
+            // Visual feedback - make it pulse when low on bullets
+            if (bulletCount <= 5) {
+                bulletDisplay.style.color = '#FF3333';
+                bulletDisplay.style.textShadow = '0 0 10px #FF0000, 0 0 20px #FF0000';
+            } else {
+                bulletDisplay.style.color = '#CCCCCC';
+                bulletDisplay.style.textShadow = '0 0 10px #00FF00, 0 0 20px #00FF00';
             }
         }
 
@@ -572,6 +600,10 @@
             enemy.position.y = -1;
             enemy.position.z = -30;
             
+            // Add bullets when a new enemy appears
+            bulletCount += 2;
+            updateBulletDisplay();
+            
             // Randomize enemy type (3 different designs)
             const enemyType = Math.floor(Math.random() * 3);
             
@@ -673,6 +705,10 @@
             enemies.push(enemy);
             document.getElementById('enemy-count').textContent = enemies.length;
         }
+        
+        // Initialize UI
+        updateHealth();
+        updateBulletDisplay();
         
         // Start the game
         animate();
