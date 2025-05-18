@@ -352,6 +352,10 @@
                 <input type="range" id="lineWidth" min="1" max="10" value="2">
             </div>
             <div class="control">
+                <label for="lineToggle">Line Visible</label>
+                <input type="checkbox" id="lineToggle" checked>
+            </div>
+            <div class="control">
                 <label for="maxPathLength">Max Length</label>
                 <input type="range" id="maxPathLength" min="100" max="5000" step="100" value="1000">
             </div>
@@ -426,6 +430,7 @@
             // Controls
             const speedControl = document.getElementById('speed');
             const lineWidthControl = document.getElementById('lineWidth');
+            const lineToggleControl = document.getElementById('lineToggle');
             const maxPathLengthControl = document.getElementById('maxPathLength');
             const pausePlayButton = document.getElementById('pausePlay');
             const resetButton = document.getElementById('reset');
@@ -462,6 +467,7 @@
             let curveAmplitude = 20;
             let areaCount = 0;
             let isPaused = false;
+            let linesVisible = lineToggleControl.checked;
             
             // Ladybird spiral movement variables
             let spiralCenterX = 0;         // Center X of spiral
@@ -1052,6 +1058,12 @@ function animateMinstrelLegs() {
                 currentPath.setAttribute("stroke-width", lineWidth);
                 currentPath.setAttribute("stroke", trailColor.value);
                 currentPath.setAttribute("id", "path" + pathId);
+                
+                // Set visibility based on toggle
+                if (!linesVisible) {
+                    currentPath.setAttribute("stroke-opacity", "0");
+                }
+                
                 pathId++;
                 
                 // Start the path at the current ant position
@@ -1288,6 +1300,17 @@ function animateMinstrelLegs() {
                 if (currentPath) {
                     currentPath.setAttribute("stroke-width", lineWidth);
                 }
+            });
+            
+            // Line toggle control
+            lineToggleControl.addEventListener('change', function() {
+                linesVisible = this.checked;
+                
+                // Update all existing paths
+                const paths = pathLines.querySelectorAll('path');
+                paths.forEach(path => {
+                    path.setAttribute("stroke-opacity", linesVisible ? "1" : "0");
+                });
             });
             
             maxPathLengthControl.addEventListener('input', function() {
