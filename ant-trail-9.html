@@ -1306,11 +1306,23 @@ function animateMinstrelLegs() {
             lineToggleControl.addEventListener('change', function() {
                 linesVisible = this.checked;
                 
-                // Update all existing paths
-                const paths = pathLines.querySelectorAll('path');
-                paths.forEach(path => {
-                    path.setAttribute("stroke-opacity", linesVisible ? "1" : "0");
-                });
+                // No longer updating existing paths - only new paths will be affected
+                // Start a new path with the new visibility setting
+                if (currentPath) {
+                    // Save current position
+                    const currentX = antX;
+                    const currentY = antY;
+                    
+                    // End current path
+                    currentPath = null;
+                    currentPathPoints = [];
+                    currentPathSegments = [];
+                    
+                    // Start new path at current position with new visibility setting
+                    antX = currentX;
+                    antY = currentY;
+                    startNewPath(); // This will use the new visibility setting
+                }
             });
             
             maxPathLengthControl.addEventListener('input', function() {
