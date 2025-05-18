@@ -955,6 +955,11 @@ function initializeZigzag() {
     zigzagStepCount = 0;
     zigzagMaxSteps = Math.floor(Math.random() * 30) + 20; // Random number of steps
     zigzagShrinking = Math.random() > 0.5; // Random shrink/grow state
+    
+    // Ensure we're not too close to the edges
+    const margin = Math.min(svgWidth, svgHeight) * 0.2; // 20% margin from edges
+    antX = Math.max(margin, Math.min(svgWidth - margin, antX));
+    antY = Math.max(margin, Math.min(svgHeight - margin, antY));
 }
 
 function initializeEllipse() {
@@ -966,11 +971,22 @@ function initializeEllipse() {
     ellipseMajor = Math.random() * maxDimension + 30;
     ellipseMinor = Math.random() * (ellipseMajor * 0.8) + 20;
     
-    // Set ellipse center near current position
-    ellipseCenterX = antX + (Math.random() - 0.5) * 50;
-    ellipseCenterY = antY + (Math.random() - 0.5) * 50;
+    // Calculate safe area for ellipse center (with margin from edges)
+    const margin = Math.max(ellipseMajor, ellipseMinor) * 1.2; // Add 20% extra margin
+    const minX = margin;
+    const maxX = svgWidth - margin;
+    const minY = margin;
+    const maxY = svgHeight - margin;
     
-    // Ensure ellipse stays within bounds
+    // Ensure current position is within safe area
+    antX = Math.max(minX, Math.min(maxX, antX));
+    antY = Math.max(minY, Math.min(maxY, antY));
+    
+    // Set ellipse center near current position, but within safe bounds
+    ellipseCenterX = antX + (Math.random() - 0.5) * 30; // Smaller random offset
+    ellipseCenterY = antY + (Math.random() - 0.5) * 30; // Smaller random offset
+    
+    // Ensure ellipse stays within safe bounds
     ellipseCenterX = Math.max(ellipseMajor, Math.min(svgWidth - ellipseMajor, ellipseCenterX));
     ellipseCenterY = Math.max(ellipseMinor, Math.min(svgHeight - ellipseMinor, ellipseCenterY));
     
@@ -978,11 +994,13 @@ function initializeEllipse() {
     ellipseMaxAngle = Math.PI/2 + Math.random() * (Math.PI * 3/2);
     
     // Set initial position on ellipse
-    antX = ellipseCenterX + ellipseMajor;
-    antY = ellipseCenterY;
+    antX = ellipseCenterX + ellipseMajor * Math.cos(ellipseAngle);
+    antY = ellipseCenterY + ellipseMinor * Math.sin(ellipseAngle);
     
-    // Set initial angle
-    antAngle = Math.PI/2;
+    // Set initial angle based on ellipse tangent
+    const dx = -ellipseMajor * Math.sin(ellipseAngle);
+    const dy = ellipseMinor * Math.cos(ellipseAngle);
+    antAngle = Math.atan2(dy, dx);
 }
 
 function animateMinstrelLegs() {
