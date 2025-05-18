@@ -166,11 +166,15 @@
             padding-bottom: 5px;
         }
 
-        .color-picker-container {
+        .color-picker-container, .custom-color-picker {
             display: flex;
             flex-direction: column;
             gap: 10px;
             margin-bottom: 15px;
+        }
+        
+        .custom-color-picker {
+            margin-bottom: 8px;
         }
 
         .color-preview {
@@ -387,8 +391,35 @@
                 <option value="golden">Golden</option>
                 <option value="seascape">Seascape</option>
                 <option value="tinted-monochrome">Tinted Monochrome</option>
+                <option value="custom">Custom</option>
                 <option value="random">Random Colors</option>
             </select>
+            <div id="customPaletteContainer" style="display: none; margin-top: 10px;">
+                <div class="custom-color-picker">
+                    <label>Color 1 <span class="color-preview" id="customColor1Preview" style="background-color: #540200;"></span></label>
+                    <input type="color" id="customColor1" value="#540200">
+                </div>
+                <div class="custom-color-picker">
+                    <label>Color 2 <span class="color-preview" id="customColor2Preview" style="background-color: #544b00;"></span></label>
+                    <input type="color" id="customColor2" value="#544b00">
+                </div>
+                <div class="custom-color-picker">
+                    <label>Color 3 <span class="color-preview" id="customColor3Preview" style="background-color: #00542a;"></span></label>
+                    <input type="color" id="customColor3" value="#00542a">
+                </div>
+                <div class="custom-color-picker">
+                    <label>Color 4 <span class="color-preview" id="customColor4Preview" style="background-color: #004354;"></span></label>
+                    <input type="color" id="customColor4" value="#004354">
+                </div>
+                <div class="custom-color-picker">
+                    <label>Color 5 <span class="color-preview" id="customColor5Preview" style="background-color: #000054;"></span></label>
+                    <input type="color" id="customColor5" value="#000054">
+                </div>
+                <div class="custom-color-picker">
+                    <label>Color 6 <span class="color-preview" id="customColor6Preview" style="background-color: #540051;"></span></label>
+                    <input type="color" id="customColor6" value="#540051">
+                </div>
+            </div>
         </div>
 
         <div class="settings-section">
@@ -555,6 +586,14 @@
                     '#C0C0C0', // Silver
                     '#D3D3D3', // Light Gray
                     '#DCDCDC'  // Gainsboro
+                ],
+                custom: [
+                    '#540200', // Deep Red
+                    '#544b00', // Olive
+                    '#00542a', // Forest Green
+                    '#004354', // Deep Blue-Green
+                    '#000054', // Navy Blue
+                    '#540051'  // Deep Purple
                 ],
                 random: [] // Will be generated on demand
             };
@@ -1376,7 +1415,47 @@ function animateMinstrelLegs() {
             });
             
             // Palette selector
+            // Custom color pickers
+            const customPaletteContainer = document.getElementById('customPaletteContainer');
+            const customColorInputs = [
+                document.getElementById('customColor1'),
+                document.getElementById('customColor2'),
+                document.getElementById('customColor3'),
+                document.getElementById('customColor4'),
+                document.getElementById('customColor5'),
+                document.getElementById('customColor6')
+            ];
+            
+            // Custom color preview spans
+            const customColorPreviews = [
+                document.getElementById('customColor1Preview'),
+                document.getElementById('customColor2Preview'),
+                document.getElementById('customColor3Preview'),
+                document.getElementById('customColor4Preview'),
+                document.getElementById('customColor5Preview'),
+                document.getElementById('customColor6Preview')
+            ];
+            
+            // Update custom palette when color inputs change
+            customColorInputs.forEach((input, index) => {
+                input.addEventListener('input', function() {
+                    // Update the preview
+                    customColorPreviews[index].style.backgroundColor = this.value;
+                    
+                    // Update the custom palette
+                    palettes.custom[index] = this.value;
+                    
+                    // If custom palette is currently selected, update the color palette
+                    if (paletteSelector.value === 'custom') {
+                        colorPalette = palettes.custom;
+                    }
+                });
+            });
+            
             paletteSelector.addEventListener('change', function() {
+                // Toggle custom palette container visibility
+                customPaletteContainer.style.display = this.value === 'custom' ? 'block' : 'none';
+                
                 if (this.value === 'random') {
                     // For random, we'll generate colors on demand in getRandomColor()
                     colorPalette = [];
