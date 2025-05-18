@@ -1,0 +1,1477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ant Man Beep</title>
+    <!-- Add html2canvas library for reliable export -->
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #ffffff;
+            font-family: Arial, sans-serif;
+        }
+        
+        .scene-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            overflow: hidden;
+            z-index: -110;
+        }
+        
+        svg {
+            width: 100%;
+            height: 100%;
+        }
+        
+        .ant {
+            filter: drop-shadow(1px 1px 1px rgba(0, 0, 0, 0.3));
+        }
+        
+        .leg {
+            transform-origin: 0 0;
+        }
+        
+        .path-line {
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+        
+        .filled-area {
+            opacity: 0.8;
+        }
+        
+        .controls {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 10px;
+            padding: 10px 20px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 15px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            z-index: 100;
+            max-width: 95%;
+            width: auto;
+        }
+        
+        .control {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-width: 80px;
+        }
+        
+        .control label {
+            margin-bottom: 5px;
+            font-size: 12px;
+            color: #333;
+            text-align: center;
+        }
+        
+        .control input {
+            width: 80px;
+        }
+        
+        .control button {
+            padding: 5px 10px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        .control button:hover {
+            background: #45a049;
+        }
+
+        /* Settings panel */
+        .settings-icon {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 40px;
+            height: 40px;
+            background-color: rgba(255, 255, 255, 0.8);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            z-index: 200;
+            transition: transform 0.3s ease;
+        }
+
+        .settings-icon:hover {
+            transform: rotate(30deg);
+        }
+
+        .settings-panel {
+            position: fixed;
+            top: 0;
+            right: -300px;
+            width: 280px;
+            height: 100vh;
+            background-color: rgba(255, 255, 255, 0.75);
+            box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            transition: right 0.3s ease;
+            z-index: 150;
+            overflow-y: auto;
+        }
+        
+        /* Move the controls inside the settings panel */
+        .settings-panel .control {
+            margin-bottom: 15px;
+        }
+
+        .settings-panel.open {
+            right: 0;
+        }
+
+        .settings-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .settings-header h3 {
+            margin: 0;
+        }
+
+
+
+        .settings-section {
+            margin-bottom: 20px;
+        }
+
+        .settings-section h4 {
+            margin-top: 0;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 5px;
+        }
+
+        .color-picker-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .color-preview {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-left: 10px;
+            border: 1px solid #ccc;
+        }
+
+        select.palette-selector {
+            width: 100%;
+            padding: 8px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            background-color: white;
+        }
+        
+        /* Mobile responsiveness */
+        @media (max-width: 600px) {
+            .controls {
+                padding: 8px 12px;
+                gap: 10px;
+                bottom: 10px;
+            }
+            
+            .control {
+                min-width: 70px;
+            }
+            
+            .control label {
+                font-size: 10px;
+            }
+            
+            .control input {
+                width: 70px;
+            }
+            
+            .control button {
+                padding: 4px 8px;
+                font-size: 10px;
+            }
+
+            .settings-panel {
+                width: 250px;
+            }
+
+            .settings-icon {
+                top: 10px;
+                right: 10px;
+                width: 35px;
+                height: 35px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="scene-container">
+        <svg id="canvas" viewBox="0 0 1000 600" preserveAspectRatio="xMidYMid slice">
+            <!-- Filled areas will be added here -->
+            <g id="filledAreas"></g>
+            <!-- Path lines will be added here -->
+            <g id="pathLines"></g>
+            <!-- Creatures -->
+            <g id="creatures">
+                <!-- Ant SVG -->
+                <g id="ant" class="creature" transform="translate(0, 0) rotate(0)">
+                    <!-- Ant abdomen (rear part) -->
+                    <ellipse cx="-8" cy="0" rx="10" ry="8" fill="#222222" />
+                    <!-- Ant thorax (middle part) -->
+                    <ellipse cx="5" cy="0" rx="7" ry="6" fill="#333333" />
+                    <!-- Ant head -->
+                    <circle cx="15" cy="0" r="5" fill="#444444" />
+                    <!-- Antennae -->
+                    <path d="M18,-2 Q25,-10 30,-8" stroke="#333333" stroke-width="1" fill="none" />
+                    <path d="M18,2 Q25,10 30,8" stroke="#333333" stroke-width="1" fill="none" />
+                    <!-- Mandibles -->
+                    <path d="M20,-2 Q23,-4 24,-3" stroke="#333333" stroke-width="1" fill="none" />
+                    <path d="M20,2 Q23,4 24,3" stroke="#333333" stroke-width="1" fill="none" />
+                    <!-- Legs (left side) -->
+                    <g id="leftLegs">
+                        <path id="leftFrontLeg" class="leg" d="M8,-5 Q2,-15 -5,-18" stroke="#333333" stroke-width="1.5" fill="none" />
+                        <path id="leftMiddleLeg" class="leg" d="M2,-5 Q-3,-12 -8,-10" stroke="#333333" stroke-width="1.5" fill="none" />
+                        <path id="leftRearLeg" class="leg" d="M-5,-5 Q-12,-15 -18,-18" stroke="#333333" stroke-width="1.5" fill="none" />
+                    </g>
+                    <!-- Legs (right side) -->
+                    <g id="rightLegs">
+                        <path id="rightFrontLeg" class="leg" d="M8,5 Q2,15 -5,18" stroke="#333333" stroke-width="1.5" fill="none" />
+                        <path id="rightMiddleLeg" class="leg" d="M2,5 Q-3,12 -8,10" stroke="#333333" stroke-width="1.5" fill="none" />
+                        <path id="rightRearLeg" class="leg" d="M-5,5 Q-12,15 -18,18" stroke="#333333" stroke-width="1.5" fill="none" />
+                    </g>
+                </g>
+                
+                <!-- Ladybird SVG -->
+                <g id="ladybird" class="creature" transform="translate(0, 0) rotate(0)" style="display: none;">
+                    <!-- Body (main shell) -->
+                    <ellipse cx="0" cy="0" rx="15" ry="12" fill="#E53935" />
+                    <!-- Head -->
+                    <circle cx="15" cy="0" r="5" fill="#111111" />
+                    <!-- Spots -->
+                    <circle cx="-8" cy="-5" r="2.5" fill="#111111" />
+                    <circle cx="-2" cy="2" r="2.5" fill="#111111" />
+                    <circle cx="5" cy="-6" r="2.5" fill="#111111" />
+                    <circle cx="8" cy="4" r="2.5" fill="#111111" />
+                    <!-- Center line -->
+                    <path d="M0,-12 L0,12" stroke="#111111" stroke-width="1" />
+                    <!-- Antennae -->
+                    <path d="M17,-2 Q22,-8 25,-6" stroke="#111111" stroke-width="1" fill="none" />
+                    <path d="M17,2 Q22,8 25,6" stroke="#111111" stroke-width="1" fill="none" />
+                    <!-- Legs (left side) -->
+                    <g id="ladybirdLeftLegs">
+                        <path class="leg" d="M8,-8 Q2,-15 -5,-18" stroke="#111111" stroke-width="1.5" fill="none" />
+                        <path class="leg" d="M0,-8 Q-5,-15 -10,-18" stroke="#111111" stroke-width="1.5" fill="none" />
+                        <path class="leg" d="M-8,-8 Q-12,-15 -18,-18" stroke="#111111" stroke-width="1.5" fill="none" />
+                    </g>
+                    <!-- Legs (right side) -->
+                    <g id="ladybirdRightLegs">
+                        <path class="leg" d="M8,8 Q2,15 -5,18" stroke="#111111" stroke-width="1.5" fill="none" />
+                        <path class="leg" d="M0,8 Q-5,15 -10,18" stroke="#111111" stroke-width="1.5" fill="none" />
+                        <path class="leg" d="M-8,8 Q-12,15 -18,18" stroke="#111111" stroke-width="1.5" fill="none" />
+                    </g>
+                </g>
+                
+                <!-- Minstrel Bug SVG -->
+                <g id="minstrel" class="creature" transform="translate(0, 0) rotate(0)" style="display: none;">
+                    <!-- Body (main shell) -->
+                    <ellipse cx="0" cy="0" rx="15" ry="12" fill="#E53935" />
+                    
+                    <!-- Stripes -->
+                    <path d="M-12,-8 L12,-8" stroke="black" stroke-width="2.5" />
+                    <path d="M-14,-4 L14,-4" stroke="black" stroke-width="2.5" />
+                    <path d="M-15,0 L15,0" stroke="black" stroke-width="2.5" />
+                    <path d="M-14,4 L14,4" stroke="black" stroke-width="2.5" />
+                    <path d="M-12,8 L12,8" stroke="black" stroke-width="2.5" />
+                    
+                    <!-- Head -->
+                    <circle cx="15" cy="0" r="5" fill="#111111" />
+                    
+                    <!-- Antennae -->
+                    <path d="M15,-2 Q25,-12 30,-15" stroke="#111111" stroke-width="1.5" fill="none" />
+                    <path d="M15,2 Q25,12 30,15" stroke="#111111" stroke-width="1.5" fill="none" />
+                    
+                    <!-- Legs (left side) -->
+                    <g id="minstrelLeftLegs">
+                        <path class="leg" d="M8,-8 Q2,-15 -5,-18" stroke="#111111" stroke-width="1.5" fill="none" />
+                        <path class="leg" d="M0,-8 Q-5,-15 -10,-18" stroke="#111111" stroke-width="1.5" fill="none" />
+                        <path class="leg" d="M-8,-8 Q-12,-15 -18,-18" stroke="#111111" stroke-width="1.5" fill="none" />
+                    </g>
+                    <!-- Legs (right side) -->
+                    <g id="minstrelRightLegs">
+                        <path class="leg" d="M8,8 Q2,15 -5,18" stroke="#111111" stroke-width="1.5" fill="none" />
+                        <path class="leg" d="M0,8 Q-5,15 -10,18" stroke="#111111" stroke-width="1.5" fill="none" />
+                        <path class="leg" d="M-8,8 Q-12,15 -18,18" stroke="#111111" stroke-width="1.5" fill="none" />
+                    </g>
+                </g>
+            </g>
+        </svg>
+    </div>
+
+    <!-- Settings Icon -->
+    <div class="settings-icon" id="settingsIcon">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+        </svg>
+    </div>
+
+    <!-- Settings Panel -->
+    <div class="settings-panel" id="settingsPanel">
+        <div class="settings-section">
+            <h4>Controls</h4>
+            <div class="control">
+                <label for="speed">Speed</label>
+                <input type="range" id="speed" min="1" max="10" value="5">
+            </div>
+            <div class="control">
+                <label for="lineWidth">Line Width</label>
+                <input type="range" id="lineWidth" min="1" max="10" value="2">
+            </div>
+            <div class="control">
+                <label for="maxPathLength">Max Length</label>
+                <input type="range" id="maxPathLength" min="100" max="5000" step="100" value="1000">
+            </div>
+            <div class="control">
+                <button id="pausePlay">Pause</button>
+            </div>
+            <div class="control">
+                <button id="reset">Reset Art</button>
+            </div>
+            <div class="control">
+                <button id="exportButton">Export</button>
+            </div>
+        </div>
+
+        <div class="settings-section">
+            <h4>Ant Trail</h4>
+            <div class="color-picker-container">
+                <label for="trailColor">Trail Color <span class="color-preview" id="trailColorPreview" style="background-color: black;"></span></label>
+                <input type="color" id="trailColor" value="#000000">
+            </div>
+        </div>
+
+        <div class="settings-section">
+            <h4>Art Palette</h4>
+            <select id="paletteSelector" class="palette-selector">
+                <option value="pastel">Pastel</option>
+                <option value="bright">Bright</option>
+                <option value="subtle">Subtle</option>
+                <option value="golden">Golden</option>
+                <option value="seascape">Seascape</option>
+                <option value="tinted-monochrome">Tinted Monochrome</option>
+                <option value="random">Random Colors</option>
+            </select>
+        </div>
+
+        <div class="settings-section">
+            <h4>Creature</h4>
+            <select id="creatureSelector" class="palette-selector">
+                <option value="ant">Ant</option>
+                <option value="ladybird">Ladybird</option>
+                <option value="minstrel">Minstrel Bug</option>
+            </select>
+        </div>
+        <div class="settings-section">
+            <p style="font-size: 4rem; line-height: 0; font-weight: bold; font-family: serif; color: purple; text-shadow: 0 0 20px yellow;">ant</p>
+            <p style="font-size: 4rem; line-height: 0; font-weight: bold; font-family: serif; color: purple; text-shadow: 0 0 20px yellow;">man</p>
+            <p style="font-size: 4rem; line-height: 0; font-weight: bold; font-family: serif; color: purple; text-shadow: 0 0 20px yellow;">beep</p>
+        </div>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Get elements
+            const canvas = document.getElementById('canvas');
+            const creatures = document.getElementById('creatures');
+            const ant = document.getElementById('ant');
+            const ladybird = document.getElementById('ladybird');
+            const minstrel = document.getElementById('minstrel');
+            const pathLines = document.getElementById('pathLines');
+            const settingsIcon = document.getElementById('settingsIcon');
+            const settingsPanel = document.getElementById('settingsPanel');
+            const closeSettings = document.getElementById('closeSettings');
+            const trailColor = document.getElementById('trailColor');
+            const trailColorPreview = document.getElementById('trailColorPreview');
+            const paletteSelector = document.getElementById('paletteSelector');
+            const creatureSelector = document.getElementById('creatureSelector');
+            const filledAreas = document.getElementById('filledAreas');
+            
+            // Current active creature
+            let activeCreature = ant;
+            
+            // Controls
+            const speedControl = document.getElementById('speed');
+            const lineWidthControl = document.getElementById('lineWidth');
+            const maxPathLengthControl = document.getElementById('maxPathLength');
+            const pausePlayButton = document.getElementById('pausePlay');
+            const resetButton = document.getElementById('reset');
+            
+            // Get SVG dimensions
+            const svgRect = canvas.getBoundingClientRect();
+            const viewBox = canvas.viewBox.baseVal;
+            let svgWidth = viewBox.width;
+            let svgHeight;
+            
+            // Set SVG height based on viewBox aspect ratio, regardless of device
+            const viewportWidth = window.innerWidth;
+            const viewportHeight = window.innerHeight;
+            const isMobileCheck = window.innerWidth <= 600;
+            
+            // Always use the full height of the SVG viewBox
+            svgHeight = viewBox.height;
+            
+            // Animation variables
+            let antX = -50; // Start off-screen
+            let antY = svgHeight / 2;
+            let antAngle = 0;
+            let targetX = Math.random() * svgWidth;
+            let targetY = Math.random() * svgHeight;
+            let speed = parseInt(speedControl.value);
+            let lineWidth = parseInt(lineWidthControl.value);
+            let maxPathLength = parseInt(maxPathLengthControl.value);
+            let isMobile = window.innerWidth <= 600;
+            let animationId;
+            let entryComplete = false;
+            let stepCount = 0;
+            let curveAngle = 0;
+            let curveFrequency = 0.02;
+            let curveAmplitude = 20;
+            let areaCount = 0;
+            let isPaused = false;
+            
+            // Ladybird spiral movement variables
+            let spiralCenterX = 0;         // Center X of spiral
+            let spiralCenterY = 0;         // Center Y of spiral
+            let spiralRadius = 20;         // Current radius of spiral
+            let spiralMinRadius = 10;      // Minimum radius of spiral
+            let spiralMaxRadius = 100;     // Maximum radius of spiral
+            let spiralAngle = 0;           // Current angle in spiral
+            let spiralDirection = 1;       // Direction of spiral (1 = outward, -1 = inward)
+            let spiralComplete = true;     // Whether current spiral is complete
+            
+            // Minstrel bug zigzag movement variables
+            let zigzagPhase = 0;           // Current phase of zigzag pattern
+            let zigzagDirection = 0;       // Current direction in radians
+            let zigzagAmplitude = 20;      // Size of zigzag
+            let zigzagStepCount = 0;       // Steps in current zigzag
+            let zigzagMaxSteps = 20;       // Max steps before changing pattern
+            let zigzagShrinking = true;    // Whether zigzag is shrinking or growing
+            let inEllipseMode = false;     // Whether currently drawing an ellipse
+            let ellipseAngle = 0;          // Current angle in ellipse
+            let ellipseMajor = 50;         // Major axis of ellipse
+            let ellipseMinor = 30;         // Minor axis of ellipse
+            let ellipseCenterX = 0;        // Center X of ellipse
+            let ellipseCenterY = 0;        // Center Y of ellipse
+            let ellipseMaxAngle = Math.PI * 2; // Full ellipse by default
+            
+            // Path data
+            let currentPath = null;
+            let currentPathPoints = [];
+            let currentPathSegments = [];
+            let allPaths = [];
+            let pathId = 0;
+            
+            // For smooth direction changes
+            let currentDirection = 0;
+            let targetDirection = 0;
+            let directionChangeSpeed = 0.05;
+            
+            // Color palettes
+            const palettes = {
+                pastel: [
+                    '#FFB6C1', // Light Pink
+                    '#AFEEEE', // Pale Turquoise
+                    '#FFFFE0', // Light Yellow
+                    '#D8BFD8', // Thistle
+                    '#98FB98', // Pale Green
+                    '#FFA07A'  // Light Salmon
+                ],
+                bright: [
+                    '#FF0000', // Red
+                    '#00FF00', // Green
+                    '#0000FF', // Blue
+                    '#FFFF00', // Yellow
+                    '#FF00FF', // Magenta
+                    '#00FFFF'  // Cyan
+                ],
+                subtle: [
+                    '#E6E6FA', // Lavender
+                    '#F0F8FF', // Alice Blue
+                    '#F5F5DC', // Beige
+                    '#F0FFF0', // Honeydew
+                    '#F5FFFA', // Mint Cream
+                    '#F8F8FF'  // Ghost White
+                ],
+                golden: [
+                    '#FFD700', // Gold
+                    '#DAA520', // Goldenrod
+                    '#B8860B', // Dark Goldenrod
+                    '#CD853F', // Peru
+                    '#D2B48C', // Tan
+                    '#F4A460'  // Sandy Brown
+                ],
+                seascape: [
+                    '#00FFFF', // Aqua
+                    '#5F9EA0', // Cadet Blue
+                    '#00CED1', // Dark Turquoise
+                    '#008B8B', // Dark Cyan
+                    '#20B2AA', // Light Sea Green
+                    '#48D1CC'  // Medium Turquoise
+                ],
+                'tinted-monochrome': [
+                    '#696969', // Dim Gray
+                    '#808080', // Gray
+                    '#A9A9A9', // Dark Gray
+                    '#C0C0C0', // Silver
+                    '#D3D3D3', // Light Gray
+                    '#DCDCDC'  // Gainsboro
+                ],
+                random: [] // Will be generated on demand
+            };
+            
+            // Current color palette
+            let colorPalette = palettes.pastel;
+            
+            // Initialize ant position
+            updateAntPosition();
+            
+            // Animation functions
+            function animate() {
+                // Skip animation if paused
+                if (isPaused) {
+                    animationId = requestAnimationFrame(animate);
+                    return;
+                }
+                // Entry animation
+                if (!entryComplete) {
+                    if (antX < 50) {
+                        antX += speed;
+                        updateAntPosition();
+                    } else {
+                        entryComplete = true;
+                        // Start new path
+                        startNewPath();
+                        // Set first random target based on creature
+                        if (activeCreature === ant) {
+                            setNewTarget();
+                        } else if (activeCreature === ladybird) {
+                            initializeNewSpiral();
+                        } else if (activeCreature === minstrel) {
+                            initializeZigzag();
+                        }
+                    }
+                } else {
+                    const prevX = antX;
+                    const prevY = antY;
+                    
+                    // Different movement patterns based on creature
+                    if (activeCreature === ant) {
+                        // Move towards target
+                        const dx = targetX - antX;
+                        const dy = targetY - antY;
+                        const distance = Math.sqrt(dx * dx + dy * dy);
+                        
+                        // If we're close to the target, set a new one
+                        if (distance < 10) {
+                            setNewTarget();
+                        }
+                        
+                        // Calculate new position with smoother curvy path
+                        curveAngle += curveFrequency * speed;
+                        
+                        // Use smoother sine wave with reduced amplitude
+                        const curve = Math.sin(curveAngle) * curveAmplitude;
+                        
+                        // Calculate target direction
+                        targetDirection = Math.atan2(dy, dx);
+                        
+                        // Smoothly interpolate between current and target direction
+                        let angleDiff = targetDirection - currentDirection;
+                        
+                        // Handle angle wrapping
+                        if (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
+                        if (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
+                        
+                        // Gradually change direction (smoother turning)
+                        currentDirection += angleDiff * directionChangeSpeed * speed;
+                        
+                        // Apply curve to smoothed direction
+                        antAngle = currentDirection + (curve * Math.PI / 180);
+                        
+                        // Move ant along curved path
+                        const moveStep = speed * 0.5;
+                        
+                        antX += Math.cos(antAngle) * moveStep;
+                        antY += Math.sin(antAngle) * moveStep;
+                        
+                        // Animate legs
+                        animateLegs();
+                    } else if (activeCreature === ladybird) {
+                        moveLadybird();
+                        animateLadybirdLegs();
+                    } else if (activeCreature === minstrel) {
+                        moveMinstrel();
+                        animateMinstrelLegs();
+                    }
+                    
+                    // Update path
+                    updatePath(prevX, prevY, antX, antY);
+                    
+                    // Check for intersections
+                    checkIntersections();
+                    
+                    // Update position
+                    updateAntPosition();
+                }
+                
+                animationId = requestAnimationFrame(animate);
+            }
+            
+            function updateAntPosition() {
+                // Get the SVG's screen dimensions
+                const svgRect = canvas.getBoundingClientRect();
+                const screenWidth = svgRect.width;
+                const screenHeight = svgRect.height;
+                
+                // Convert SVG coordinates to screen coordinates
+                const svgPoint = canvas.createSVGPoint();
+                svgPoint.x = antX;
+                svgPoint.y = antY;
+                const CTM = canvas.getScreenCTM();
+                const screenPoint = svgPoint.matrixTransform(CTM);
+                
+                // Calculate screen position relative to SVG container
+                const screenX = screenPoint.x - svgRect.left;
+                const screenY = screenPoint.y - svgRect.top;
+                
+                // Define margins in screen pixels
+                const screenMargin = 30;
+                
+                // Check if ant is outside visible screen area
+                let needsAdjustment = false;
+                let adjustedScreenX = screenX;
+                let adjustedScreenY = screenY;
+                
+                if (screenX < screenMargin) {
+                    adjustedScreenX = screenMargin;
+                    needsAdjustment = true;
+                } else if (screenX > screenWidth - screenMargin) {
+                    adjustedScreenX = screenWidth - screenMargin;
+                    needsAdjustment = true;
+                }
+                
+                if (screenY < screenMargin) {
+                    adjustedScreenY = screenMargin;
+                    needsAdjustment = true;
+                } else if (screenY > screenHeight - screenMargin) {
+                    adjustedScreenY = screenHeight - screenMargin;
+                    needsAdjustment = true;
+                }
+                
+                // If adjustment needed, convert screen coordinates back to SVG coordinates
+                if (needsAdjustment) {
+                    // Create inverse transform to convert screen to SVG coordinates
+                    const inverse = CTM.inverse();
+                    
+                    // Convert adjusted screen coordinates to SVG coordinates
+                    svgPoint.x = adjustedScreenX + svgRect.left;
+                    svgPoint.y = adjustedScreenY + svgRect.top;
+                    const adjustedSvgPoint = svgPoint.matrixTransform(inverse);
+                    
+                    // Update ant position
+                    antX = adjustedSvgPoint.x;
+                    antY = adjustedSvgPoint.y;
+                    
+                    // Set a new target toward the center
+                    const centerScreenX = screenWidth / 2;
+                    const centerScreenY = screenHeight / 2;
+                    
+                    // Convert center screen point to SVG coordinates
+                    svgPoint.x = centerScreenX + svgRect.left;
+                    svgPoint.y = centerScreenY + svgRect.top;
+                    const centerSvgPoint = svgPoint.matrixTransform(inverse);
+                    
+                    // Set target with some randomness - use full SVG dimensions
+                    targetX = centerSvgPoint.x + (Math.random() - 0.5) * svgWidth * 0.8;
+                    targetY = centerSvgPoint.y + (Math.random() - 0.5) * svgHeight * 0.8;
+                    
+                    // Make direction change faster when near edges
+                    directionChangeSpeed = 0.08;
+                }
+                
+                // Update creature position and rotation
+                const degrees = antAngle * 180 / Math.PI;
+                activeCreature.setAttribute('transform', `translate(${antX}, ${antY}) rotate(${degrees}) scale(0.5)`);
+            }
+            
+         
+function animateLegs() {
+    // Get all leg elements
+    const leftFrontLeg = document.getElementById('leftFrontLeg');
+    const leftMiddleLeg = document.getElementById('leftMiddleLeg');
+    const leftRearLeg = document.getElementById('leftRearLeg');
+    const rightFrontLeg = document.getElementById('rightFrontLeg');
+    const rightMiddleLeg = document.getElementById('rightMiddleLeg');
+    const rightRearLeg = document.getElementById('rightRearLeg');
+    
+    // Much faster animation speed
+    stepCount += speed * 0.5;
+    
+    // Calculate phase for each leg in the tripod gait (0 to 2π)
+    const phase = stepCount % (2 * Math.PI);
+    
+    // Define two distinct positions for each leg
+    // Forward position (positive angle) and backward position (negative angle)
+    const forwardAngle = 30;  // Exaggerated for visibility
+    const backwardAngle = -15;
+    
+    // For tripod 1: Left front, right middle, left rear
+    let tripod1Angle;
+    // For tripod 2: Right front, left middle, right rear
+    let tripod2Angle;
+    
+    // Create a clear step function between two positions
+    // When phase is in first half of cycle, tripod 1 is forward, tripod 2 is backward
+    // When phase is in second half of cycle, tripod 1 is backward, tripod 2 is forward
+    if (phase < Math.PI) {
+        tripod1Angle = forwardAngle;
+        tripod2Angle = backwardAngle;
+    } else {
+        tripod1Angle = backwardAngle;
+        tripod2Angle = forwardAngle;
+    }
+    
+    // Apply the calculated angles directly to each leg
+    // Tripod 1: Left front, right middle, left rear
+    leftFrontLeg.setAttribute('transform', `rotate(${tripod1Angle}, 8, -5)`);
+    rightMiddleLeg.setAttribute('transform', `rotate(${tripod1Angle}, 2, 5)`);
+    leftRearLeg.setAttribute('transform', `rotate(${tripod1Angle}, -5, -5)`);
+    
+    // Tripod 2: Right front, left middle, right rear
+    rightFrontLeg.setAttribute('transform', `rotate(${tripod2Angle}, 8, 5)`);
+    leftMiddleLeg.setAttribute('transform', `rotate(${tripod2Angle}, 2, -5)`);
+    rightRearLeg.setAttribute('transform', `rotate(${tripod2Angle}, -5, 5)`);
+}
+
+function animateLadybirdLegs() {
+    // Get all ladybird leg elements
+    const leftLegs = document.getElementById('ladybirdLeftLegs').children;
+    const rightLegs = document.getElementById('ladybirdRightLegs').children;
+    
+    // Increment step count
+    stepCount += speed * 0.5;
+    
+    // Calculate phase (0 to 2π)
+    const phase = stepCount % (2 * Math.PI);
+    
+    // Define leg movement angles
+    const forwardAngle = 20;
+    const backwardAngle = -10;
+    
+    // Determine leg positions based on phase
+    let leftLegsAngle, rightLegsAngle;
+    
+    if (phase < Math.PI) {
+        leftLegsAngle = forwardAngle;
+        rightLegsAngle = backwardAngle;
+    } else {
+        leftLegsAngle = backwardAngle;
+        rightLegsAngle = forwardAngle;
+    }
+    
+    // Apply transformations to left legs
+    for (let i = 0; i < leftLegs.length; i++) {
+        const leg = leftLegs[i];
+        const pivotX = 8 - i * 8; // Adjust pivot point based on leg position
+        leg.setAttribute('transform', `rotate(${leftLegsAngle}, ${pivotX}, -8)`);
+    }
+    
+    // Apply transformations to right legs
+    for (let i = 0; i < rightLegs.length; i++) {
+        const leg = rightLegs[i];
+        const pivotX = 8 - i * 8; // Adjust pivot point based on leg position
+        leg.setAttribute('transform', `rotate(${rightLegsAngle}, ${pivotX}, 8)`);
+    }
+}
+
+// Ladybird movement functions
+function moveLadybird() {
+    if (spiralComplete) {
+        initializeNewSpiral();
+        return;
+    }
+    // Move in spiral pattern
+    const moveStep = speed * 0.15;
+    spiralAngle += moveStep * 0.05;
+    spiralRadius += spiralDirection * moveStep * 0.3;
+    
+    // Check if spiral is complete
+    if ((spiralDirection > 0 && spiralRadius > spiralMaxRadius) ||
+        (spiralDirection < 0 && spiralRadius < spiralMinRadius)) {
+        spiralComplete = true;
+        return;
+    }
+    
+    // Calculate new position
+    antX = spiralCenterX + Math.cos(spiralAngle) * spiralRadius;
+    antY = spiralCenterY + Math.sin(spiralAngle) * spiralRadius;
+    
+    // Update angle for ladybird rotation
+    antAngle = spiralAngle + (spiralDirection > 0 ? Math.PI/2 : -Math.PI/2);
+}
+
+function initializeNewSpiral() {
+    spiralComplete = false;
+    spiralCenterX = Math.random() * svgWidth;
+    spiralCenterY = Math.random() * svgHeight;
+    spiralRadius = Math.random() * 20 + 10;
+    spiralMinRadius = spiralRadius;
+    spiralMaxRadius = spiralRadius + Math.random() * 100 + 50;
+    spiralAngle = Math.random() * Math.PI * 2;
+    spiralDirection = Math.random() > 0.5 ? 1 : -1;
+    
+    // Set initial position
+    antX = spiralCenterX + Math.cos(spiralAngle) * spiralRadius;
+    antY = spiralCenterY + Math.sin(spiralAngle) * spiralRadius;
+    
+    // Set initial angle
+    antAngle = spiralAngle + (spiralDirection > 0 ? Math.PI/2 : -Math.PI/2);
+}
+
+// Minstrel bug movement functions
+function moveMinstrel() {
+    const moveStep = speed * 0.2;
+    
+    if (inEllipseMode) {
+        // Move in elliptical pattern
+        ellipseAngle += moveStep * 0.05;
+        
+        // Check if ellipse is complete
+        if (ellipseAngle >= ellipseMaxAngle) {
+            inEllipseMode = false;
+            initializeZigzag();
+            return;
+        }
+        
+        // Calculate new position based on ellipse equation
+        antX = ellipseCenterX + ellipseMajor * Math.cos(ellipseAngle);
+        antY = ellipseCenterY + ellipseMinor * Math.sin(ellipseAngle);
+        
+        // Update angle for minstrel rotation (tangent to ellipse)
+        const dx = -ellipseMajor * Math.sin(ellipseAngle);
+        const dy = ellipseMinor * Math.cos(ellipseAngle);
+        antAngle = Math.atan2(dy, dx);
+    } else {
+        // Move in zigzag pattern
+        zigzagStepCount++;
+        
+        // Adjust zigzag amplitude
+        if (zigzagShrinking) {
+            zigzagAmplitude -= 0.5;
+            if (zigzagAmplitude <= 5) {
+                zigzagShrinking = false;
+            }
+        } else {
+            zigzagAmplitude += 0.5;
+            if (zigzagAmplitude >= 25) {
+                zigzagShrinking = true;
+            }
+        }
+        
+        // Update zigzag phase
+        zigzagPhase += moveStep * 0.2;
+        
+        // Calculate zigzag offset perpendicular to direction
+        const perpAngle = zigzagDirection + Math.PI/2;
+        const zigzagOffset = Math.sin(zigzagPhase) * zigzagAmplitude;
+        
+        // Calculate new position
+        antX += Math.cos(zigzagDirection) * moveStep + Math.cos(perpAngle) * zigzagOffset;
+        antY += Math.sin(zigzagDirection) * moveStep + Math.sin(perpAngle) * zigzagOffset;
+        
+        // Update angle for minstrel rotation
+        antAngle = zigzagDirection + Math.sin(zigzagPhase) * 0.5;
+        
+        // Check if we should change direction or switch to ellipse mode
+        if (zigzagStepCount >= zigzagMaxSteps) {
+            if (Math.random() < 0.3) { // 30% chance to switch to ellipse mode
+                initializeEllipse();
+            } else {
+                // Change direction slightly
+                zigzagDirection += (Math.random() - 0.5) * Math.PI/6; // ±30 degrees
+                zigzagStepCount = 0;
+                zigzagMaxSteps = Math.floor(Math.random() * 30) + 20;
+            }
+        }
+        
+        // Boundary check
+        if (antX < 10) {
+            zigzagDirection = Math.PI - zigzagDirection;
+            antX = 10;
+        } else if (antX > svgWidth - 10) {
+            zigzagDirection = Math.PI - zigzagDirection;
+            antX = svgWidth - 10;
+        }
+        
+        if (antY < 10) {
+            zigzagDirection = -zigzagDirection;
+            antY = 10;
+        } else if (antY > svgHeight - 10) {
+            zigzagDirection = -zigzagDirection;
+            antY = svgHeight - 10;
+        }
+    }
+}
+
+function initializeZigzag() {
+    inEllipseMode = false;
+    zigzagPhase = 0;
+    zigzagDirection = Math.random() * Math.PI * 2; // Random direction
+    zigzagAmplitude = Math.random() * 15 + 10; // Random amplitude
+    zigzagStepCount = 0;
+    zigzagMaxSteps = Math.floor(Math.random() * 30) + 20; // Random number of steps
+    zigzagShrinking = Math.random() > 0.5; // Random shrink/grow state
+}
+
+function initializeEllipse() {
+    inEllipseMode = true;
+    ellipseAngle = 0;
+    
+    // Set random ellipse parameters
+    const maxDimension = Math.min(svgWidth, svgHeight) * 0.2;
+    ellipseMajor = Math.random() * maxDimension + 30;
+    ellipseMinor = Math.random() * (ellipseMajor * 0.8) + 20;
+    
+    // Set ellipse center near current position
+    ellipseCenterX = antX + (Math.random() - 0.5) * 50;
+    ellipseCenterY = antY + (Math.random() - 0.5) * 50;
+    
+    // Ensure ellipse stays within bounds
+    ellipseCenterX = Math.max(ellipseMajor, Math.min(svgWidth - ellipseMajor, ellipseCenterX));
+    ellipseCenterY = Math.max(ellipseMinor, Math.min(svgHeight - ellipseMinor, ellipseCenterY));
+    
+    // Random partial ellipse (between 1/4 and full ellipse)
+    ellipseMaxAngle = Math.PI/2 + Math.random() * (Math.PI * 3/2);
+    
+    // Set initial position on ellipse
+    antX = ellipseCenterX + ellipseMajor;
+    antY = ellipseCenterY;
+    
+    // Set initial angle
+    antAngle = Math.PI/2;
+}
+
+function animateMinstrelLegs() {
+    const minstrelLeftLegs = document.getElementById('minstrelLeftLegs');
+    const minstrelRightLegs = document.getElementById('minstrelRightLegs');
+    
+    // Calculate leg animation based on movement
+    const legPhase = Date.now() * 0.01 * speed;
+    const leftAngle = Math.sin(legPhase) * 15;
+    const rightAngle = Math.sin(legPhase + Math.PI) * 15;
+    
+    // Apply rotation to leg groups
+    minstrelLeftLegs.setAttribute('transform', `rotate(${leftAngle}, 0, -8)`);
+    minstrelRightLegs.setAttribute('transform', `rotate(${rightAngle}, 0, 8)`);
+}
+            
+            function setNewTarget() {
+                // Set a new random target using the full SVG dimensions
+                targetX = Math.random() * svgWidth;
+                targetY = Math.random() * svgHeight;
+                
+                // Add some randomness to make path more interesting
+                if (Math.random() > 0.7) {
+                    // Sometimes make a more dramatic turn
+                    // Use proportional values based on SVG dimensions for consistent behavior
+                    const turnDistance = Math.min(svgWidth, svgHeight) * 0.3;
+                    targetX = antX + (Math.random() - 0.5) * turnDistance;
+                    targetY = antY + (Math.random() - 0.5) * turnDistance;
+                }
+                
+                // Reset curve parameters for new direction - more gentle values for smoother movement
+                curveFrequency = 0.01 + Math.random() * 0.03;
+                curveAmplitude = 15 + Math.random() * 25;
+                
+                // Adjust direction change speed based on how sharp the turn is
+                const dx = targetX - antX;
+                const dy = targetY - antY;
+                const newDirection = Math.atan2(dy, dx);
+                const directionDiff = Math.abs(newDirection - currentDirection);
+                
+                // Slower direction changes for sharper turns (smoother movement)
+                directionChangeSpeed = directionDiff > Math.PI/2 ? 0.02 : 0.05;
+            }
+            
+            function startNewPath() {
+                // Create a new path element
+                currentPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                currentPath.setAttribute("class", "path-line");
+                currentPath.setAttribute("stroke-width", lineWidth);
+                currentPath.setAttribute("stroke", trailColor.value);
+                currentPath.setAttribute("id", "path" + pathId);
+                pathId++;
+                
+                // Start the path at the current ant position
+                currentPathPoints = [`M${antX},${antY}`];
+                currentPathSegments = [];
+                currentPath.setAttribute("d", currentPathPoints.join(" "));
+                
+                // Add path to the SVG
+                pathLines.appendChild(currentPath);
+                
+                // Add to our paths array for intersection checking
+                allPaths.push({
+                    element: currentPath,
+                    points: [[antX, antY]],
+                    segments: []
+                });
+            }
+            
+            function updatePath(prevX, prevY, x, y) {
+                if (!currentPath) return;
+                
+                // Add line segment to the path
+                currentPathPoints.push(`L${x},${y}`);
+                currentPath.setAttribute("d", currentPathPoints.join(" "));
+                
+                // Add point and segment for intersection checking
+                const currentPathObj = allPaths[allPaths.length - 1];
+                currentPathObj.points.push([x, y]);
+                
+                // Add the new segment
+                const newSegment = {
+                    x1: prevX,
+                    y1: prevY,
+                    x2: x,
+                    y2: y
+                };
+                currentPathObj.segments.push(newSegment);
+                currentPathSegments.push(newSegment);
+                
+                // Check if path is too long - FIX FOR ISSUE #2
+                const maxPoints = Math.floor(maxPathLength / (speed * 0.5));
+                if (currentPathPoints.length > maxPoints) {
+                    // Remove oldest point from the displayed path
+                    currentPathPoints.shift(); // Remove the M command
+                    currentPathPoints[0] = currentPathPoints[0].replace("L", "M"); // Convert first L to M
+                    
+                    // Remove oldest segment from tracking arrays
+                    currentPathObj.points.shift();
+                    currentPathObj.segments.shift();
+                    currentPathSegments.shift();
+                    
+                    // Update path with new data
+                    currentPath.setAttribute("d", currentPathPoints.join(" "));
+                }
+            }
+            
+            function checkIntersections() {
+                if (!currentPath || allPaths.length < 1 || currentPathSegments.length < 4) return;
+                
+                const currentPathObj = allPaths[allPaths.length - 1];
+                const currentSegment = currentPathSegments[currentPathSegments.length - 1];
+                
+                // Skip the most recent segments to avoid false intersections
+                const skipSegments = 3;
+                
+                for (let i = 0; i < currentPathSegments.length - skipSegments; i++) {
+                    const segment = currentPathSegments[i];
+                    
+                    // Check if these line segments intersect
+                    if (linesIntersect(
+                        currentSegment.x1, currentSegment.y1, 
+                        currentSegment.x2, currentSegment.y2,
+                        segment.x1, segment.y1,
+                        segment.x2, segment.y2
+                    )) {
+                        // Find the intersection point
+                        const intersectionPoint = findIntersection(
+                            currentSegment.x1, currentSegment.y1, 
+                            currentSegment.x2, currentSegment.y2,
+                            segment.x1, segment.y1,
+                            segment.x2, segment.y2
+                        );
+                        
+                        if (intersectionPoint) {
+                            // Handle the intersection and create closed areas
+                            handleIntersection(intersectionPoint, i);
+                            return; // Only handle one intersection at a time
+                        }
+                    }
+                }
+            }
+            
+            function linesIntersect(x1, y1, x2, y2, x3, y3, x4, y4) {
+                // Check if two line segments intersect
+                const denominator = ((y4 - y3) * (x2 - x1) - (x4 - x3) * (y2 - y1));
+                
+                // If denominator is 0, lines are parallel
+                if (denominator === 0) return false;
+                
+                const ua = ((x4 - x3) * (y1 - y3) - (y4 - y3) * (x1 - x3)) / denominator;
+                const ub = ((x2 - x1) * (y1 - y3) - (y2 - y1) * (x1 - x3)) / denominator;
+                
+                // Return true if the intersection point lies on both line segments
+                return (ua >= 0 && ua <= 1 && ub >= 0 && ub <= 1);
+            }
+            
+            function findIntersection(x1, y1, x2, y2, x3, y3, x4, y4) {
+                // Find the intersection point of two line segments
+                const denominator = ((y4 - y3) * (x2 - x1) - (x4 - x3) * (y2 - y1));
+                if (denominator === 0) return null; // Lines are parallel
+                
+                const ua = ((x4 - x3) * (y1 - y3) - (y4 - y3) * (x1 - x3)) / denominator;
+                
+                // Calculate intersection point
+                return {
+                    x: x1 + ua * (x2 - x1),
+                    y: y1 + ua * (y2 - y1)
+                };
+            }
+            
+            function handleIntersection(intersectionPoint, segmentIndex) {
+                // FIX FOR ISSUE #1 - Completely rewritten to create proper filled areas
+                
+                // Create first closed area (the loop)
+                const loopPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                loopPath.setAttribute("class", "filled-area");
+                loopPath.setAttribute("id", "area" + areaCount);
+                areaCount++;
+                
+                // Get random colors for both new areas
+                const color1 = getRandomColor();
+                const color2 = getRandomColor();
+                
+                loopPath.setAttribute("fill", color1);
+                loopPath.setAttribute("stroke", "none");
+                
+                // Build loop path - from intersection to current position and back to intersection
+                let pathD = `M${intersectionPoint.x},${intersectionPoint.y}`;
+                
+                // Add points from segmentIndex+1 to the end (includes current ant position)
+                for (let i = segmentIndex + 1; i < currentPathSegments.length; i++) {
+                    const segment = currentPathSegments[i];
+                    if (i === segmentIndex + 1) {
+                        // For the first segment after intersection, start from the intersection point
+                        pathD += ` L${segment.x2},${segment.y2}`;
+                    } else {
+                        pathD += ` L${segment.x2},${segment.y2}`;
+                    }
+                }
+                
+                // Close the path back to the intersection point
+                pathD += ` Z`;
+                loopPath.setAttribute("d", pathD);
+                
+                // Add to the SVG
+                filledAreas.appendChild(loopPath);
+                
+                // Create second area if the intersection is not at the start of the path
+                if (segmentIndex > 0) {
+                    const remainingPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                    remainingPath.setAttribute("class", "filled-area");
+                    remainingPath.setAttribute("id", "area" + areaCount);
+                    areaCount++;
+                    
+                    remainingPath.setAttribute("fill", color2);
+                    remainingPath.setAttribute("stroke", "none");
+                    
+                    // Build remaining path - from start to intersection
+                    let remainingPathD = `M${currentPathSegments[0].x1},${currentPathSegments[0].y1}`;
+                    
+                    // Add points from start to segmentIndex
+                    for (let i = 0; i <= segmentIndex; i++) {
+                        const segment = currentPathSegments[i];
+                        remainingPathD += ` L${segment.x2},${segment.y2}`;
+                    }
+                    
+                    // Add intersection point and close
+                    remainingPathD += ` L${intersectionPoint.x},${intersectionPoint.y} Z`;
+                    remainingPath.setAttribute("d", remainingPathD);
+                    
+                    // Add to the SVG
+                    filledAreas.appendChild(remainingPath);
+                }
+                
+                // Start a new path from the intersection point
+                currentPath = null;
+                currentPathPoints = [];
+                currentPathSegments = [];
+                
+                // Create new path starting at intersection
+                antX = intersectionPoint.x;
+                antY = intersectionPoint.y;
+                startNewPath();
+            }
+            
+            function getRandomColor() {
+                // If using random palette, generate a random color
+                if (paletteSelector.value === 'random') {
+                    return '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0');
+                }
+                // Otherwise use the selected palette
+                return colorPalette[Math.floor(Math.random() * colorPalette.length)];
+            }
+            
+            function resetArt() {
+                // Clear all paths and areas
+                pathLines.innerHTML = '';
+                filledAreas.innerHTML = '';
+                
+                // Reset variables
+                currentPath = null;
+                currentPathPoints = [];
+                currentPathSegments = [];
+                allPaths = [];
+                pathId = 0;
+                areaCount = 0;
+                
+                // Start new path
+                if (entryComplete) {
+                    startNewPath();
+                }
+            }
+            
+            // Start animation
+            animate();
+            
+            // Event listeners for controls
+            speedControl.addEventListener('input', function() {
+                speed = parseInt(this.value);
+            });
+            
+            lineWidthControl.addEventListener('input', function() {
+                lineWidth = parseInt(this.value);
+                if (currentPath) {
+                    currentPath.setAttribute("stroke-width", lineWidth);
+                }
+            });
+            
+            maxPathLengthControl.addEventListener('input', function() {
+                maxPathLength = parseInt(this.value);
+            });
+            
+            resetButton.addEventListener('click', resetArt);
+            
+            // Pause/Play button event listener
+            pausePlayButton.addEventListener('click', function() {
+                isPaused = !isPaused;
+                this.textContent = isPaused ? 'Resume' : 'Pause';
+            });
+            
+            // Settings panel event listeners
+            settingsIcon.addEventListener('click', function() {
+                settingsPanel.classList.toggle('open');
+            });
+            
+            // Close settings when clicking on the canvas
+            canvas.addEventListener('click', function() {
+                settingsPanel.classList.remove('open');
+            });
+            
+            // Trail color picker
+            trailColor.addEventListener('input', function() {
+                trailColorPreview.style.backgroundColor = this.value;
+                
+                // Start a new path with the new color
+                // Save current position
+                const currentX = antX;
+                const currentY = antY;
+                
+                // End current path
+                currentPath = null;
+                currentPathPoints = [];
+                currentPathSegments = [];
+                
+                // Start new path at current position with new color
+                antX = currentX;
+                antY = currentY;
+                startNewPath(); // This will use the new color value
+            });
+            
+            // Palette selector
+            paletteSelector.addEventListener('change', function() {
+                if (this.value === 'random') {
+                    // For random, we'll generate colors on demand in getRandomColor()
+                    colorPalette = [];
+                } else {
+                    colorPalette = palettes[this.value];
+                }
+            });
+            
+            // Creature selector
+            creatureSelector.addEventListener('change', function() {
+                // Hide all creatures first
+                ant.style.display = 'none';
+                ladybird.style.display = 'none';
+                minstrel.style.display = 'none';
+                
+                // Show the selected creature
+                if (this.value === 'ant') {
+                    ant.style.display = '';
+                    activeCreature = ant;
+                } else if (this.value === 'ladybird') {
+                    ladybird.style.display = '';
+                    activeCreature = ladybird;
+                } else if (this.value === 'minstrel') {
+                    minstrel.style.display = '';
+                    activeCreature = minstrel;
+                }
+            });
+            
+            // Handle window resize
+            window.addEventListener('resize', function() {
+                // Update mobile status
+                isMobile = window.innerWidth <= 600;
+                
+                // Update SVG dimensions
+                const newRect = canvas.getBoundingClientRect();
+                
+                // Get the current viewport dimensions
+                const viewportWidth = window.innerWidth;
+                const viewportHeight = window.innerHeight;
+                
+                // Get the viewBox from the SVG element
+                const viewBox = canvas.viewBox.baseVal;
+                
+                // Update internal variables to match new dimensions
+                // This ensures the ant moves within the visible area
+                svgWidth = viewBox.width;
+                
+                // Always use the full height of the SVG viewBox
+                // This ensures the ant can travel throughout the entire SVG area
+                svgHeight = viewBox.height;
+                
+                // If ant is near an edge after resize, move it toward center
+                const margin = 50;
+                if (antX <= margin || antX >= svgWidth - margin || 
+                    antY <= margin || antY >= svgHeight - margin) {
+                    // Set a new target toward the center
+                    targetX = svgWidth / 2;
+                    targetY = svgHeight / 2;
+                }
+            });
+            
+            // Clean up on page unload to prevent memory leaks
+            window.addEventListener('beforeunload', function() {
+                cancelAnimationFrame(animationId);
+            });
+            
+            // Export functionality using html2canvas
+            document.getElementById('exportButton').addEventListener('click', function() {
+                // Show loading message
+                const loadingMsg = document.createElement('div');
+                loadingMsg.textContent = 'Generating image...';
+                loadingMsg.style.position = 'fixed';
+                loadingMsg.style.top = '50%';
+                loadingMsg.style.left = '50%';
+                loadingMsg.style.transform = 'translate(-50%, -50%)';
+                loadingMsg.style.background = 'rgba(0,0,0,0.7)';
+                loadingMsg.style.color = 'white';
+                loadingMsg.style.padding = '15px 20px';
+                loadingMsg.style.borderRadius = '5px';
+                loadingMsg.style.zIndex = '1000';
+                document.body.appendChild(loadingMsg);
+                
+                // Pause animation during export
+                const wasPaused = isPaused;
+                isPaused = true;
+                pausePlayButton.textContent = 'Resume';
+                
+                // Use setTimeout to allow the loading message to render
+                setTimeout(function() {
+                    try {
+                        // Get the scene container
+                        const sceneContainer = document.querySelector('.scene-container');
+                        
+                        // Use html2canvas to capture the scene
+                        html2canvas(sceneContainer, {
+                            scale: 2, // 2x resolution for quality
+                            backgroundColor: '#FFFFFF',
+                            logging: false,
+                            allowTaint: true,
+                            useCORS: true
+                        }).then(function(canvas) {
+                            try {
+                                // Convert to JPEG
+                                const jpegUrl = canvas.toDataURL('image/jpeg', 0.95);
+                                
+                                // Create download link
+                                const downloadLink = document.createElement('a');
+                                downloadLink.href = jpegUrl;
+                                downloadLink.download = 'ant-art-' + new Date().toISOString().substring(0, 19).replace(/[:.]/g, '-') + '.jpg';
+                                
+                                // Trigger download
+                                document.body.appendChild(downloadLink);
+                                downloadLink.click();
+                                document.body.removeChild(downloadLink);
+                                
+                                console.log('Export successful!');
+                            } catch (e) {
+                                console.error('Error creating JPEG:', e);
+                                alert('Error creating JPEG. Please try again.');
+                            } finally {
+                                // Remove loading message
+                                document.body.removeChild(loadingMsg);
+                                
+                                // Restore animation state
+                                if (!wasPaused) {
+                                    isPaused = false;
+                                    pausePlayButton.textContent = 'Pause';
+                                }
+                            }
+                        }).catch(function(error) {
+                            console.error('html2canvas error:', error);
+                            alert('Error exporting image. Please try again.');
+                            
+                            // Remove loading message
+                            document.body.removeChild(loadingMsg);
+                            
+                            // Restore animation state
+                            if (!wasPaused) {
+                                isPaused = false;
+                                pausePlayButton.textContent = 'Pause';
+                            }
+                        });
+                    } catch (e) {
+                        console.error('Export error:', e);
+                        alert('Error exporting image. Please try again.');
+                        
+                        // Remove loading message
+                        document.body.removeChild(loadingMsg);
+                        
+                        // Restore animation state
+                        if (!wasPaused) {
+                            isPaused = false;
+                            pausePlayButton.textContent = 'Pause';
+                        }
+                    }
+                }, 100); // Small delay to ensure UI updates
+            });
+        });
+    </script>
