@@ -393,6 +393,7 @@
                 <option value="tinted-monochrome">Tinted Monochrome</option>
                 <option value="custom">Custom</option>
                 <option value="random">Random Colors</option>
+                <option value="transparent">Transparent</option>
             </select>
             <div id="customPaletteContainer" style="display: none; margin-top: 10px;">
                 <div class="custom-color-picker">
@@ -595,6 +596,7 @@
                     '#000054', // Navy Blue
                     '#540051'  // Deep Purple
                 ],
+                transparent: ['transparent'], // No color (transparent)
                 random: [] // Will be generated on demand
             };
             
@@ -1310,6 +1312,10 @@ function animateMinstrelLegs() {
                 // If using random palette, generate a random color
                 if (paletteSelector.value === 'random') {
                     return '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0');
+                }
+                // If using transparent, return transparent
+                if (paletteSelector.value === 'transparent') {
+                    return 'transparent';
                 }
                 // Otherwise use the selected palette
                 return colorPalette[Math.floor(Math.random() * colorPalette.length)];
