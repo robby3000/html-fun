@@ -1547,37 +1547,91 @@
             document.getElementById('exportButton').addEventListener('click', function() {
                 // Show loading message
                 const loadingMsg = document.createElement('div');
-                loadingMsg.textContent = 'Generating image...';
+                loadingMsg.textContent = 'Generating high-resolution image...';
                 loadingMsg.style.position = 'fixed';
                 loadingMsg.style.top = '50%';
                 loadingMsg.style.left = '50%';
                 loadingMsg.style.transform = 'translate(-50%, -50%)';
-                loadingMsg.style.background = 'rgba(0,0,0,0.7)';
+                loadingMsg.style.background = 'rgba(0,0,0,0.8)';
                 loadingMsg.style.color = 'white';
-                loadingMsg.style.padding = '15px 20px';
-                loadingMsg.style.borderRadius = '5px';
+                loadingMsg.style.padding = '15px 25px';
+                loadingMsg.style.borderRadius = '8px';
                 loadingMsg.style.zIndex = '1000';
+                loadingMsg.style.fontFamily = 'Arial, sans-serif';
+                loadingMsg.style.fontSize = '16px';
+                loadingMsg.style.textAlign = 'center';
+                loadingMsg.style.boxShadow = '0 4px 8px rgba(0,0,0,0.3)';
                 document.body.appendChild(loadingMsg);
+                
+                // Add a progress indicator
+                const progress = document.createElement('div');
+                progress.style.width = '200px';
+                progress.style.height = '4px';
+                progress.style.background = '#555';
+                progress.style.marginTop = '10px';
+                progress.style.borderRadius = '2px';
+                progress.style.overflow = 'hidden';
+                
+                const progressBar = document.createElement('div');
+                progressBar.style.width = '0%';
+                progressBar.style.height = '100%';
+                progressBar.style.background = '#4CAF50';
+                progressBar.style.transition = 'width 0.3s';
+                progress.appendChild(progressBar);
+                loadingMsg.appendChild(progress);
                 
                 // Pause animation during export
                 const wasPaused = isPaused;
                 isPaused = true;
                 pausePlayButton.textContent = 'Resume';
                 
-                // Use setTimeout to allow the loading message to render
+                // Use setTimeout to allow the UI to update
                 setTimeout(function() {
                     try {
                         // Get the scene container
                         const sceneContainer = document.querySelector('.scene-container');
                         
-                        // Use html2canvas to capture the scene
-                        html2canvas(sceneContainer, {
-                            scale: 2, // 2x resolution for quality
+                        // Calculate optimal scale based on device capabilities
+                        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+                        const devicePixelRatio = window.devicePixelRatio || 1;
+                        
+                        // Adjust scale based on device type and pixel ratio
+                        let scale = isMobile ? Math.min(devicePixelRatio * 1.5, 3) : Math.min(devicePixelRatio * 2, 4);
+                        
+                        // Cap the maximum dimensions to prevent memory issues on mobile
+                        const maxDimension = isMobile ? 4096 : 8192;
+                        const width = sceneContainer.offsetWidth * scale;
+                        const height = sceneContainer.offsetHeight * scale;
+                        
+                        if (width > maxDimension || height > maxDimension) {
+                            scale = Math.min(maxDimension / sceneContainer.offsetWidth, maxDimension / sceneContainer.offsetHeight);
+                        }
+                        
+                        console.log(`Exporting at ${Math.round(scale * 100)}% scale (${Math.round(width)}x${Math.round(height)})`);
+                        
+                        // Update progress
+                        progressBar.style.width = '30%';
+                        
+                        // Use html2canvas to capture the scene with higher quality settings
+                        const options = {
+                            scale: scale,
                             backgroundColor: '#FFFFFF',
-                            logging: false,
+                            logging: true,
                             allowTaint: true,
-                            useCORS: true
-                        }).then(function(canvas) {
+                            useCORS: true,
+                            onclone: function(clonedDoc) {
+                                // Ensure the cloned document has the same dimensions
+                                const clonedContainer = clonedDoc.querySelector('.scene-container');
+                                if (clonedContainer) {
+                                    clonedContainer.style.width = sceneContainer.offsetWidth + 'px';
+                                    clonedContainer.style.height = sceneContainer.offsetHeight + 'px';
+                                }
+                                progressBar.style.width = '60%';
+                            }
+                        };
+                        
+                        // Start the capture process
+                        html2canvas(sceneContainer, options).then(function(canvas) {
                             try {
                                 // Convert to JPEG
                                 const jpegUrl = canvas.toDataURL('image/jpeg', 0.95);
