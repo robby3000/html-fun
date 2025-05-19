@@ -525,6 +525,7 @@
             let ellipseCenterX = 0;        // Center X of ellipse
             let ellipseCenterY = 0;        // Center Y of ellipse
             let ellipseMaxAngle = Math.PI * 2; // Full ellipse by default
+            let ellipseRotation = 0;       // Rotation angle of the ellipse (in radians)
             
             // Path data
             let currentPath = null;
@@ -788,40 +789,19 @@ function animateLegs() {
     // Much faster animation speed
     stepCount += speed * 0.5;
     
-    // Calculate phase for each leg in the tripod gait (0 to 2π)
-    const phase = stepCount % (2 * Math.PI);
+    // Calculate leg animation based on movement
+    const legPhase = Date.now() * 0.01 * speed;
+    const leftAngle = Math.sin(legPhase) * 15;
+    const rightAngle = Math.sin(legPhase + Math.PI) * 15;
     
-    // Define two distinct positions for each leg
-    // Forward position (positive angle) and backward position (negative angle)
-    const forwardAngle = 30;  // Exaggerated for visibility
-    const backwardAngle = -15;
+    // Apply rotation to leg groups
+    leftFrontLeg.setAttribute('transform', `rotate(${leftAngle}, 8, -5)`);
+    leftMiddleLeg.setAttribute('transform', `rotate(${leftAngle}, 2, -5)`);
+    leftRearLeg.setAttribute('transform', `rotate(${leftAngle}, -5, -5)`);
     
-    // For tripod 1: Left front, right middle, left rear
-    let tripod1Angle;
-    // For tripod 2: Right front, left middle, right rear
-    let tripod2Angle;
-    
-    // Create a clear step function between two positions
-    // When phase is in first half of cycle, tripod 1 is forward, tripod 2 is backward
-    // When phase is in second half of cycle, tripod 1 is backward, tripod 2 is forward
-    if (phase < Math.PI) {
-        tripod1Angle = forwardAngle;
-        tripod2Angle = backwardAngle;
-    } else {
-        tripod1Angle = backwardAngle;
-        tripod2Angle = forwardAngle;
-    }
-    
-    // Apply the calculated angles directly to each leg
-    // Tripod 1: Left front, right middle, left rear
-    leftFrontLeg.setAttribute('transform', `rotate(${tripod1Angle}, 8, -5)`);
-    rightMiddleLeg.setAttribute('transform', `rotate(${tripod1Angle}, 2, 5)`);
-    leftRearLeg.setAttribute('transform', `rotate(${tripod1Angle}, -5, -5)`);
-    
-    // Tripod 2: Right front, left middle, right rear
-    rightFrontLeg.setAttribute('transform', `rotate(${tripod2Angle}, 8, 5)`);
-    leftMiddleLeg.setAttribute('transform', `rotate(${tripod2Angle}, 2, -5)`);
-    rightRearLeg.setAttribute('transform', `rotate(${tripod2Angle}, -5, 5)`);
+    rightFrontLeg.setAttribute('transform', `rotate(${rightAngle}, 8, 5)`);
+    rightMiddleLeg.setAttribute('transform', `rotate(${rightAngle}, 2, 5)`);
+    rightRearLeg.setAttribute('transform', `rotate(${rightAngle}, -5, 5)`);
 }
 
 function animateLadybirdLegs() {
@@ -925,12 +905,18 @@ function moveMinstrel() {
         }
         
         // Calculate new position based on ellipse equation
-        antX = ellipseCenterX + ellipseMajor * Math.cos(ellipseAngle);
-        antY = ellipseCenterY + ellipseMinor * Math.sin(ellipseAngle);
+        const cosRot = Math.cos(ellipseRotation);
+        const sinRot = Math.sin(ellipseRotation);
+        const cosAngle = Math.cos(ellipseAngle);
+        const sinAngle = Math.sin(ellipseAngle);
+        
+        // Calculate position with rotation
+        antX = ellipseCenterX + (ellipseMajor * cosAngle * cosRot - ellipseMinor * sinAngle * sinRot);
+        antY = ellipseCenterY + (ellipseMajor * cosAngle * sinRot + ellipseMinor * sinAngle * cosRot);
         
         // Update angle for minstrel rotation (tangent to ellipse)
-        const dx = -ellipseMajor * Math.sin(ellipseAngle);
-        const dy = ellipseMinor * Math.cos(ellipseAngle);
+        const dx = -ellipseMajor * sinAngle * cosRot - ellipseMinor * cosAngle * sinRot;
+        const dy = -ellipseMajor * sinAngle * sinRot + ellipseMinor * cosAngle * cosRot;
         antAngle = Math.atan2(dy, dx);
     } else {
         // Move in zigzag pattern
@@ -1045,16 +1031,25 @@ function initializeEllipse() {
     ellipseCenterX = Math.max(ellipseMajor, Math.min(svgWidth - ellipseMajor, ellipseCenterX));
     ellipseCenterY = Math.max(ellipseMinor, Math.min(svgHeight - ellipseMinor, ellipseCenterY));
     
+    // Set random rotation for the ellipse (0 to 2π)
+    ellipseRotation = Math.random() * Math.PI * 2;
+    
     // Random partial ellipse (between 1/4 and full ellipse)
     ellipseMaxAngle = Math.PI/2 + Math.random() * (Math.PI * 3/2);
     
-    // Set initial position on ellipse
-    antX = ellipseCenterX + ellipseMajor * Math.cos(ellipseAngle);
-    antY = ellipseCenterY + ellipseMinor * Math.sin(ellipseAngle);
+    // Set initial position on ellipse (accounting for rotation)
+    const cosRot = Math.cos(ellipseRotation);
+    const sinRot = Math.sin(ellipseRotation);
+    const cosAngle = Math.cos(ellipseAngle);
+    const sinAngle = Math.sin(ellipseAngle);
     
-    // Set initial angle based on ellipse tangent
-    const dx = -ellipseMajor * Math.sin(ellipseAngle);
-    const dy = ellipseMinor * Math.cos(ellipseAngle);
+    // Calculate position with rotation
+    antX = ellipseCenterX + (ellipseMajor * cosAngle * cosRot - ellipseMinor * sinAngle * sinRot);
+    antY = ellipseCenterY + (ellipseMajor * cosAngle * sinRot + ellipseMinor * sinAngle * cosRot);
+    
+    // Set initial angle based on ellipse tangent (accounting for rotation)
+    const dx = -ellipseMajor * sinAngle * cosRot - ellipseMinor * cosAngle * sinRot;
+    const dy = -ellipseMajor * sinAngle * sinRot + ellipseMinor * cosAngle * cosRot;
     antAngle = Math.atan2(dy, dx);
 }
 
