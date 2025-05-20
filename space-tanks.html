@@ -129,7 +129,6 @@
 <body>
     <div id="game-container"></div>
     <div id="ui">
-        <div>Enemies: <span id="enemy-count">0</span></div>
         <div>Score: <span id="score">0</span></div>
     </div>
     <div id="health">
@@ -416,7 +415,6 @@
             
     // Update UI
     document.getElementById('score').textContent = score;
-    document.getElementById('enemy-count').textContent = enemies.length;
     document.getElementById('health-bar').style.width = '100%';
     document.getElementById('game-over').style.display = 'none';
     updateBulletDisplay();
@@ -707,7 +705,7 @@ function spawnEnemy() {
                 if (enemy.position.z > 5) {
                     scene.remove(enemy);
                     enemies.splice(i, 1);
-                    document.getElementById('enemy-count').textContent = enemies.length;
+
                     continue;
                 }
                 
@@ -845,7 +843,6 @@ function spawnEnemy() {
             
             scene.add(enemy);
             enemies.push(enemy);
-            document.getElementById('enemy-count').textContent = enemies.length;
         }
         
         // Initialize UI
