@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Directory</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            text-align: center;
+            padding: 20px;
+        }
+        h1 {
+            color: #333;
+        }
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .card {
+            background-color: #fff;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            margin: 15px;
+            padding: 20px;
+            width: 250px;
+            transition: transform 0.3s;
+            cursor: pointer;
+        }
+        .card:hover {
+            transform: scale(1.1);
+        }
+        svg {
+            width: 100px;
+            height: 100px;
+        }
+        a {
+            text-decoration: none;
+            font-weight: bold;
+            color: #007bff;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Welcome to the Fun and Useful Directory!</h1>
+
+    <div class="container">
+        <div class="card">
+            <svg viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="10" stroke="black" stroke-width="2" fill="none"/>
+                <path d="M2 12 L12 2 L22 12 L12 22 Z" stroke="black" stroke-width="2" fill="none"/>
+            </svg>
+            <a href="ant-trail-10.html">Ant Trail</a>
+        </div>
+
+        <div class="card">
+            <svg viewBox="0 0 24 24">
+                <rect x="4" y="4" width="16" height="16" stroke="black" stroke-width="2" fill="none"/>
+                <circle cx="12" cy="12" r="6" stroke="black" stroke-width="2" fill="none"/>
+            </svg>
+            <a href="aquarium-1.html">Aquarium</a>
+        </div>
+
+        <div class="card">
+            <svg viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="10" stroke="black" stroke-width="2" fill="none"/>
+                <circle cx="12" cy="12" r="6" stroke="black" stroke-width="2" fill="none"/>
+                <animateTransform attributeType="XML" attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="5s" repeatCount="indefinite"/>
+            </svg>
+            <a href="liquid-metal-orb.html">Liquid Metal Orb</a>
+        </div>
+
+        <div class="card">
+            <svg viewBox="0 0 24 24">
+                <path d="M2 12 L22 12 M12 2 L12 22" stroke="black" stroke-width="2" fill="none"/>
+            </svg>
+            <a href="space-exploration.html">Space Exploration</a>
+        </div>
+
+        <div class="card">
+            <svg viewBox="0 0 24 24">
+                <rect x="4" y="4" width="16" height="16" stroke="black" stroke-width="2" fill="none"/>
+                <path d="M4 4 L20 20" stroke="black" stroke-width="2" fill="none"/>
+            </svg>
+            <a href="space-tanks.html">Space Tanks</a>
+        </div>
+
+        <div class="card">
+            <svg viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="10" stroke="black" stroke-width="2" fill="none"/>
+                <circle cx="12" cy="12" r="4" stroke="black" stroke-width="2" fill="none"/>
+                <animate attributeName="r" from="4" to="8" dur="1s" repeatCount="indefinite"/>
+            </svg>
+            <a href="whack-mole-2.html">Whack a Mole</a>
+        </div>
+    </div>
+
+</body>
+</html>

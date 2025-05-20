@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Space Tank Battle</title>
     
+    <!-- Google Fonts - Press Start 2P -->
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    
     <!-- Favicon -->
     <link rel="icon" type="image/png" href="images/space-tank-battle-icon.png">
     
@@ -38,7 +41,7 @@
             overflow: hidden;
             background: #000;
             touch-action: none;
-            font-family: Arial, sans-serif;
+            font-family: 'Press Start 2P', cursive, monospace;
         }
         #game-container {
             position: absolute;
@@ -50,8 +53,9 @@
             top: 10px;
             left: 10px;
             color: white;
-            font-size: 18px;
+            font-size: 14px;
             pointer-events: none;
+            line-height: 1.5;
         }
         #health {
             position: absolute;
@@ -84,10 +88,11 @@
             justify-content: center;
             align-items: center;
             color: white;
-            font-size: 24px;
+            font-size: 18px;
             user-select: none;
             -webkit-user-select: none;
             touch-action: manipulation;
+            line-height: 1.2;
         }
         #game-over {
             position: absolute;
@@ -101,17 +106,18 @@
             align-items: center;
             flex-direction: column;
             color: white;
-            font-size: 36px;
+            font-size: 28px;
         }
         #restart-btn {
             margin-top: 20px;
             padding: 10px 20px;
-            font-size: 24px;
+            font-size: 18px;
             background: #4CAF50;
             color: white;
             border: none;
             border-radius: 5px;
             cursor: pointer;
+            line-height: 1.5;
         }
         @media (min-width: 768px) {
             .control-btn {
@@ -129,32 +135,32 @@
     <div id="health">
         <div id="health-bar"></div>
     </div>
-    <div id="bullets-display" style="position: absolute; top: 40px; right: 10px; font-size: 36px; color: #CCCCCC; text-shadow: 0 0 10px #00FF00, 0 0 20px #00FF00; font-weight: bold;">20</div>
+    <div id="bullets-display" style="position: absolute; top: 40px; right: 10px; font-size: 28px; color: #CCCCCC; text-shadow: 0 0 10px #00FF00, 0 0 20px #00FF00; font-weight: bold; font-family: 'Press Start 2P', cursive, monospace; line-height: 1.2;">20</div>
     <div id="controls">
         <div class="control-btn" id="left-btn">←</div>
         <div class="control-btn" id="fire-btn">FIRE</div>
         <div class="control-btn" id="right-btn">→</div>
     </div>
-    <div id="start-screen" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.8); display: flex; justify-content: center; align-items: center; flex-direction: column; color: white; font-size: 36px;">
-        <h1 style="margin: 0 0 15px 0; font-size: 42px; text-shadow: 0 0 10px #4CAF50;">SPACE TANK BATTLE</h1>
-        <img src="images/space-tank-battle-800.png" alt="Space Tank Battle Preview" style="max-width: 80%; max-height: 40vh; height: auto; border-radius: 5px; margin: 10px 0 20px; border: 2px solid #4CAF50; box-shadow: 0 0 15px rgba(76, 175, 80, 0.5);">
-        <button id="start-btn" style="margin-top: 10px; padding: 10px 30px; font-size: 24px; background: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer; box-shadow: 0 0 10px rgba(76, 175, 80, 0.5);">Start Game</button>
-        <button id="info-btn-start" style="margin-top: 10px; padding: 5px 15px; font-size: 16px; background: rgba(255,255,255,0.2); color: white; border: none; border-radius: 5px; cursor: pointer;">info</button>
+    <div id="start-screen" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.8); display: flex; justify-content: center; align-items: center; flex-direction: column; color: white; font-size: 24px; font-family: 'Press Start 2P', cursive, monospace; line-height: 1.5; text-align: center; padding: 20px;">
+        <h1 style="margin: 0 0 25px 0; font-size: 32px; text-shadow: 0 0 10px #4CAF50; line-height: 1.4;">SPACE TANK BATTLE</h1>
+        <img src="images/space-tank-battle-800.png" alt="Space Tank Battle Preview" style="max-width: 80%; max-height: 40vh; height: auto; border-radius: 5px; margin: 20px 0; border: 2px solid #4CAF50; box-shadow: 0 0 15px rgba(76, 175, 80, 0.5);">
+        <button id="start-btn" style="margin-top: 10px; padding: 12px 30px; font-size: 18px; background: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer; box-shadow: 0 0 10px rgba(76, 175, 80, 0.5); font-family: 'Press Start 2P', cursive, monospace; line-height: 1.5;">START GAME</button>
+        <button id="info-btn-start" style="margin-top: 20px; padding: 8px 16px; font-size: 14px; background: rgba(255,255,255,0.2); color: white; border: none; border-radius: 5px; cursor: pointer; font-family: 'Press Start 2P', cursive, monospace; line-height: 1.5;">INFO</button>
     </div>
     
-    <div id="game-over">
-        <div>GAME OVER</div>
-        <div>Final Score: <span id="final-score">0</span></div>
-        <button id="restart-btn">Play Again</button>
-        <button id="info-btn-gameover" style="margin-top: 10px; padding: 5px 15px; font-size: 16px; background: rgba(255,255,255,0.2); color: white; border: none; border-radius: 5px; cursor: pointer;">info</button>
+    <div id="game-over" style="font-family: 'Press Start 2P', cursive, monospace; text-align: center;">
+        <div style="font-size: 32px; margin-bottom: 20px;">GAME OVER</div>
+        <div style="font-size: 18px; margin-bottom: 30px;">FINAL SCORE: <span id="final-score" style="color: #4CAF50;">0</span></div>
+        <button id="restart-btn" style="font-family: 'Press Start 2P', cursive, monospace; font-size: 18px; padding: 12px 24px; background: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer; margin-bottom: 20px;">PLAY AGAIN</button>
+        <button id="info-btn-gameover" style="display: block; margin: 0 auto; padding: 8px 16px; font-size: 14px; background: rgba(255,255,255,0.2); color: white; border: none; border-radius: 5px; cursor: pointer; font-family: 'Press Start 2P', cursive, monospace; line-height: 1.5;">INFO</button>
     </div>
     
-    <div id="info-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.9); z-index: 1000; justify-content: center; align-items: center;">
-        <div style="background: rgba(50, 50, 80, 0.9); padding: 30px; border-radius: 10px; max-width: 500px; text-align: center; color: white; position: relative;">
-            <h2 style="margin-top: 0; font-size: 24px; margin-bottom: 15px;">SPACE TANK BATTLE</h2>
-            <img src="images/space-tank-battle-2-800.png" alt="Space Tank Battle Preview" style="max-width: 100%; height: auto; border-radius: 5px; margin-bottom: 15px; border: 2px solid #4CAF50; box-shadow: 0 0 10px rgba(76, 175, 80, 0.5);">
-            <p style="font-size: 18px; line-height: 1.6; margin-bottom: 20px;">Shoot down the enemy spaceships. Keep an eye on your laser cannon count at the top right, you get 2 more shots with every enemy spaceship that spawns. If you get hit 10 times you die. Good luck!</p>
-            <button id="close-modal" style="padding: 5px 15px; background: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer; margin-top: 20px;">Close</button>
+    <div id="info-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.9); z-index: 1000; justify-content: center; align-items: center; font-family: 'Press Start 2P', cursive, monospace;">
+        <div style="background: rgba(50, 50, 80, 0.9); padding: 30px; border-radius: 10px; max-width: 500px; text-align: center; color: white; position: relative; font-size: 14px; line-height: 1.8;">
+            <h2 style="margin-top: 0; font-size: 20px; margin-bottom: 20px; color: #4CAF50;">SPACE TANK BATTLE</h2>
+            <img src="images/space-tank-battle-2-800.png" alt="Space Tank Battle Preview" style="max-width: 100%; height: auto; border-radius: 5px; margin-bottom: 20px; border: 2px solid #4CAF50; box-shadow: 0 0 10px rgba(76, 175, 80, 0.5);">
+            <p style="font-size: 14px; line-height: 1.8; margin-bottom: 30px;">Shoot down the enemy spaceships. Keep an eye on your laser cannon count at the top right, you get 2 more shots with every enemy spaceship that spawns. If you get hit 10 times you die. Good luck!</p>
+            <button id="close-modal" style="padding: 10px 20px; background: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer; font-family: 'Press Start 2P', cursive, monospace; font-size: 14px; line-height: 1.5;">CLOSE</button>
         </div>
     </div>
     
