@@ -1,0 +1,905 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Space Tank Battle</title>
+    
+    <!-- Google Fonts - Press Start 2P -->    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="images/space-tank-battle-icon.png">
+    
+    <!-- Social Media Preview -->
+<meta property="og:title" content="Space Tank Battle">
+<meta property="og:description" content="An exciting space tank battle game. Defeat enemy space-tanks and survive as long as you can!">
+<meta property="og:url" content="https://robby3000.github.io/html-fun/space-tanks.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Space Tank Battle">
+<meta property="og:locale" content="en_US">
+
+<!-- Primary Meta Tags -->
+<meta property="og:image" content="https://robby3000.github.io/html-fun/images/space-tank-battle.png">
+<meta property="og:image:secure_url" content="https://robby3000.github.io/html-fun/images/space-tank-battle.png">
+<meta property="og:image:width" content="1024">
+<meta property="og:image:height" content="1024">
+<meta property="og:image:alt" content="Space Tank Battle Game Screenshot">
+<meta property="og:image:type" content="image/png">
+
+<!-- Twitter Card tags -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://robby3000.github.io/html-fun/images/space-tank-battle.png">
+<meta name="twitter:title" content="Space Tank Battle">
+<meta name="twitter:description" content="An exciting space tank battle game. Defeat enemy space-tanks and survive as long as you can!">
+    <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/examples/js/controls/OrbitControls.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background: #000;
+            touch-action: none;
+            font-family: 'Press Start 2P', cursive;
+        }
+        #game-container {
+            position: absolute;
+            width: 100vw;
+            height: 100dvh;
+        }
+        #ui {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: white;
+            font-size: 12px;
+            pointer-events: none;
+            line-height: 1.5;
+        }
+        #health {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 100px;
+            height: 20px;
+            border: 2px solid white;
+        }
+        #health-bar {
+            height: 100%;
+            width: 100%;
+            background: red;
+        }
+        #controls {
+            position: fixed;
+            bottom: 20px;
+            left: 0;
+            width: 100%;
+            display: flex;
+            justify-content: space-around;
+            padding: 0 20px;
+            box-sizing: border-box;
+            z-index: 100;
+            pointer-events: auto;
+        }
+        .control-btn {
+            width: 80px;
+            height: 80px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-size: 16px;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+        }
+        #game-over {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            color: white;
+            font-size: 24px;
+            overflow-y: auto;
+            padding: 20px;
+            box-sizing: border-box;
+            text-align: center;
+        }
+        #restart-btn {
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 16px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-family: 'Press Start 2P', cursive;
+        }
+        @media (min-width: 768px) {
+            .control-btn {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container"></div>
+    <div id="ui">
+        <div>Score: <span id="score">0</span></div>
+    </div>
+    <div id="health">
+        <div id="health-bar"></div>
+    </div>
+    <div id="bullets-display" style="position: absolute; top: 40px; right: 10px; font-size: 24px; color: #CCCCCC; text-shadow: 0 0 10px #00FF00, 0 0 20px #00FF00;">20</div>
+    <div id="controls">
+        <div class="control-btn" id="left-btn">←</div>
+        <div class="control-btn" id="fire-btn">FIRE</div>
+        <div class="control-btn" id="right-btn">→</div>
+    </div>
+    <div id="start-screen" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.8); display: flex; justify-content: center; align-items: center; flex-direction: column; color: white; font-size: 24px; overflow-y: auto; padding: 20px; box-sizing: border-box; text-align: center;">
+        <h1 style="margin: 0 0 30px 0; font-size: 28px; text-shadow: 0 0 10px #4CAF50; text-align: center; line-height: 1.4;">SPACE TANK BATTLE</h1>
+        <img src="images/space-tank-battle-800.png" alt="Space Tank Battle Preview" style="max-width: 80%; max-height: 40vh; height: auto; border-radius: 5px; margin: 0 0 30px; border: 2px solid #4CAF50; box-shadow: 0 0 15px rgba(76, 175, 80, 0.5);">
+        <button id="start-btn" style="margin-bottom: 20px; padding: 10px 30px; font-size: 16px; background: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer; box-shadow: 0 0 10px rgba(76, 175, 80, 0.5); font-family: 'Press Start 2P', cursive;">Start Game</button>
+        <button id="info-btn-start" style="padding: 5px 15px; font-size: 12px; background: rgba(255,255,255,0.2); color: white; border: none; border-radius: 5px; cursor: pointer; font-family: 'Press Start 2P', cursive;">info</button>
+    </div>
+    
+    <div id="game-over">
+        <div style="margin-bottom: 20px;">GAME OVER</div>
+        <div style="margin-bottom: 30px;">Final Score:<br><span id="final-score" style="font-size: 28px; display: inline-block; margin-top: 10px;">0</span></div>
+        <button id="restart-btn" style="margin-bottom: 20px;">Play Again</button>
+        <button id="info-btn-gameover" style="padding: 5px 15px; font-size: 12px; background: rgba(255,255,255,0.2); color: white; border: none; border-radius: 5px; cursor: pointer; font-family: 'Press Start 2P', cursive;">info</button>
+    </div>
+    
+    <div id="info-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.9); z-index: 1000; justify-content: center; align-items: flex-start; overflow-y: auto; padding-top: 10vh;">
+        <div style="background: rgba(50, 50, 80, 0.9); padding: 20px; border-radius: 10px; max-width: 500px; width: 90%; margin: 0 auto 20vh; text-align: center; color: white; position: relative; box-sizing: border-box;">
+            <h2 style="margin-top: 0; font-size: 18px; margin-bottom: 15px; line-height: 1.4;">SPACE TANK BATTLE</h2>
+            <img src="images/space-tank-battle-2-800.png" alt="Space Tank Battle Preview" style="max-width: 100%; height: auto; border-radius: 5px; margin-bottom: 15px; border: 2px solid #4CAF50; box-shadow: 0 0 10px rgba(76, 175, 80, 0.5);">
+            <p style="font-size: 12px; line-height: 1.8; margin-bottom: 20px;">Shoot down the enemy spaceships. Keep an eye on your laser cannon count at the top right, you get 2 more shots with every enemy spaceship that spawns. If you get hit 10 times you die. Good luck!</p>
+            <button id="close-modal" style="padding: 5px 15px; background: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer; margin-top: 20px; font-family: 'Press Start 2P', cursive; font-size: 12px; position: relative; z-index: 1001;">Close</button>
+        </div>
+    </div>
+    
+    <!-- Audio elements for sound effects -->
+    <audio id="laser-sound" preload="auto">
+        <!-- Placeholder base64 audio data - replace with actual sound effect -->
+        <source src="data:audio/wav;base64,UklGRuIJAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0Yb0JAACDe4aB2/X+13JyeWqP7PTn89J3ZHJkd8/x3efhiFpnY16f6dja4qZXWmBSh9zazuOxW09fSW/M28bdvWBAW0lfvdvD18JoQlZMUa7ZysrMeEFRTUd+zcrG0KNKQE5AZ73PvtGxWj5UPli01rrKumE7TkJHpNa9xMhnNUxHP53Lv7/LfTlHQj9py8DDwL5ZO0JGPH7Lu8PBrTtGOUo8o8e7wMKkL0c8Sj6rw8K9x4s4RzxGSbjAxrnGcjdEQzxvy7/Eu7hEPjpJN4jLtcG7szRFPEo1lc+7v8CkOUY5Rj2mw8G9xJA4QjxFTbXAwrzCYjc9RDxwz7zGtsJIQUBIOH3LusS9tz5DPUc5jMm7wr+qPkg9STluy77Dt8RsOUI/P1HBxMO5xpsxSDtINoHNu8i3w185QD8/Wsa/wrfIiTRHOkc2k8m6xbvAUjpEQUBawL7FuceEN0g7RzueyLzDu7lMQEBDPGLDu8S6xW82RDtDQ7DDv8DAqj5CO0U5bcu4wbnBZThEPEVEtcO/vMSiO0Q8RTd4ybfEt8aQOEI6RDh7zLjGucmWO0Y+RT1Yvr/Av8GvSD8/QT9Sur69vr65UD5EQEU+ocS3wbbEZjBGPUU8ls66w7jHfDNCOkg4cMq+xbfHkjVEPUU6csm9wrnEoEA/PEM/ULrEv76+tEw5QEJAULfDwb2+tk49Qz9CPabHt8O4xGY1RDlHPJHMu8i2yIszQDpDQUGhx7bEtseTOEE9QEREpcS5wrjGci9CPEQ8UbLDusK4yH01QjtGP1a/xby/vbxSM0g8STdpxLu/vry/XjVFOUU6b8nAwrrDrks8QztHN4HMt8O6wrFMOUA8RzyMybnFuMiTOUM+QENBoMq5xrjFlTU8PkM/SKfIvLy0vaBEOEI9RjuCw7e7urS+djJDQENDQZzFtL+2u61TOEg6Szlwvru6v7TBiDtDQEFHPX/Jtr24ubRkOkk9ST1ctb63v7W/nEM+QkFIP2zAvry7uLhjOERARUNHoMm2vrW/qko9Rz1LPmO8vrm/tMFyOkRAREdAj8e4wbi7uWg0SDxLPVytwLC7sbmjUEJIREVIRZS9tLe4sLyEPkVFQ0xAZre8tbizt61aQEpDSUlFj8Szubayu4c/RUZGS0Nptrm1u7K5plY9TUFOQ1WewbK9s7eyYEFJRkZNQoTCura7sbyRRUNHRUtGU6i/tbuzt7VkPUdGRkxBfMO1ubqyvZdGRkhFSkhSqMC2ua+vsGM9SURLSEpVsrazsbOstYBBTUVLSE1Oobmzs7CyrqVVQ0hKSE1Ja7e1trC2rbZzQk1GS0pMVK21trK1rreRQUlGTUhQSaC6sraysrOkSUdGTUdRR4bAsriyta+yWURMSUlOSHO/s7iytq+1bkFMRU5JUU6avbS1tbKzpFFHSklKT0iCuKawqLCksoBDTEZOSVJJe7Oqr6yuqa2UTEpNTUxQTV2usLKurquwlEhPSE9MUkxnsLCxr62uq6phSE9LUk1TT5+5r7Cvr6yoW0ZNTE9OUlGPuq2zrbGptIFFT0lTTFVKiryus62yqbJ3SFJLUU5UTHK1sLOtsayym0xOS09OUkxwt7Czq6qnqKReSFFKUk5VTWqvrauqqqmopV9JVE1TTlZOZ6qvq6+orqWvh0tTTlJQVVBmqa6rrqqtprCJTFNQUVJSVlKTt6uvqq2nr4dJU09QU1JXT4e0qK+qraisoFtLUlBTUVdQgLSssaqtqqunYklST1ZPV1BqrrGuraysqqllR1VOVU9YT2SmqaWqpKeiqJlaTlVSWFNaVV6brqSspKijp6BhTFhTWFRZV1mTr6SspailpaVqS1hUV1VYWVaKsKWsp6enpKl0S1dVV1dXW1SDsaitqKeoo6t+T1VTVlhWW1R0qqmpq6WqoqyKUlNWVlhVXFNwq62oqqeqo6qSVFFXU1dVW1VoqK6mrKWtjFFgnp+gnZybnZqeh05WUlVUWFVaU2+koaCgn56enZheUVZWVllXW1ZrpKKkoKKfoZ2gbVBXVVlYWllbYJ2mpaOjoaKeonxQWVZaWFxZX1iPqaOmo6Kjn6OHVFtWW1hdWWBWg6ukpqKkoqGilFtaWVtZXFpfWHOqpaeipaGioZ5oVlxYW1heWl9djKGanpudmZyYnXtVXVlcW15cYFxwnp2fnZ6cnpqejFdbXF1cXl1gX2eeo56fnp6cnZudbFleW19dYF5jXYWnnqKen52fmqCCWV1dXl5gXmJecqCgoaCgn56dnZNiW1xeXl9fYWBol6Ofop+gnZ+cnoNcXlxgXmFfYmBwn6GhoKCfnZKZgVlfXl9fX2FgZF51m5iZmZiZl5iVmYJdX2BhYWJjY2RmjJ+Zm5qamJiYl5ZvXWNeY2FkYmZibZeem5yZm5iblpyHYGJhYWJiZGNmZHuenJubm5uZmpiYdF5jYGRhZWNmZGmWn5qemp2ZnJecjGFgYWJjY2VkZmRxmJ+cnZqcmZuXnH1fYWJiZGNlZGZlao6YlJWUlJOTk5GTd2FlY2VlZWdlaWRzl5aVlpWWlJWTlJFvYWZkZmZmaGZqZXyclpeXlpaVlpOVjGpiZmVmZ2doZ2tlg52VmJeXlpWVlJWMaWNnZmdnaGhoameCm5aZl5eWlpWVlJJxYmdmaGdoaGlqaIOblpmXmJaXkYuPf2doaWlqaWtqbGtubICTkJCQj4+Pj46OjG5na2lramxrbWxubYaUkJKRkZCRj5CNkXlmbGtsa21sbm1vbH2VkZORkpGRkJCPj4xxaWtsbGxtbm1vbHeTkpOSkpGRkJCQkIlua2xsbG1tbm5vbnKRlJKSkpKRkZCRj491am1rbWxubW9ucG18jYuLioqKioqJioiKe2xvbW5ub29vcHBxcIKOjI2LjIuLi4uLiot5bW9ucG9xcHFxcnFziI+NjoyNjIyLjIuLiXRucW9xcHFxcnFzcXmNj46OjY2MjIyMi4uJdW5xcHFwcnFzcXRxgZCNj46NjY2MjIyMjIZxb3FxcXFycnNyc3KIi4WHhYaFhYWFhYSFgHJxcnNzc3NzdHR0dXSAiYeIh4iHh4eHhoeGhXdydHN0dHR1dXV1dnV8iomJiIiIiIiIh4eHh4N1c3R0dXV1dXZ1dnZ5iIqJiYmJiIiIiIiHiIBzdHR1dXV1dnZ2dnd2gYuJiomJiYmJiIiIiIV3dHV1dXV2dnZ2dnd3eYCAgICAgICAgICAgH9/eXd4d3h4eHh5eHl5eXl7goKCgoKCgoGCgYGBgoB5eXl5eXl6enp6enp7en+Eg4ODg4ODgoOCgoKCgXp6enp6enp6e3t7e3t7f4AA" type="audio/wav">
+    </audio>
+    
+    <audio id="enemy-laser-sound" preload="auto">
+        <!-- Placeholder base64 audio data - replace with actual sound effect -->
+        <source src="data:audio/wav;base64,UklGRrADAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YYwDAACTd0tvjGBPhH9QYIxyS3CMZ0p8h2FMhINeToWFXFF9jVpWb5hbW16daFlYiodPYmOmVGVQkoRTYVqlZl1Xb6BcX1d1oVdjVHegW19YaqNqWGFYnYJTZFR7omBcX1iWkFVhW2Cgg1ZhXF+ihFdgXlqYlFlgXlp5q2ddXl9clZxaY1piXaKSW2FdYVyXn2BgXWFbeq14W2FdYVyQp2pdYV5hXI6qcltiXWJbdquOXmBgYGFdg62FXWFgYGFdd6qWZV5jX2JgYImsjGBgYWFgY12Ap5xsXWRfY19jXounmmtcZl1mXGhadJ2mi2BiY2FjYWNgZpuin21eZWBkYWRhZGGYoKOAXGZgZWFkY2NkYZKioJNgZWFkYmRjZGJlX4KmmaZ4YGVjZGNkY2VjZWNmlKSapXhhZWRkZWRlZGRlZGZhhaSboJ1wYWdjZmVlZWRmZGdjaGFzn56dn5tsY2dkZ2RnZWdlZmVmZmVnY3Ogm5+boY5jaGVnZWdlZ2ZnZmdmZ2ZnZmdmaJOgmp6bnphsZWhmaGZoZ2hnaGdoZ2hnaGhoaGhoaGiUnpqdmp2Zn3ZlamdpZ2loaWhoaGhoaGloaWhpaGloaWhqaGpmcpyam5qbmpuanJVraWlpaWlpaWlpaWlpaWlpaWlpaWlpaWppamlqaWlqaWppamhsZYOfmZyam5uam5mcmJ6NaGppamppamlqaWppamlqaWpqampqampqampqampqampqampqampqampqampramtqa2praWxpbWZ7nZmbmpqampqampqampqbmZuYnodnbWlramtqa2tra2tra2tra2tra2tra2tra2tra2tra2tra2tra2tra2tra2tra2tra2tra2tra2xsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxtbG1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbmxubG9pgJ2Ym5mamZqZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmYmZiZmJmYmZiZmJmXmZeakm5sbW1tbW1tbm1ubW1tbW1tbW1tbW1tbW1tbW1tbW1ubW5tbm1ubW5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5vbm9ub25vbg==" type="audio/wav">
+    </audio>
+    
+    <audio id="enemy-destroyed-sound" preload="auto">
+        <!-- Placeholder base64 audio data - replace with actual sound effect -->
+        <source src="data:audio/wav;base64,UklGRgwKAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YegJAACAgH+Af4B/gH+Af4B/gH+Af4B/f4B/gH+Af4B/gH+Af4B/gH+BfHBxcW5rbGtsa2xsbW1scXNyc3BxcHFycXJjXmFdVFVTX2lmaFhXVlpgYF51hH6BbHJpiLCnrZKNjJOurq6ur6+vxsjMuIaPiJ+oqKFKSUNjl4mVTTk7RH13fm1hYmJucXBxcXJxdnt5emNoX36ro6a0u7m2mp2ZrMG6v5mVkaHKxcuxn6WefXZ6fI6Fj1hERk6Oi5J6YWZjZWRlY1xeWnKFgIJramlteHR5YVlZX5CRko6JiomOj46YzMLQlml1b6erraqwqrR2Vl5ekpCTjYuJjHNrbWtkZmJ3jYWKRT87T3p3d4eTj5GTk5aIc3d0hYuIjqikrIlkbmiEhoeGi4iLgn1+fX9+foKNiY16dXV1Z2xjibKornJnaWpvb219ioaHZmNjZmtqa25zcHR5fXiGkZGQmZqckmpyZ5GuqKqfnKCQbHRslaajopCPkn5iaWVub25wcnVwiJqWl3VvcHeSiZNuYGFmmJmbkoSGhYKBgH9sc2eWv7W6fXJ1dHd2doGLh4qcnKGKYmtlcnV1c2VoZHN/fX13dHdwYGJgaW5tboyMkX5eY2BpbmtzoZ+kj3p+fGplZHCZlJmKf4OAjIiPelZcV3aGgIeenqGMb3Zyd3R2dnt6e3ZzdHNubW5tbG5qg5CMjHFzcHRzdnOPlpaPbXBtc3d3d4uOjop9f35/fn99cG9wcXRzdHd5eHhucW12enx6nqKmj01ZTXmOi4ySkJWAXGNdfYiFiIuLjYN4enloZGRpdXdyj6OenoWBhXhjZ2R8iYOHf4R+j56cnXxzdXmQi5CDen17hYSGfnJzcnqAfYCEh4SMk5KTgHl7e4WDhIF/gICRlJSPg4WEh4mIiH5/fYaRj5GEgIF+cHJveoaChHd3dXl8fnuJj4+NhoOGfnV2dnh7eH6RkZCUmpeaYVhWaJuUmZCNjYxycXBxbXFrnrKup2NpYXWFg4SIiomKjoyRcFZeXJqcoY9xdnN8fX5+jYqOg3l5enNzcXmRj5GJhIWEfHp7e319fIeOjIt4eXeAjYqNdXBwcnt7eYSQjI5ta2h4n5eegnR4d4SDhX95eXp4eHd7jIuNhX1/foWFhoN+f39/gH+Ah4eIgXN4c4+Yl5Frb2l+kY2PiIaIgnFzcXyDgYKKjIyGd3t3hoqKhnJycXZ6enmLj4+LgICBeXFzc5CRk4drcWx/hYWDcXJwdnt7eomMjodwcnB3e3p7hoiIhHx9fHt6ent9fn2BhoaFh4aHg3FycHl/fn+NjpCHc3ZzeXx7fYmJioiEhIV4c3N2iIeIhYKDgoeHiYFucW1/iYeHenp5enp7eoOGhYR3eHZ/iIaHdnNzd4KBgn99fn6GhoiAcnVyfH9+f4iHiX90d3V8fn1+gH+Af4B/gH19fH1+f36GioqIdHVzeoKBgYqNjYh0d3R9hYOEdnZ0e4iHiIWDhIJ6eXl6ent6iIyMiXt8e3t5enmJi4uGeXx5gIODgoGAgX56e3p8fXx9fX59goaFhoB/gH9+fX59fHx9g4OEgXx9fICCgYKFhIWBe318hoeIg3F0cXyEgoOFhYaCeHt4gYSEg4SDhH94eXh+gH+Ag4KCg4SDg3p6eXyCgYGIi4qJeHl4fIGAgISFhYN5enl9gYCBhoeHhYGCgn16e3p5enl/ioeKfnt8fISDhX98fH19fn1/goOCg4OEg4OChH1zdnOFjIqJfn9+gIGAgX9/fn+BgYCBgIGAgYCBf3t8eoeLiol7fHt+goGCfX18f4iHiIJ+f358fHt+hYSFgX9/gIGAgYCBgIF/f35+fH18gYWEhH18fX18fXyAgoGChYSGf3V3dn+CgYF8fXuChoWFf31+fXx9fICCgYKDgoN/eXp5fH18fomIioF5e3p9fHx+hYSGfnp7e4GBgoKDgoN/fn9/goGCgH1+fX5+f359fn1/gYCBgYKCgYGAgX58fH18fXyAhYSFgYCBf3d4d36EgoN+fn1/gYCBf35/fnx9fH6BgIGBgIGAfn5/fXx9fIODhIF7fHt+f39/gH+Af4B/gHt5eXuDgoOAfn9+fHt7fYB/gH+Af3+Af4B+fH18f4B/gIGAgX98fXyAgYCBhIOEf3t8fIGBgoGCgYJ/fn9/gYCBgIB/gH9/fn+DgoOBgIGAgH+Af4B/gH59fX6CgYKBf4B/f35+f4SDhH56e3qBgYKBfn9+f4B/f35/fn+BgIGAf4B/gH+Afn1+fYCAgYB9fn2AgYCBgoGCgYB/gH19fH6Eg4SDgoKCfHp6fIOCg4GAgIGBgYKAfn9+f4B/f31+fYCDgoKDgoOBent6f4OCg4CAf399fn2ChISDfH18fX5+fYGCgoF+f35/fn9/f4B/gIGAgX9+f3+CgYJ/fH18gYKCgX+AgH9+f36CgoOBfX59gIKBgYCAf4B/gH+Af4CAgoGCf3x9fIGCgoF/gIB/fn5/f4B/gIKBgoGAgYB/fn9+fX59goODgoCAgX99fn6BgoGCg4KDfnx9fYGAgYCAf4B/gH9/f3+Af4B/gH5/fn+AgH+AgYGAfn9+f4B/f4B/gH+Af4B+fX5+gIGAgYCAgYB/gH9+fn1/gYCBfn59foB/f4CBgIF+fn1+gIB/gYKBgX9/fn+BgIGAf3+AgH+Af35/foCAgYCAf4B+fX5+gYGCgH1+fX5+fn+Af4B/fn9+f3+Af4B/gH9+fn9/gH+AgYCBf35/f4B/gH9/gH+AgIGAfn9+f4B/gH+Af4CBgIF/fn9+f39+f4GAgX9+fn+AgH+AgYCBf39+f4GAgYB/gH+Af4B/gH+Af35+f4GAgX9+f35/gH+AgYCBf35/f4GAgYB+f35/gH+AgH+Af35/fn+AgH9+f35/gH+AgICBgH5/foCBgIB/gH+Af4CAgH+Af4CAgIB/gH+Af4CAgIB/gH+Af4B/gH+Af4B/f35/gYCBgH+Af4B/gH+Af4B/gH+AgIB/gH9/gH+Af4B/gH+AgH+AgH+AgH+Af4B/gH+Af4B/fn9+gIGBgH5/fn+Af4B/gH+Af4B/gICAf4B/gIB/gH+Af4B/gH+Af4B/gH+Af4B/gH+Af4B/gICAf4B/gH+Af4B/gH+Af4B/gIGBgH+Af4B/gICAgIGAf4B/gH9/gIGAgYB/gH+Af4B/gH+Af4B/gH+Af4CAf4B/gH+AgH+AgH+Af4B/gH+AgIB/gH+AgH+Af4CAf4CAf4B/gICAf4B/gH9/gH+AgH+Af4B/gH+Af3+Af4CAgH+Af4B/gH+Af4B/gH+Af4B/gH+AgH+Af4B/gICAgH+Af4CAf4B/gH+Af4B/gIB/gH+Af4CAgH+Af4B/gIB/gH+AgH+Af4B/" type="audio/wav">
+    </audio>
+    
+    <audio id="player-hit-sound" preload="auto">
+        <!-- Placeholder base64 audio data - replace with actual sound effect -->
+        <source src="data:audio/wav;base64,UklGRkYmAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0Yf0kAACAf39+fHp5eHp0cm1faGpramdhUllgWWFea2xPYXNsVkc6T2VmXHWdkqe2m4F+eXyBc2RpaFxtb1JRVV6GjpGhn626tsHP09bTzraSrr2noJOAh5+DfIeLq6+VjJKHhJCjtL7Oysazt77QzrS/zOHi5/Hw7+jm5eHg0tre18zV4Nbespa/way4raKmo6KbpbSknoSdro+PiJmgr77AutHl9Pjx6NTZz9Xj6OHQv8zQzt7Krcza6P/5/+ra2ODMx9fU3tjX5/Dv7tTRzr290dzn7+nbu7zX59POy7ugq8CwrK6kmY6MiZuSjquamoyXmpGjkIGju8PHyNbYvrfDwczO2uDg4fHz8djOxsLPxMHO4+LYqpSVrrOknqu1tMCZl56dqbnG3OTj4c3Ku6+nq720npKXp67Aw8O/0tvR2eX6+PDx9e/m3uDQyNDQ2OHh3Nja0Mzg0MfR4t/X4NfOysGXiJeLa219fX50eWxUV11VYl9cdWxWZ21ogHl8cXZ1bHV2dGqAfICTnqu1t6Gntr3Cs7ayqra/ycm/uLu7wsnPzM/Wz9G9trixsqyln6SgmpyinKrBvrWokHh4f3Z/m5qRipCur52hoKGonYuOlJWRj6Cin6Wptr7AwLyvpaawtauql42Ll6GTj4iBipiNkZ2fs7yyqqSottDNw8fH3Ozv9Pjt4+fo5t7Vz8HIv7e4uLunoay0r6Sao6+oo6iamJycnZifoa20tcnHw9LVwLO2p6ibfWBUbHJhWVQ9OkVHPz1HQDlEOycoKzI1MDE1PEBGUlFPSj5IU09WXVlbUUlKSEtMSTs5PUBGQjUmIis9PUJNVWJ0goZ+fIB4cXJ7d3FpaGNdW2ttYWdzhYiHeHd2eH17dn2HjpiWl4d9gYuNhYF9eXZtYFtlbG9tcHNva2ZjXl9gYWBodXyBhYSEhndwaVxYXV9janR6eoOHjo6JhYyZrbSvqqmxqKmim56ZlJCIhoaAf3pze4KAgICDfoGKjY2GjZWano+FhYWKlJqcnJ+go56Vk5OVmZyYnp+fm5WNj6CpqaShpa2tsbi4ubeyr6efnJmdoqKfk5SYk5Cap7O8vL6+u7OwsK+xsrKsmo2GgX53bXR3bGZqc3Byd3Nram5rZmJeWVJJPzxGT1VZYGhmWVJZXFxdaWVja3J7foONmZWZoKCjqLKytLKspaCdm5ePhnpxYlRVW15gWlNRS0M6MzM4Q0pMSEFAQUBGT1JXV1BIRklMSEZCPTcxNTpIU1daZG94gIeIhYJ8fICEf3+Gh42Qjo+MgnpybGhlZ2lpZmJdXGJiX2BfX2BdVEpBQERHR0hNSlBYXWNrdH6Ll5qXlI+Oi4eGg35+f394c3FsbWtpbnFxc3h/goKIj5ihqLK6uLOsop6al5SUmJOPjIyQkJCUlZCNjIiDfHZ1dnh8foCBfnd3fH19eXNwcXNxdoGFiJCWm5qZnJeUlIyHg4KAfXp5e3t9gIWNk5eYlpGQj4iFgHlzb29tbXF4foSHhIOGiI2Rk5STkZKQjoiEg4aPmqatr6yoo52doZ+cnp6goKOlpaOflo+LhYKCgoB+fH14dHRzdXd1cnByc3BubW5vdHl8fn54dHFucHZ4dXJrZmhrb3V6goeLkJCSlJWVlpKNi4uQkpOYnqWprK6vsbO3ubezrqilp6+5wsjFwr25ubq6t7Kws7Wzs7Gsp6CXkY2Jg4J9eXp4eHp5c25rZmReV1JQUlNZXmFlamxub3R4eXl2cW1tcHR5eXx+fXx6dWxmY2BiYWBhZGhscnV0dHR3e3t/goOFhYF7dXNxcnd6fHx7dW9mXFFJQjw3NDQ2Oz5AQklPVFpjaGloaGxrbGxubnBxcW9wcGxvcnJzc3Jxc3d1d32EiIuLio+VmZmVko2Ff36Af3x7en2BgHx4cWlkYVpRTE1RWGBmamhkX11gYmNjXVhTUE9PUlZZXV5eX1hVVlZUUVFTVlpdX2ZoZGBgYWJkZGRlZWRlYmJhYF9dX2Jka3J2en2Di5WfqrK3vcLHyMfFwbmzsbKztLW0r6qsrrK1tLKuqqinop2ZlJCJgHp0b21ub3Bwb25rZmNiYmJhX15dXFtaWVhWVFBNSkQ9OTc4OTk7PDw9PTs7PT8/P0RJTVJYXWFla3F3d3RzcnBwbm1qaGtpZWNgXl9dW1hUT0xLRT9AREdHRkhMTU1PVFheZWlqampvc3V4f4eMkJKUl5uYko2IgX16eXZ1dnd5e3x7dnJvamVkZWRjYWJiZWlnZmdjX1lTTUhEQT8+Pj4/QkRHSUpKS0xLS0xQVlpdYGJgXltaXWBlaW10e4GChYmOk5WWmJmbnp6dm5mampeSjouJh4aGhIGAfnx3dXZ5eHp9goeLjo2QkI6Lh4SCgYB9eXZzcWxrZmFhYF9gZGlvc3d8fX5+e3h3d3Z0dXV0dnp6e3p5eHd1c3Bta2hnZ2htc3iBi5WbnqCgoaKgm5mYmJeVkIuJiYqJh4eFhIaHh4iGhIF9eXZ0cGxra21ucXJwcXJzdHNxcXBxcnR0dHV0c3Jua2xubm5vbWxtb3JzdHh7fYB+e3dzcG9tbGtscHV6fX59fHl3d3p9fX1/gYOFio6Tl5mbm5eVl5ianJ2io6SlpqakpKWnqKmpqqyvsrS3t7SysrS3ur2/wL+/wsTCv7u4t7Sztrm+w8fLz9HQ0NHPzs3Jx8bEwcG+u7i1tLKztLS0tbOxsa+tqaajoKCemJOPjImEgoCAgIB/f39/f35+e3p4eHp8fn9/f4B/fn1/goWFhIWJjJCUl5yhpquws7Kxr62qqKimpaSjo6Slp6mpqqqqqKakoJyWko+NjIqKjI2MiomLjY2MjZCTl5mZmpyeoKOmqqyur7KztLa4uby+vLq4t7a3t7m8vr/Av7u4tbKtqqikoJmUkI2KhX93cW5raWhpa21wcnJzdXd6gIaLkZeam5ycm56fn52cm5uYlZSSkZGSkY+Ni4mIhoSFh4iJiYmJiIiFhIODhYaGhoiLjI6QkJCQj42MjI2QkZGRj4yJhoJ+enl6fH5+fn19e3p7foCAgH98e3l2c3BubWtnY19cW1teYmdrbnF0d3l5eHd3eHyBhoqOk5WUkY+Lh4OCgYKEhoiKjZCTlZWXmJeVlJOTkpGPjYuJiYmJiYqMjZGVmp6fnp2dnJqXlJOTlJaYmZudnJqampqZl5aUko+Mh4SAfHp3dXV1dXZ4enx+f4KFiIuNkpaYmZiXlpeYmZmYl5WTkIuHhIB8enh2dXZ2dnNwbWxtcHFydXd4eHh2dXRzdHV4eXl5eHVzb2tnYl5bWVdWVldYWlxeX15eX2BiZGRiYWFhYGBiZWhrbG1vcXJxcHBwcG9ubm5vb3BvbmxqaGVgXFpYV1dXV1lcXFxcXFxcW1hVU1BOS0pJSkxNT1BSVFZYWVxdXl9hY2ZqbW9vcHFycnFwcHJ1eHp6e3t8fX1+f4CAgIGChYeJi42NjYuIhYOBfnp4eX2BhIaHh4aFhoeIiIiJioyOkJKWmpycnZ6dnp+hoaGhoaGipaipqqqqqqurrKysqqinpqSioJyZlpORj46Mi4qKiomJioqKiYiGgn98eXZ1dXV2eHh4d3Z3eXt7e3p4dXNycnN0dHR0dHNzc3Jva2dlZGNiYmNjY2RmZ2hoamtsbGxtbW5ta2ppaWtucXR2d3l5ent5eHZ1c3Jxc3R3eXl6ent9gYWJjI6RlZmdoqaqrrG1uLm6uru8vr6+vLq4trWzsKynop+cmpeVlJKSkZCPi4iEgX57eHVzcnJzdHV2eXt9f4OFhoiJiYqKiomFgn57eHRycG9wcG9tbGtqa2xsbGxub25tbnFzdHZ5fICEh4qNjpGSkpKTlJWXmJiZmpucnp6dm5mXlpSTkY+MioiHhoWDgYCAgH9+fn+AgYKDgoOEhoeJiouNj5KVmqClqq6wsrS2tre4uLi3t7WzsrCwr6+vraupqKiqq6yrqaelo6GfnJmYmJaVlJKRkI+OjoyLiIaDf3t2c3FvbW1sa2pqaWdlZWVlZGNjY2NiYmFgX19fX19gYGBgX15dXFxcW1tbXV9iZGZnaGhpampsbm9xcnN1dnh5e3x+f4CAf359e3h2dXV0cnBubGppaGhqbG5wcnJycnJycnFvbW1vcXJzdXZ3eHl5enx/gYGDhIWFhISCgX99e3t8fH19fX6AgYKCgoKDg4OEhIOEhYaIi42PkZKTk5WXmZqam5ubm5mWk5GQj4+QkJCQkJCQkZKTlJWXmJmYlpSTkpCOi4iFg4CAgIKEhoeJjJCUmJyeoaSmp6inp6ampKOioKChoKChoaKioqKio6OioqGfnJqZl5aVlpaWlpWVlZWUkpGRkpSWmZudnp+fn5+goKCfnZyamZmampmYl5eXlpaWl5eXlpWUk5GPjYyLi4qKiYiIiIaFg4B+e3p4eHh5enp5eHh5e31/gYKEhIODhIWHiImKi4yNjY2Ojo2LiomHhoWFhIWGh4iKi42OkJGSk5OTlJSVlZSUlZWWlZORj4yJh4aDgYB9enl4d3d3eHd3d3d3eHh3dnV1dnd5e35/gH9/f39+fn5+fXx8e3x8e3t6eXl4d3Z1dXZ2dnd4eXp7fHx9fX5+fn6AgoWIi4+Tlpmdn6CgoJ+fnpybmZiYl5aVlZSUk5OSkpKQjoyIhH96dnJua2lnZmZoaWttb3FzdHZ3eXt9f4GEiIyQlZuhpqqtr7CxsbGwr6+vrq2rqqmnpqShnpycnJycnJ2foKCfnp2cmpmXl5aWlZWVlZaYmJmZmJeXlZSTk5KRkZOVl5qcnp+fn5+en6ChoaGioqKioaGhoKCenJmXlZSSkI6LiIWCgH17eHVzcW9tamloZ2ZlZWRjYmFgYF9fYGBgYWFiYmNiYF9dXFpZWFZUUlBOTk1NTU5QUFBQUFBSVFdaXWBjZmhqbG5wcnR2eHl5eXl5eXl5ent8fX+Bg4SFhoaGhYSCf317eHRwbWlnY2BeW1lXVlZWV1laXF9hY2Vnamxtbm9vcXFxcXBvbm1sa2lnZWRjZGVmaGpucXR2eHp7fX6AgYKEhYWFhYWFhYSDgoF/fnx6eXh3d3Z1c3JzcnBvbWxrbG1ubm9vcXJzc3NycW9tamloaGhnZmVkZGRjY2VmZ2lqbG5wc3Z4en2AgoaIi42Qk5WWl5iYl5aVlZaWmJqcnZ6foKGioqKioqKhoqGhoKCgn6CgoaKjpKSmpqalpKOioaGipKaoqaqqqaioqKiopqWjo6KioJ6dnJubnJydnp6dnJqamZiWk5GOi4iFg4GAfn59fX19fn+Bg4SFhoaHh4eHh4iIiYqLjIyMi4qJiIaFg4KBgYKDg4SEhISDgoKCgH99fHt6eXd1c3Fwbm5tbm9vcHFydHV1dnd3d3d3d3Z1c3JycXFyc3R1dnd4eHl4eHh4d3d4eXp6e3t6eXh2dXNycnJzc3R1d3l7fX5/gIKDhYeJiouLjY2NjIuJiIeGhYWEg4KBgH58e3p5eHh3d3VzcXBwcHBwcHBxcXFwcHBxcnN0dHV2eHh4eXp7e3x+f3+AgYKDhYaHh4eGhYOBf317eXh3d3d3eXp7fX5/gIB/f359e3t8fX5/gIKDg4SEhISEg4KAf359fHt6eXh4d3d2dXV1dXV0c3Nzc3Jzc3R1dnh5enp7enp7fH1+f4CCg4WGh4iIiYuNj5CSlJWWlpaWlZSTk5OSkpKSkpKSk5OSkpGQj46NjIyLiomJiIaEgoF/f35+f3+AgYKDhIeJi4yOj5CRkpOUlpeYmZubm5uamJeVlJKRkJCPj4+PkJGSk5SVlpeYmJiXlZORkI+NjIqJh4aFhIOBf359fHt6ent7fH19fX5+fn5+fn5+fnx6d3RxbmxqampqamprbG1tb3Bxc3R1dnZ1dXV0dHV1dXV2d3h5e31+fXx7e3p6eXh4eXl6e3x8fHt7e3x9fn5+fn+AgYGCg4OEhISEhISFhYaHioyNjY2NjIuLjIyMjIyLiomIh4aFhIODg4KBgICAgICBgYGBgH9+fHp4d3V0c3FxcXBvb29vcHBwcHBwcHBvb29vb29wcXJzc3V2d3h4eXt8fn+AgIGBgYB/fXt5d3V0dHR0dHR0dHNycnJzdHV2d3l6enp6ent7fH19fn5/gIKDhIWGh4eJiouMjpGTlZaXl5iYmZiYmJiYmZmZmpqampqZmZiYmJmZmZmYl5aVk5KSkpKSk5SUlJOTkpGRkJCPj4+PjoyLiYiHhoaFg4KBgICAf35+fn18enh3dnV1dHNycW9ubWxsbW1ub3Bxc3V4en1/gIOFiIqMjo+QkZKTlJSUlJWVlZSTkZCOjYuJh4SCgH58enh2dXNzcnJxcG5ta2ppaWloZ2dmZWVkZGVmZmZlZWVlZWZmZ2doaWpsbGxra2poZ2ZlZGRjYmJiY2NkZGRkZWVmZ2hpamxtbW9wcnR2dnd4eXp7fH1+f4CCg4SFhoeIiYqKi4uLiomIh4aGhoaGhoaFhYSDgoGBgYGBgoODhIWHiIiJiYqKioqKiouLjIyMjI2MjIuKiomJiIeHh4aGhoWFhIOBgIB/f39/gIGBg4SFhYWFhISDg4KBf358enl3dXRycXBxcXJ0dHV1dnd4eHl6e3t7enl5eXl6e3x+f4CCgoODg4SEg4OCgoKCgYGAf3+AgICAgH9+fXx6eXd2dXRzc3NzdHV1dnZ2d3h6e319fX18fHt6eXh3dnVzcnBvb29wcHBxcnJzdHV2d3h4d3Z2dnd4eHl6ent7fHx8fHt7enp5eXh4eXl6ent8fn+AgICAf359fHt7enp6ent9foCBgoSEhYWGhYaGhoaFhIOCgYB/fn18e3p4d3Z1dHNxcG9vb3Bxc3Z4e32AgoOFhoeIiYqLjY6PkJGSk5SUlJSVlZaWl5iYmZiYmJiXl5eXl5eXlpWUk5GQj42Mi4mIhoaFhISEhIWFhoeHiImKi4yNjo2NjIuKiYmJiYmLjI2Njo+QkJCRkZGQkJCQkI+OjoyLiomIh4aGhYWFhIOCgH9+fn5+fXx8fHx8fHx8fHt6enp6e3x9fn5+fX18fHt7e3t7e3p6ent8fX+AgYGCgoKCg4ODhIWGh4eIiIiJiYmJioqLi4yMjIyMjY2NjIyLi4qKiYmKiouMjIyMi4uKiYeGhYSDgoB+fXt6eHd1dHJycXBwb25ubW5vcHFyc3R2eHl7fX5/gIGCg4ODg4SEhISEgoKBgIB/f39+fX18fHx8fHt6eXh3dnRycG9tbGtqaWlpamtsbW9vb29vcHBwcHBxcnN0dXd4eHl5eXh4eHl5ent8fH19fn5+f39/gICAgYGAgH9/f39+fXx5dnNxbmtqaWlpaWhpaGhoaGhoaGhqa21vcXN0dXZ3eXp8fX5/gIKDg4ODg4OCgYGBgYGCg4ODgoKDg4SEhYWGhoaGhoaGhYWFhoaHiIiJiYqKi4uMjI2Njo+QkZGSk5SVlpaWlpaXl5eXlpaVlZWWlpaXlpeWl5eYmZqam5ucnJycnJuamJeVlJKQjoyJh4SCgH58enl5eXl5eXl5eXl6ent7e3x9fXx7e3l4eHd3dnZ1dXRzc3JycnJycnNzdHZ3eHl6ent7fHx8fX5/gICAgICAgH9+fX18fHt7fHx8fHt7e3t8fH18fHt6eXh3d3Z1dHRzc3Nzc3Jzc3R1dnZ3d3h5enx9f4CBg4ODhISFhYaHh4eIiYmKiouLjIyNjo+QkZKTk5KRkI+OjY2MjIuLioqJiYmIiIeHh4eHhoaFhYWFhYSDgoGAfn17eXh2dXRzc3NzdHR0dHR1dXV1dXZ3eHh5ent8fHx9fX59fX19fHx8e3p5eXl4eHZ1dHNycXBvbm5tbGtra2tra2tra2tra2tsbm9xcnN0dXZ3d3d3eHh5eXl5eXl5eXl5eXp6enl4d3Z2dnd3eHh5enp7fHx8fH1+f3+AgICAgYGBgoOEhYaHh4iIiYmJiYqLi4yNjo+QkZGSk5OSkpGQj46OjY2MjIyMi4qKioqLi4uLi4qKioqKioqLjI2Ojo6Ojo6Ojo2NjY6Ojo6Ojo6Ojo2NjIyMjIuKiYmIh4aGhoaHh4aGhYSDg4KBgIB/f39/fn5+fn59fHt7ent7e3t8fn+AgYKCgYGCgoODhIWFhIOCgX9/fn19fHx7e3t6eXh4d3d3d3d3d3Z2dnd3eHh4eHl5eXl5enp7e3t7e3t8fHx8fXx8fHx8fHx7e3t7fH5/gIGCg4ODg4ODgoKDg4SEhISEhISDgoGBgH9+fX19fX19fn5+fn5+fX18e3p6eXh4eHh4eHh5eXl5eXl5enp7e3t8fHt7e3p6enl4d3Z1dXRzc3Nzc3NzcnJycnFxcG9vb25ubW1sbGtramppaWloaGlpaWprbG1ucHFydHZ4ent9f4CAgYKEhYaHh4iJiYqKi4uMjI2Njo+PkJGRkZCQkI+Pj4+Pj4+Pj4+Pj5CQkJCPj4+Pj4+Pj4+QkJCQj5CQkJGRkZGRkZCPjo2Mi4qIh4aFhIODgoGBgH9/fn19fHx9fX1+fn5+fn59fX18fHx8fHx8e3p6eXl4eHd2dnV1dHNzcnFwcG9vcHBxcnJzdHV2dnd4eHl5enp7fHx9fX5+fn5+fn5+fn9/gICAgIB/f39/f39/f359fHt6eXl5eHh4eHh5eXl5eXl5eHd2dXRzc3JycnJycnJycnJyc3R1dnd4eXp7e3x8fHt7enp5eHh4eHh4eHl6ent8fHx7e3p6eXh4d3d3d3d4eHh4eHh3d3d3eHh4eHh5eXl5eXl5eXl6enp6ent8fX5/gIGCg4SFhYaGh4eIiImJioqKioqKioqLi4uKioqKiYmJiIiHh4aGhYSEg4OCgoKBgYGBgYGBgYGAgH9/f3+AgICBgYCAgIGBgYGBgoODg4SEhISEhISFhYaGhoaHh4eHh4eHh4eGhoaGhoaGhYWEg4OCgoKCgoGBgIB/f359fXx7e3t6enp6enp6enp6enp6enp6enp7e3t7e3t7e3t7e3t8fH19fX19fn5+f39/gICAgICBgYGBgYGBgYGBgICAgH9+fn19fHt6enl5eHh4d3d3d3d3dnZ2dXV1dXV1dXV1dXZ3d3d4eHl5eXl5enp7e3t7e3t8fHx7e3t7enp6eXl4d3d3d3d3d3d3d3d4eHh5eXp6ent7e3t8fHx8fHt7e3t7e3t7e3t7e3t7e3t7e3p6enp6enp6enp6ent7fHx8fX19fn5/f39/f39/fn19fHx8fHt7e3t7fHx8fHt7e3t8fHx8fHx8fHx8fHx8fHx8fHx8fX19fX19fX19fX1+fn5+fn59fX19fX19fHx8fHx8e3t7e3t7e3t7e3t7e3t7e3t7fHx8fH19fX5+f4CAgIGBgoKCgoKCgoKDg4ODg4ODg4KCgoGBgYGCgoKCgoKCgoKCgoOCgoKCgoKCgoKCgoKCgYGAgH9/f39/f39/f39/f39/f35+fn5+fn5+fn59fX5+fn9/f39/f39/fn5+fn5+fX19fX19fXx8fH19fHx8fHx8fHx8fH19fX1+fn5+fn5+fX19fX19fX5+fn9/f4CAgYGBgoKCgoKDg4ODhISEhISEhISEhISEhYWFhYWFhYWFhYWFhYWEhISEhISEhISEhISEhISEg4OCgoGBgYB/f35+fn5/f39/gICAgICBgYGBgoKCgoKCgoKCgoKBgYGAgICAgICAgICAgYGBgYKCgoKCgoKCgoKCgoGBgYGBgYCAgICAgICAgICAgICAgICAf39+fn5+fX19fXx8fHx8fHx8fH19fX1+fn5+f39/f4CAgICBgYGBgYGBgYGBgYGBgYGBgICAf39/f39/f39/f35+fn59fXx8fHx8e3t7e3x8fHx8fHx8fHx8fHx8fH19fX19fX5+fn5+fn5/f39/gICAgIGBgYGBgYGBgICAgICAgICAgICAgH9/f39/fn5+fn59fX19fX19fX19fX19fn5+fn9/f4CAgICAgIGBgYKCgoODg4OEhISEhISEg4ODg4ODg4ODg4KCgoKCgoKCg4KCgoKCgoKCgoKBgYGBgYGBgYGBgYGAgICAgICAgICAf3+AgICAgICAgICAgICAf39/f39/f39/fn5+fn19fX19fX19fX19fn5+fn9/f39/f39/f39/f39/f39/f39/gICAgICAgIGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGAgICAgH9/f39/f39/f39/f39/fn5+fn19fX19fXx8fHx8fHx8fX19fX19fX19fX19fX19fX19fX19fX5+fn9/f39/f39/f39/f3+AgICAgICAgICAgICAgICAgICAgICAgYGBgYGBgYGBgYKCgoKCgoKCgoKCgoGBgYGBgYGBgYGBgYGBgYGBgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIB/f39/f39/f39/f39/f39/f39/f39/f39/f39+fn5+fn5+fn5+f39+f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/gICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgH9/f39/f39/f39/f39/f39/f39/f39/f39/f39/fn5+fn5+fn5+fn5+fn5+fn5+f39/f39/f39/f39/f39/f39/f39/f39/f4CAgICAgICAgICAf39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f4CAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgH9/f39/f39/f39/f39/f39/f39/f4CAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgH9/f39/f39/f39/f39/f35+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5/f39/f39/f39/f39/f39/f39/f39/gICAgICAgICAgICAgICAgICAgICAgIB/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f4CAgICAgICAgICAf39/f39/f39/f39/gICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIB/f3+Af4CAgICAgICAgICAgICAgICAgICAgICAgICAgH9/f39/f39/f39/gICAgICAgICAgIB/f39/f39/f39/f39/f39/f39/f39/f3+Af39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f4CAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgH9/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f4CAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAf4B/gH9/f39/f39/f39/f4CAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIB/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f4CAgICAgICAgIB/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f4CAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAf39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/gICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAf39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f3+Af4B/gH+AgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIB/f39/f3+Af4B/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f4CAgICAgH+Af4CAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIB/gICAgH9/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/gH+Af4CAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIB/gICAgICAgICAgICAgICAgICAf4B/gH9/f39/f39/f39/f39/f39/f3+Af39/f4B/f39/f3+Af4B/gH+Af4B/gH+Af4B/f39/f3+Af4B/gH+Af3+AAExJU1R+AAAASU5GT0lOQU0WAAAAU3ludGhldGljIGV4cGxvc2lvbiAxAElQUkQYAAAAU3ludGhldGljIHNvdW5kIGVmZmVjdHMASUFSVBAAAABJd2FuIEdhYm92aXRjaAAASUNSRAYAAAAyMDA5AABJQ09QDgAAAHB1YmxpYyBkb21haW4AaWQzIJYAAABJRDMDAAAAAAEMVElUMgAAABYAAABTeW50aGV0aWMgZXhwbG9zaW9uIDFURFJDAAAABQAAADIwMDlUQUxCAAAAGAAAAFN5bnRoZXRpYyBzb3VuZCBlZmZlY3RzVFBFMQAAAA8AAABJd2FuIEdhYm92aXRjaFRYWFgAAAAYAAAAQ29weXJpZ2h0AHB1YmxpYyBkb21haW4=" type="audio/wav">
+    </audio>
+    
+    <audio id="game-over-sound" preload="auto">
+        <!-- Placeholder base64 audio data - replace with actual sound effect -->
+        <source src="data:audio/wav;base64,UklGRhIPAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0Ye0OAACAiYyMioN+bmJTTThWibW/n5iFemxfVUNklW6VvZ2VgXllYkl0mX1ybq2ji4RwbFN+oYZ6cFuGqIp/dGCCrY2GdGpcWZuOgGyFt5mPf3NmW0tmnXaGu6yXjnxzY1lOQHaNtsOinomAcGVaTEc1oN6yrpmPfnVmXU9HO4DNwqyhkIV2bV1XRlCPfLS/oZqJfnFkXEpfloFwmLyclYV7bWNUYKCFf2xxraOPh3duYVuamIR7b196ro6Kd3Rcf6yRiXtvZ1V5pYiAdWWUspKQfXdnYVBkn4OAZ5W2mJKBeWljUHGhgn9sc7Kgk4V8bGlScaGLfnhjfrGYjoJ2bGFampqGfnJmaquajYN2b15pppiHgnBvV4CpkIh9cWlgo6CPhntvaFlqqI+KendiebCdkYl6dWVkT3Wji4R5bm+xp5iPhHtxaF9WUpGXgIBsgLqnnZOIf3ZsZVpXR3ecf4JtqryloJOLgXhwZmFVVUJjloZ2lsivqZ6UjIJ7cWthXFNORkaNhYnNu7Kon5WNhHx0bWVgV1NJSTlckL/SuLinpJeSh4N3dGlmXFpPT0NGNFnhzcK7sKmfmJCJgXt0bWhhXFVRSkdAQoWPyc26uauonJiOioF8dXBpZV5bVFJJSj+CkYN7lNC4t6unnpiRi4V/eXRvamRhW1hRUUdXmJGHhnt9bJXFsa6moZqUj4mEf3p1cGxnZGJbUUpASbXWu7eooJWLgndyYImzlpWGg3VpWk8/Sa/Iq6KQhXVqWlBATKzIrKORhXZqW1FBTKTIr6OThnhrXlJCS5jFtKOXh3ptX1VDS4i/uqaZjHxyYFpFSXetwKuckYB2ZlxOQm+TvrWglod5b11ZP2CFn8SlnY2BdGdbT0WDgK68npqHfm9jWUdbkHe3s5+VhnttYVdGcJFws7OflId6bmFXSXiSbJ25oJaJfHJjXEl3lHR7sa2Wkn56ZWRLaJWDcYC2opWLfHRkX02MkH5xdrOglYh+cWhZWpaQe3lkn6qVjIB0a15alZWAfGtrpqKPiHtwaFd/pIaFc25fm6SNiXlyZl2Ro4aIcnRccKSYh4NycFuOp5CKfXVqYF+glYl/dmpppqOQjXx5aWdTbaGLhXlyZ6Srl5KFfnNqYVhTj5WAgG15s6malYiCdm9mXVdKf5d9f2yluaKfkoyBenBoYVdUQ3eSf3Waw6inmpSKgnpxa2FdUU8/ZJR0nMiyraObk4qEenVqZ1taTE09SoCZzL20raOdlI2FfndvamFdVFBHRTlHydC6u62rnpuQjIN+dnBqY19WU0pJPUN5o83At7KopJuXjomCfHZwa2NgWFZMTT9RjId4jMa7sq6loZmVjYmBfnZzbGhiXlhUT0pNj46Dgnp2dbm3ramjnZiSjYiDfnl1b2xmY1xcU1VJjJeewKummpKIgHVuZJ+plJKEf3RtZFpVR4rFpaCNhHNpWlBAZbm+qp6Qg3ZpXVBCYK/ArJ+ShHhrXlJDWaHBr6CVhnttYFZEVY+8taOYi3xzYVxFUX6svaebkIB3Zl5OR3SSvLGelYd6b19aQWaEn8CinYyCdWhdUEqEf6+3nZmHfnBkW0hgjni5rp6ThntvYllIdI1yta2ekod6b2JYS32NbaO0nZWIfHFkW0x8kXGDtKaWj354ZmRLcJN/cI22mpaGfXBmW1WSiH1sjLOYlIR8bmdWZpyDf212r5yThn5va1Zsm4p9eWOLrJSOgXdtYl2YlIV7c2KCq5CNf3ZtXnGmjIl6dGZlnZyJhnVzX3SmlIqBdm5iYZuYh4N0cGGYpo+OfXpqaVR5oImFeHJlnamUkIR8dGlkU2mcioB7a36yoZiRhYBzb2FgTGuZg4ByeLSpnpeNhnt2amdZWUZ5kX93gLyrpJuTi4N7c2tkXFVNSICMcpjBrKmemY+JgHpxa2NcVU5IQ4R+qsetsKGfk5CGgXhya2ReVlFJRjplwcW3s6qlnJePiYF7dW5oYlxVUElFO1S2yrm3ramgnJOPh4J7dm9rZF9YVE1KP1qSdJnGtbKrpZ+Zk46Ig3x4cW1mZFtaUVFEV4+HfX9vlsCuraWhm5aRi4eBfXdzbmllYFxWVUtfmoqIgn55dHFrp7Wlpp6blnhqY1xPgJeAf3JtY11TTUJns8e2sKagg2liVEdcpL6tn5WHfG5jV0hWlr2xoZeJfXJkW0lRhre2pJmNf3ZmX0xOeKm7qJuSgnpqYVNHbpK4sJ6WiHxyYl1FYoOivKKbjoJ3aWBSTH+Fs7Kdl4h9cmRdSGaIhL6mnpCGeW9hWUl+goi+oZ6MhnZuYFdPjHyEuqObjYR3bWJVVo9+eK+rmZKDe21mVleLh2+StJyWiH9zaF9Rg455cp2wlJSAfmtpVGeXgntsnquUkYF7bGdUeZp9gGeKrZaRg3xuaVZ+m4N+c2ido5GKf3RtXW2fi4R4cGWZoo2KfHRrXoWihoh0dV98pZGJgHVvXoqjjIh9dG1de6SKiXp2Z3Gnl4+FfXRrYl2Ykod+eGh6rJqTioB5b2heWI6UgX9zbJuulZeGhXZ0ZmRVXJKMfnxsnLKbnI2LfXtta11dS2yUf31yrbChnZONhH12bmdfWFFLf4x0irutpp+XkIiBenNsZV5XUUhOi3mmwqutn52Sj4SBd3NqZV1YUUxDRoS+vrKvpaGYlIyGf3pzbWdgXFNRRkc4jtC1uKyqoJ2UkImEfXlybWdiXFdRTEVLinmgxa+xpqWcmZGOh4N8eHJtaGNdWlNRRl6SfoF0grqxq6ehnJeSjYiEfnp1cWtoYl9aVlFQjI+Fg354d2yCt6enoJ2Yk4+Kh4J+enV2fHBqYlpTSU2Gub6uqqCZkYiCd3RlkqyjnI6Dd2thVElpoLipm5OEe25jWUlfkLSwnZaIfXNkX0pXgKi2opiOgHhoYlFOdZO2qpuThXtwYl1HaYOit56Zi4B2aWFRUoKEs6yblIZ8cWReSWuGh7uhnI2Fd29hWkyCfoy6nZuKhHVuYFdUjniKtp+Zi4N2bWJVW5B5frCll4+CemxmVl2NgnGar5eUhX5xaV1Wh4t2d6ankpF+fGlpUnOTgHZ0qKGSjH54amVWhpJ8e2mfo5OLgXduZFuKlX1+aXuol4+EfHBrWYOZhX92Z3qnkoyCeHBlZZqShX50a2ifl4qFeHRkbZ6Uh4N0c2Byn5GGgXRwY5iejYl9d2xmXpaTh394bW6jnY+Lf3tval1hlo6DfHVqmKmTlIWDdXNlZFJ3l4J/dm+jqZiVioV8dW1mX1VclIKBcYe0op2VjYd+eW9rYVxTUYWJeHyusKCgk5CGgnlzbGVfV1NHcYx0q7eopZyXj4mCe3ZuamFeU1JFUH2dwa+tpJ+YkouGf3pzbmdiW1ZPS0NGuMOvsqalm5iQjIWAenRvaWVeWlNPSUR0jLi6rK2ioZiWjoqEf3p1cGpmYFxXUk5Jf4d7eKa7p6ufoJeVjYuEgXt3cm5pZWBdV1VLcZV/hXh8bYm2p6WgnJeTjoqGgn16dXJtamRiXFtTX5aNiYaBfpGUhYR1d2OHppWQiYB7cG1hYFBdjYR4iIx7dGVfTF2Fq7Kel4t/d2ljUVN4nbWkmZGDe25lWkxui66um5WIfXVmYkxggZi2oZmOg3luY1lNe4OosJqWiH90aGJPYIeCtaSbkIZ6cmVfTXiEh7idm4uFd3BjXFGIfIq2nJqKhHZvY1lYjnmEsqCXjIN5bmVYXY5+d6eolZGDfW9pW1yJh3GLrpqTiH92amRUgI17cpWtkpOCf29rW2WUgn1tlKmSkIJ8b2padJl+gGuBqZWQhH5wbVt3mIV+d2iUoo+KgHdwY2iZjIN6c2aRoYyKfXZuYX2ghoh3dmR5oZCJgXZyYoKgi4h+dXBhfaCJiHt3am+ilY6FfnRuY2aajYd8eWp7ppaPiH96b2teZpaMgn1zb5+kkpKEgnZ0ZmZUdpWCf3ZzpaWYlIqFfHduaGBaWZCEgXOGsaGclI6HgHlybGVeWU57jHp6p7Gfn5SRiIN7dm9oY1tXTF2OdZu5pqacmJCLhH94c2xnYFtUUEZskLe0qaeem5KPh4R7eXBuZGNYWUxROnvMrrKnpZ2Zk46IhH15c29oZV1cUlNFWYKPvq+spqGcl5KNiIN+enVwa2dhXlhWTlSJgn13pbalqJ6elZSNi4SBfHhzcGtnYl9aWE5zlICFeXxxe62qoaCamJKPioeDf3t3dG9tZ2ZgX1hZiZWFi32Mm5OJhnt3bmycnZCNhH54b2tgYE50jYKZjoJ6bWZaUHONrqmZk4Z9dGdiTmWCnrKdl4yBeWxlWFR8ia6omJKGfXRnY05rg5O1nJmLg3hvZFxSgX+irpiWh4B1a2NVYYt6rqWZkIZ8dGhiUnOJebGhmo2GenNnYFN+hnesopiOhXtzaGBWgohyn6iXkYZ+dGpiV3+Mcoirm5KLf3lraFZ2j3xzlKqSkoJ/cG1eY4+Fe3GZpZCQgH1ubFp1lX5/a5KlkY6CfHBrXH2Wf4BueaSWj4R/cnBeeZeGf3lqgaOQjIJ6cmlllZCFfnZrdaKQi4F5c2dwnY6Hf3ZxY4qciYd7d2ttnJSLg3xzbmGEm4aHeHhnhKOPjYJ9dG5lZJWOhn15a4Smk5GHgXlza2Vch5KBgHVxmqWSlIaEeXZsaGBaho59f26Tq5iYjYqAfXNvZmJYXY6Df3OZr5uckY6FgXh1bGlfXlBojXx7qK2fnpSSiYV9enFuZWNYWklwhYW4qaafmpSOiYJ+d3NsaGJeV1VMW5u3q6ehnJeSjYiDfnp1cWxoY19aV1JVnbWlpp6dlZSNi4WDfXt1c25sZ2VfXldliXmZqp2emJaRj4qIhIF9e3d1cW9ramZlXnCKfoF5gZ+al5SRj4yJh4SCf316eHZ0cXBta2lphoaCgX98e3d+l5GQjoyKiIaEg4F/fnx7eHh1dXJxbG5/iZeSj42Jh4SCf316d4iLhoWCf314d3F0f4WPioeEgX57eHZyfIGJjIaFgoB9e3l1d4CBioeFg4F/fXt6d32Ag4mEhIGAfn18enqAf4OFgoKAgH5+fXx9gX+DgoGBgH9/f35+f4B/gYCAgIB/gAA=" type="audio/wav">
+    </audio>
+
+    <script>
+        // Game variables
+        let score = 0;
+        let health = 10;
+        let enemies = [];
+        let bullets = [];
+        let enemyBullets = [];
+        let gameOver = false;
+        let gameStarted = false;
+        let moveLeft = false;
+        let moveRight = false;
+        let lastEnemySpawnTime = 0;
+        const enemySpawnInterval = 2000; // ms
+        let soundInitialized = false; // Flag to track if sound has been initialized
+        let bulletCount = 20; // Starting bullet count
+        let lastLifeGainedAtScore = 0; // Track when we last gave an extra life
+
+        // Initialize Three.js
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setClearColor(0x000033);
+        
+        // Initialize sound system
+        function initializeSound() {
+            const laserSound = document.getElementById('laser-sound');
+            
+            // Create a short silent sound to unlock audio on iOS/Safari
+            laserSound.volume = 0.1;
+            laserSound.play()
+                .then(() => {
+                    soundInitialized = true;
+                    console.log('Sound initialized successfully');
+                })
+                .catch(e => console.log('Could not initialize sound:', e));
+        }
+        document.getElementById('game-container').appendChild(renderer.domElement);
+
+        // Add stars background
+        const starsGeometry = new THREE.BufferGeometry();
+        const starsMaterial = new THREE.PointsMaterial({
+            color: 0xFFFFFF,
+            size: 0.1,
+            transparent: true
+        });
+
+        const starsVertices = [];
+        for (let i = 0; i < 1000; i++) {
+            const x = (Math.random() - 0.5) * 2000;
+            const y = (Math.random() - 0.5) * 2000;
+            const z = (Math.random() - 0.5) * 2000;
+            starsVertices.push(x, y, z);
+        }
+
+        starsGeometry.setAttribute('position', new THREE.Float32BufferAttribute(starsVertices, 3));
+        const stars = new THREE.Points(starsGeometry, starsMaterial);
+        scene.add(stars);
+
+        // Create player ship (more detailed sci-fi design)
+        const player = new THREE.Group();
+        player.position.z = -5;
+        player.position.y = -1;
+        scene.add(player);
+        
+        // Main hull (sleek, elongated shape)
+        const hullGeometry = new THREE.CylinderGeometry(0.3, 0.5, 2, 8);
+        const hullMaterial = new THREE.MeshPhongMaterial({ color: 0x0088FF });
+        const hull = new THREE.Mesh(hullGeometry, hullMaterial);
+        hull.rotation.x = Math.PI / 2;
+        player.add(hull);
+        
+        // Cockpit (dome on top)
+        const cockpitGeometry = new THREE.SphereGeometry(0.3, 16, 16, 0, Math.PI * 2, 0, Math.PI / 2);
+        const cockpitMaterial = new THREE.MeshPhongMaterial({ color: 0x66CCFF, transparent: true, opacity: 0.7 });
+        const cockpit = new THREE.Mesh(cockpitGeometry, cockpitMaterial);
+        cockpit.position.y = 0.3;
+        player.add(cockpit);
+        
+        // Wings (flat, angled surfaces on sides)
+        const wingGeometry = new THREE.BoxGeometry(1.8, 0.1, 0.8);
+        const wingMaterial = new THREE.MeshPhongMaterial({ color: 0x0066CC });
+        const wings = new THREE.Mesh(wingGeometry, wingMaterial);
+        wings.position.y = -0.1;
+        player.add(wings);
+        
+        // Engine glow (at the back)
+        const engineGlowGeometry = new THREE.CircleGeometry(0.2, 16);
+        const engineGlowMaterial = new THREE.MeshBasicMaterial({ color: 0x00FFFF });
+        const engineGlow = new THREE.Mesh(engineGlowGeometry, engineGlowMaterial);
+        engineGlow.position.z = 1;
+        engineGlow.rotation.y = Math.PI;
+        player.add(engineGlow);
+        
+        // Weapon mounts (dual cannons)
+        const cannonGeometry = new THREE.CylinderGeometry(0.05, 0.05, 0.6, 8);
+        const cannonMaterial = new THREE.MeshPhongMaterial({ color: 0x888888 });
+        
+        // Left cannon
+        const cannonLeft = new THREE.Mesh(cannonGeometry, cannonMaterial);
+        cannonLeft.position.set(-0.3, 0, -0.8);
+        cannonLeft.rotation.x = Math.PI / 2;
+        player.add(cannonLeft);
+        
+        // Right cannon
+        const cannonRight = new THREE.Mesh(cannonGeometry, cannonMaterial);
+        cannonRight.position.set(0.3, 0, -0.8);
+        cannonRight.rotation.x = Math.PI / 2;
+        player.add(cannonRight);
+
+        // Add lights
+        const ambientLight = new THREE.AmbientLight(0x404040);
+        scene.add(ambientLight);
+
+        const directionalLight = new THREE.DirectionalLight(0xFFFFFF, 0.5);
+        directionalLight.position.set(0, 1, 1);
+        scene.add(directionalLight);
+
+        // Set camera position
+        camera.position.set(0, 2, 5);
+        camera.lookAt(0, 0, -10);
+
+        // Handle window resize with mobile optimization
+        function handleResize() {
+            // Check if mobile device
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            
+            // Get the visual viewport dimensions
+            const viewportWidth = window.innerWidth;
+            const viewportHeight = window.innerHeight;
+            
+            // Update camera aspect ratio
+            camera.aspect = viewportWidth / viewportHeight;
+            camera.updateProjectionMatrix();
+            
+            // Set renderer size to match viewport
+            renderer.setSize(viewportWidth, viewportHeight);
+            
+            // Reposition controls based on viewport height
+            const controls = document.getElementById('controls');
+            if (controls) {
+                controls.style.bottom = `${Math.max(20, viewportHeight * 0.05)}px`;
+            }
+        }
+        
+        // Listen for all events that might change the viewport
+        window.addEventListener('resize', handleResize);
+        window.addEventListener('orientationchange', handleResize);
+        window.addEventListener('scroll', handleResize);
+        
+        // Also handle resize when modals are opened/closed
+        document.getElementById('close-modal').addEventListener('click', () => {
+            // Small delay to allow browser UI to settle
+            setTimeout(handleResize, 100);
+        });
+        
+        document.getElementById('restart-btn').addEventListener('click', () => {
+            // Small delay to allow browser UI to settle
+            setTimeout(handleResize, 100);
+        });
+        
+        // Initial resize
+        handleResize();
+
+        // Mobile controls
+        document.getElementById('left-btn').addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            moveLeft = true;
+        });
+        document.getElementById('left-btn').addEventListener('touchend', (e) => {
+            e.preventDefault();
+            moveLeft = false;
+        });
+        document.getElementById('right-btn').addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            moveRight = true;
+        });
+        document.getElementById('right-btn').addEventListener('touchend', (e) => {
+            e.preventDefault();
+            moveRight = false;
+        });
+        document.getElementById('fire-btn').addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            fireBullet();
+        });
+
+        // Desktop controls
+        document.addEventListener('keydown', (e) => {
+            if (gameOver || !gameStarted) return;
+            
+            if (e.code === 'Space') {
+                fireBullet();
+                
+                // Initialize sound if this is the first user interaction
+                if (!soundInitialized) {
+                    initializeSound();
+                }
+            } else if (e.key === 'ArrowLeft') {
+                moveLeft = true;
+            } else if (e.key === 'ArrowRight') {
+                moveRight = true;
+            }
+        });
+
+        document.addEventListener('keyup', (e) => {
+            if (e.key === 'ArrowLeft') {
+                moveLeft = false;
+            } else if (e.key === 'ArrowRight') {
+                moveRight = false;
+            }
+        });
+
+        // Game over and restart
+        document.getElementById('restart-btn').addEventListener('click', restartGame);
+        
+        // Start game button
+        document.getElementById('start-btn').addEventListener('click', startGame);
+        
+        // Info buttons
+        document.getElementById('info-btn-start').addEventListener('click', showInfoModal);
+        document.getElementById('info-btn-gameover').addEventListener('click', showInfoModal);
+        document.getElementById('close-modal').addEventListener('click', hideInfoModal);
+        
+        function showInfoModal() {
+            document.getElementById('info-modal').style.display = 'flex';
+        }
+        
+        function hideInfoModal() {
+            document.getElementById('info-modal').style.display = 'none';
+        }
+        
+        function startGame() {
+            gameStarted = true;
+            document.getElementById('start-screen').style.display = 'none';
+        }
+        
+
+        
+        // Initialize sound on first user interaction with the game
+        document.addEventListener('click', function initSound() {
+            if (!soundInitialized) {
+                initializeSound();
+                document.removeEventListener('click', initSound);
+            }
+        }, { once: true });
+
+        function restartGame() {
+            // Remove all enemies and bullets
+            enemies.forEach(enemy => scene.remove(enemy));
+            
+    // Reset game state
+    enemies = [];
+    score = 0;
+    health = 10;
+    gameOver = false;
+    gameStarted = true;
+    bulletCount = 20; // Reset bullet count
+    lastLifeGainedAtScore = 0; // Reset life gain tracker
+            
+    // Update UI
+    document.getElementById('score').textContent = score;
+    document.getElementById('health-bar').style.width = '100%';
+    document.getElementById('game-over').style.display = 'none';
+    updateBulletDisplay();
+            
+    // Reset player position
+    player.position.x = 0;
+}
+
+function fireBullet() {
+    if (gameOver) return;
+            
+    // Check if player has bullets available
+    if (bulletCount <= 0) {
+        // Maybe add a "click" or "empty" sound here
+        return;
+    }
+            
+    // Decrease bullet count
+    bulletCount--;
+    updateBulletDisplay();
+            
+    // Play laser sound effect
+    {
+        const laserSound = document.getElementById('laser-sound');
+        laserSound.currentTime = 0; // Reset sound to start
+                
+        // Try to play the sound with error handling
+        laserSound.play()
+            .then(() => {
+                soundInitialized = true;
+                console.log('Sound played successfully');
+            })
+            .catch(e => {
+                console.log('Error playing sound:', e);
+                // If sound failed because of no user interaction, we'll initialize it later
+            });
+    }
+            
+    const bulletGeometry = new THREE.SphereGeometry(0.1, 16, 16);
+    const bulletMaterial = new THREE.MeshPhongMaterial({ color: 0xFFFF00 });
+    const bullet = new THREE.Mesh(bulletGeometry, bulletMaterial);
+            
+    // Position bullet at the end of the cannon
+    bullet.position.copy(player.position);
+    bullet.position.z -= 2;
+            
+    // Set bullet velocity (forward)
+    bullet.userData.velocity = new THREE.Vector3(0, 0, -0.5);
+            
+    scene.add(bullet);
+    bullets.push(bullet);
+}
+
+function enemyFire(enemy) {
+    if (gameOver) return;
+            
+    // Play enemy laser sound effect
+    {
+        const enemyLaserSound = document.getElementById('enemy-laser-sound');
+        enemyLaserSound.currentTime = 0;
+        enemyLaserSound.play().catch(e => console.log('Error playing enemy laser sound:', e));
+    }
+            
+    const bulletGeometry = new THREE.SphereGeometry(0.1, 16, 16);
+    const bulletMaterial = new THREE.MeshPhongMaterial({ color: 0xFF00FF });
+    const bullet = new THREE.Mesh(bulletGeometry, bulletMaterial);
+            
+    // Position bullet at the enemy's position
+    const worldPosition = new THREE.Vector3();
+    enemy.getWorldPosition(worldPosition);
+    bullet.position.copy(worldPosition);
+    bullet.position.z += 2;
+            
+    // Calculate direction to player
+    const direction = new THREE.Vector3();
+    direction.subVectors(player.position, bullet.position).normalize();
+    bullet.userData.velocity = direction.multiplyScalar(0.3);
+            
+    scene.add(bullet);
+    enemyBullets.push(bullet);
+}
+
+function updateHealth() {
+    const healthPercent = (health / 10) * 100;
+    const healthBar = document.getElementById('health-bar');
+    healthBar.style.width = `${healthPercent}%`;
+    
+    // Update health bar color based on remaining lives
+    if (health >= 7) {
+        healthBar.style.background = '#4CAF50'; // Green
+    } else if (health >= 4) {
+        healthBar.style.background = '#FFC107'; // Yellow
+    } else {
+        healthBar.style.background = '#F44336'; // Red
+    }
+            
+    if (health <= 0) {
+        gameOver = true;
+        document.getElementById('final-score').textContent = score;
+        document.getElementById('game-over').style.display = 'flex';
+    }
+}
+
+function updateBulletDisplay() {
+    const bulletDisplay = document.getElementById('bullets-display');
+    bulletDisplay.textContent = bulletCount;
+            
+    // Visual feedback - make it pulse when low on bullets
+    if (bulletCount <= 5) {
+        bulletDisplay.style.color = '#FF3333';
+        bulletDisplay.style.textShadow = '0 0 10px #FF0000, 0 0 20px #FF0000';
+    } else {
+        bulletDisplay.style.color = '#CCCCCC';
+        bulletDisplay.style.textShadow = '0 0 10px #00FF00, 0 0 20px #00FF00';
+    }
+}
+
+function updateScore() {
+    score += 10;
+    document.getElementById('score').textContent = score;
+            
+    // Check if player should get an extra life (every 250 points)
+    if (health < 10 && score >= lastLifeGainedAtScore + 250) {
+        health++;
+        lastLifeGainedAtScore = Math.floor(score / 250) * 250;
+        updateHealth();
+                
+        // Maybe add a special sound or visual effect for gaining a life
+        console.log('Extra life gained at score:', score);
+    }
+}
+
+function checkCollisions() {
+    // Check player bullets hitting enemies
+    for (let i = bullets.length - 1; i >= 0; i--) {
+        const bullet = bullets[i];
+                
+        for (let j = enemies.length - 1; j >= 0; j--) {
+            const enemy = enemies[j];
+                    
+            if (bullet.position.distanceTo(enemy.position) < 1) {
+                // Hit!
+                scene.remove(bullet);
+                bullets.splice(i, 1);
+                        
+                // Play enemy destroyed sound
+                {
+                    const enemyDestroyedSound = document.getElementById('enemy-destroyed-sound');
+                    enemyDestroyedSound.currentTime = 0;
+                    enemyDestroyedSound.play().catch(e => console.log('Error playing enemy destroyed sound:', e));
+                }
+                        
+                scene.remove(enemy);
+                enemies.splice(j, 1);
+                        
+                updateScore();
+                // Removed enemy count display
+                break;
+            }
+        }
+    }
+            
+    // Check enemy bullets hitting player
+    for (let i = enemyBullets.length - 1; i >= 0; i--) {
+        const bullet = enemyBullets[i];
+                
+        if (bullet.position.distanceTo(player.position) < 1) {
+            // Hit player!
+            scene.remove(bullet);
+            enemyBullets.splice(i, 1);
+                    
+            health--;
+                    
+            // Play appropriate sound based on health
+            {
+                if (health <= 0) {
+                    // Game over sound
+                    const gameOverSound = document.getElementById('game-over-sound');
+                    gameOverSound.currentTime = 0;
+                    gameOverSound.play().catch(e => console.log('Error playing game over sound:', e));
+                } else {
+                    // Player hit sound
+                    const playerHitSound = document.getElementById('player-hit-sound');
+                    playerHitSound.currentTime = 0;
+                    playerHitSound.play().catch(e => console.log('Error playing player hit sound:', e));
+                }
+            }
+                    
+            updateHealth();
+        }
+    }
+}
+
+// Game loop
+
+
+function spawnEnemy() {
+    // Create enemy ship as a group of objects
+    const enemy = new THREE.Group();
+            
+    // Position enemy at random x position, far away
+    enemy.position.x = (Math.random() - 0.5) * 10;
+    enemy.position.y = -1;
+    enemy.position.z = -30;
+            
+    // Add bullets when a new enemy appears
+    bulletCount += 2;
+    updateBulletDisplay();
+            
+    // Randomize enemy type (3 different designs)
+    const enemyType = Math.floor(Math.random() * 3);
+            // Check enemy bullets hitting player
+            for (let i = enemyBullets.length - 1; i >= 0; i--) {
+                const bullet = enemyBullets[i];
+                
+                if (bullet.position.distanceTo(player.position) < 1) {
+                    // Hit player!
+                    scene.remove(bullet);
+                    enemyBullets.splice(i, 1);
+                    
+                    health--;
+                    
+                    // Play appropriate sound based on health
+                    {
+                        if (health <= 0) {
+                            // Game over sound
+                            const gameOverSound = document.getElementById('game-over-sound');
+                            gameOverSound.currentTime = 0;
+                            gameOverSound.play().catch(e => console.log('Error playing game over sound:', e));
+                        } else {
+                            // Player hit sound
+                            const playerHitSound = document.getElementById('player-hit-sound');
+                            playerHitSound.currentTime = 0;
+                            playerHitSound.play().catch(e => console.log('Error playing player hit sound:', e));
+                        }
+                    }
+                    
+                    updateHealth();
+                }
+            }
+        }
+
+        // Game loop
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            if (gameOver || !gameStarted) return;
+            
+            // Move player
+            if (moveLeft && player.position.x > -5) {
+                player.position.x -= 0.1;
+            }
+            if (moveRight && player.position.x < 5) {
+                player.position.x += 0.1;
+            }
+            
+            // Move bullets
+            for (let i = bullets.length - 1; i >= 0; i--) {
+                const bullet = bullets[i];
+                bullet.position.add(bullet.userData.velocity);
+                
+                // Remove bullets that are too far away
+                if (bullet.position.z < -30) {
+                    scene.remove(bullet);
+                    bullets.splice(i, 1);
+                }
+            }
+            
+            // Move enemy bullets
+            for (let i = enemyBullets.length - 1; i >= 0; i--) {
+                const bullet = enemyBullets[i];
+                bullet.position.add(bullet.userData.velocity);
+                
+                // Remove bullets that are too far away
+                if (bullet.position.z > 10) {
+                    scene.remove(bullet);
+                    enemyBullets.splice(i, 1);
+                }
+            }
+            
+            // Move enemies and make them shoot
+            const currentTime = Date.now();
+            for (let i = enemies.length - 1; i >= 0; i--) {
+                const enemy = enemies[i];
+                enemy.position.z += enemy.userData.speed;
+                
+                // Remove enemies that are too close
+                if (enemy.position.z > 5) {
+                    scene.remove(enemy);
+                    enemies.splice(i, 1);
+                    // Removed enemy count display
+                    continue;
+                }
+                
+                // Enemy shooting logic
+                if (currentTime - enemy.userData.lastShotTime > enemy.userData.shotInterval) {
+                    enemyFire(enemy);
+                    enemy.userData.lastShotTime = currentTime;
+                }
+            }
+            
+            // Spawn new enemies
+            if (currentTime - lastEnemySpawnTime > enemySpawnInterval) {
+                spawnEnemy();
+                lastEnemySpawnTime = currentTime;
+            }
+            
+            // Check collisions
+            checkCollisions();
+            
+            // Rotate stars for background effect
+            stars.rotation.y += 0.0005;
+            
+            renderer.render(scene, camera);
+        }
+
+        function spawnEnemy() {
+            // Create enemy ship as a group of objects
+            const enemy = new THREE.Group();
+            
+            // Position enemy at random x position, far away
+            enemy.position.x = (Math.random() - 0.5) * 10;
+            enemy.position.y = -1;
+            enemy.position.z = -30;
+            
+            // Add bullets when a new enemy appears
+            bulletCount += 2;
+            updateBulletDisplay();
+            
+            // Randomize enemy type (3 different designs)
+            const enemyType = Math.floor(Math.random() * 3);
+            
+            if (enemyType === 0) {
+                // Type 1: Triangular fighter
+                const hullGeometry = new THREE.ConeGeometry(0.5, 1.5, 3);
+                const hullMaterial = new THREE.MeshPhongMaterial({ color: 0xFF0000 });
+                const hull = new THREE.Mesh(hullGeometry, hullMaterial);
+                hull.rotation.x = Math.PI / 2;
+                hull.rotation.z = Math.PI;
+                enemy.add(hull);
+                
+                // Add wing fins
+                const finGeometry = new THREE.BoxGeometry(1.2, 0.1, 0.5);
+                const finMaterial = new THREE.MeshPhongMaterial({ color: 0xCC0000 });
+                const fins = new THREE.Mesh(finGeometry, finMaterial);
+                fins.position.z = 0.4;
+                enemy.add(fins);
+                
+                // Add weapon
+                const weaponGeometry = new THREE.BoxGeometry(0.7, 0.15, 0.15);
+                const weaponMaterial = new THREE.MeshPhongMaterial({ color: 0x880000 });
+                const weapon = new THREE.Mesh(weaponGeometry, weaponMaterial);
+                weapon.position.z = 0.7;
+                enemy.add(weapon);
+            } else if (enemyType === 1) {
+                // Type 2: Saucer ship
+                const hullGeometry = new THREE.SphereGeometry(0.5, 16, 8, 0, Math.PI * 2, 0, Math.PI * 0.6);
+                const hullMaterial = new THREE.MeshPhongMaterial({ color: 0xFF4400 });
+                const hull = new THREE.Mesh(hullGeometry, hullMaterial);
+                hull.rotation.x = Math.PI;
+                enemy.add(hull);
+                
+                // Add top dome
+                const domeGeometry = new THREE.SphereGeometry(0.25, 16, 8, 0, Math.PI * 2, 0, Math.PI * 0.5);
+                const domeMaterial = new THREE.MeshPhongMaterial({ color: 0xFF8800, transparent: true, opacity: 0.7 });
+                const dome = new THREE.Mesh(domeGeometry, domeMaterial);
+                dome.position.y = 0.2;
+                enemy.add(dome);
+                
+                // Add bottom ring
+                const ringGeometry = new THREE.TorusGeometry(0.6, 0.1, 8, 16);
+                const ringMaterial = new THREE.MeshPhongMaterial({ color: 0xCC4400 });
+                const ring = new THREE.Mesh(ringGeometry, ringMaterial);
+                ring.rotation.x = Math.PI / 2;
+                ring.position.y = -0.1;
+                enemy.add(ring);
+            } else {
+                // Type 3: Rectangular cruiser
+                const hullGeometry = new THREE.BoxGeometry(0.8, 0.3, 1.8);
+                const hullMaterial = new THREE.MeshPhongMaterial({ color: 0xFF0066 });
+                const hull = new THREE.Mesh(hullGeometry, hullMaterial);
+                enemy.add(hull);
+                
+                // Add top structure
+                const topGeometry = new THREE.BoxGeometry(0.4, 0.2, 0.6);
+                const topMaterial = new THREE.MeshPhongMaterial({ color: 0xCC0066 });
+                const top = new THREE.Mesh(topGeometry, topMaterial);
+                top.position.y = 0.25;
+                enemy.add(top);
+                
+                // Add side pods
+                const podGeometry = new THREE.CylinderGeometry(0.15, 0.15, 0.6, 8);
+                const podMaterial = new THREE.MeshPhongMaterial({ color: 0x880044 });
+                
+                const leftPod = new THREE.Mesh(podGeometry, podMaterial);
+                leftPod.rotation.z = Math.PI / 2;
+                leftPod.position.set(-0.5, 0, 0);
+                enemy.add(leftPod);
+                
+                const rightPod = new THREE.Mesh(podGeometry, podMaterial);
+                rightPod.rotation.z = Math.PI / 2;
+                rightPod.position.set(0.5, 0, 0);
+                enemy.add(rightPod);
+            }
+            
+            // Add cannon/weapon to all enemy types
+            const enemyCannonGeometry = new THREE.CylinderGeometry(0.08, 0.08, 0.5, 8);
+            const enemyCannonMaterial = new THREE.MeshPhongMaterial({ color: 0x888888 });
+            const enemyCannon = new THREE.Mesh(enemyCannonGeometry, enemyCannonMaterial);
+            enemyCannon.rotation.x = Math.PI / 2;
+            enemyCannon.position.z = 0.8;
+            enemy.add(enemyCannon);
+            
+            // Add engine glow
+            const engineGlowGeometry = new THREE.CircleGeometry(0.15, 16);
+            const engineGlowMaterial = new THREE.MeshBasicMaterial({ color: 0xFF6600 });
+            const engineGlow = new THREE.Mesh(engineGlowGeometry, engineGlowMaterial);
+            engineGlow.position.z = -0.9;
+            engineGlow.rotation.y = Math.PI;
+            enemy.add(engineGlow);
+            
+            enemy.userData.speed = 0.02 + Math.random() * 0.03;
+            enemy.userData.lastShotTime = 0;
+            enemy.userData.shotInterval = 2000 + Math.random() * 2000; // ms
+            enemy.userData.type = enemyType; // Store the enemy type for potential future use
+            
+            scene.add(enemy);
+            enemies.push(enemy);
+            // Removed enemy count display
+        }
+        
+        // Initialize UI
+        updateHealth();
+        updateBulletDisplay();
+        
+        // Show start screen initially
+        gameStarted = false;
+        document.getElementById('start-screen').style.display = 'flex';
+        document.getElementById('game-over').style.display = 'none';
+        
+        // Start the animation loop
+        animate();
+    </script>
+</body>
+</html>
