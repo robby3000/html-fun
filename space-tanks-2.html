@@ -213,6 +213,10 @@
         let soundInitialized = false; // Flag to track if sound has been initialized
         let bulletCount = 20; // Starting bullet count
         let lastLifeGainedAtScore = 0; // Track when we last gave an extra life
+        let silverEnemyActive = false; // Track if a silver enemy is currently active
+        let silverEnemyTimer = 0; // Timer for silver enemy duration
+        let silverEnemyDirection = 1; // Direction for silver enemy side-to-side movement
+        let lastSilverEnemySpawnScore = -1; // Track when the last silver enemy was spawned (segment)
 
         // Initialize Three.js
         const scene = new THREE.Scene();
@@ -448,15 +452,24 @@
         function restartGame() {
             // Remove all enemies and bullets
             enemies.forEach(enemy => scene.remove(enemy));
+            bullets.forEach(bullet => scene.remove(bullet));
+            enemyBullets.forEach(bullet => scene.remove(bullet));
             
     // Reset game state
     enemies = [];
+    bullets = [];
+    enemyBullets = [];
     score = 0;
     health = 10;
     gameOver = false;
     gameStarted = true;
     bulletCount = 20; // Reset bullet count
     lastLifeGainedAtScore = 0; // Reset life gain tracker
+    silverEnemyActive = false;
+    silverEnemyTimer = 0;
+    lastSilverEnemySpawnScore = -1; // Reset silver enemy tracking
+    
+    console.log('Game restarted, silver enemy tracking reset')
             
     // Update UI
     document.getElementById('score').textContent = score;
@@ -577,8 +590,8 @@ function updateBulletDisplay() {
     }
 }
 
-function updateScore() {
-    score += 10;
+function updateScore(points = 10) {
+    score += points;
     document.getElementById('score').textContent = score;
             
     // Check if player should get an extra life (every 250 points)
@@ -614,8 +627,45 @@ function checkCollisions() {
                         
                 scene.remove(enemy);
                 enemies.splice(j, 1);
-                        
-                updateScore();
+                
+                // Check if it was a silver enemy (worth 5x points)
+                if (enemy.userData.isSilverEnemy) {
+                    updateScore(50); // 5x normal points
+                    silverEnemyActive = false;
+                    
+                    // Add visual indicator for bonus points
+                    const bonusText = document.createElement('div');
+                    bonusText.textContent = '+50 POINTS!';
+                    bonusText.style.position = 'absolute';
+                    bonusText.style.top = '40%';
+                    bonusText.style.left = '50%';
+                    bonusText.style.transform = 'translate(-50%, -50%)';
+                    bonusText.style.color = '#FFFF00';
+                    bonusText.style.fontSize = '20px';
+                    bonusText.style.fontFamily = "'Press Start 2P', cursive";
+                    bonusText.style.textShadow = '0 0 10px #FFFF00';
+                    bonusText.style.zIndex = '1000';
+                    bonusText.style.pointerEvents = 'none';
+                    document.body.appendChild(bonusText);
+                    
+                    // Animate the text upward and fade out
+                    let posY = 40;
+                    let opacity = 1;
+                    const animInterval = setInterval(() => {
+                        posY -= 0.5;
+                        opacity -= 0.02;
+                        bonusText.style.top = `${posY}%`;
+                        bonusText.style.opacity = opacity;
+                        if (opacity <= 0) {
+                            clearInterval(animInterval);
+                            document.body.removeChild(bonusText);
+                        }
+                    }, 30);
+                    
+                    console.log('Silver enemy destroyed! +50 points');
+                } else {
+                    updateScore(10); // Normal points
+                }
                 // Removed enemy count display
                 break;
             }
@@ -708,6 +758,54 @@ function spawnEnemy() {
             
             if (gameOver || !gameStarted) return;
             
+            // Check if we should spawn a silver enemy based on score segment
+            const currentSegment = Math.floor(score / 500);
+            const scoreInSegment = score % 500;
+            
+            // Debug info to console
+            if (score > 0 && score % 100 === 0) {
+                console.log(`Score: ${score}, Segment: ${currentSegment}, Position in segment: ${scoreInSegment}`);
+                console.log(`Last silver enemy segment: ${lastSilverEnemySpawnScore}, Silver active: ${silverEnemyActive}`);
+            }
+            
+            // Spawn silver enemy if:
+            // 1. We're in a new segment compared to when we last spawned a silver enemy
+            // 2. We're past the first 100 points in the segment
+            // 3. We're before the last 100 points in the segment
+            // 4. There isn't already a silver enemy active
+            if (currentSegment !== lastSilverEnemySpawnScore && 
+                scoreInSegment >= 100 && 
+                scoreInSegment <= 400 && 
+                !silverEnemyActive) {
+                
+                // Guaranteed spawn with 10% chance each frame when conditions are met
+                if (Math.random() < 0.1) {
+                    console.log(`Spawning silver enemy at score ${score} (segment ${currentSegment})`);
+                    spawnSilverEnemy();
+                    lastSilverEnemySpawnScore = currentSegment;
+                }
+            }
+            
+            // Handle silver enemy timer if active
+            if (silverEnemyActive) {
+                silverEnemyTimer++;
+                
+                // Silver enemy disappears after 12 seconds (assuming 60fps, that's ~720 frames)
+                if (silverEnemyTimer > 720) {
+                    console.log('Silver enemy timed out after 12 seconds');
+                    // Find and remove the silver enemy
+                    for (let i = enemies.length - 1; i >= 0; i--) {
+                        if (enemies[i].userData.isSilverEnemy) {
+                            scene.remove(enemies[i]);
+                            enemies.splice(i, 1);
+                            break;
+                        }
+                    }
+                    silverEnemyActive = false;
+                    silverEnemyTimer = 0;
+                }
+            }
+            
             // Move player
             if (moveLeft && player.position.x > -5) {
                 player.position.x -= 0.1;
@@ -744,12 +842,31 @@ function spawnEnemy() {
             const currentTime = Date.now();
             for (let i = enemies.length - 1; i >= 0; i--) {
                 const enemy = enemies[i];
-                enemy.position.z += enemy.userData.speed;
+                
+                // Special movement for silver enemy (side to side only, no forward movement)
+                if (enemy.userData.isSilverEnemy) {
+                    // No forward movement
+                    // Only move side to side
+                    enemy.position.x += 0.08 * silverEnemyDirection;
+                    
+                    // Reverse direction when reaching boundaries
+                    if (enemy.position.x > 4) {
+                        silverEnemyDirection = -1;
+                    } else if (enemy.position.x < -4) {
+                        silverEnemyDirection = 1;
+                    }
+                } else {
+                    // Regular enemy movement
+                    enemy.position.z += enemy.userData.speed;
+                }
                 
                 // Remove enemies that are too close
                 if (enemy.position.z > 5) {
                     scene.remove(enemy);
                     enemies.splice(i, 1);
+                    if (enemy.userData.isSilverEnemy) {
+                        silverEnemyActive = false;
+                    }
                     // Removed enemy count display
                     continue;
                 }
@@ -758,6 +875,16 @@ function spawnEnemy() {
                 if (currentTime - enemy.userData.lastShotTime > enemy.userData.shotInterval) {
                     enemyFire(enemy);
                     enemy.userData.lastShotTime = currentTime;
+                    
+                    // Silver enemy fires twice as many bullets
+                    if (enemy.userData.isSilverEnemy && Math.random() < 0.5) {
+                        // Small delay for second shot
+                        setTimeout(() => {
+                            if (!gameOver && enemy.parent === scene) {
+                                enemyFire(enemy);
+                            }
+                        }, 200);
+                    }
                 }
             }
             
@@ -899,6 +1026,95 @@ function spawnEnemy() {
         gameStarted = false;
         document.getElementById('start-screen').style.display = 'flex';
         document.getElementById('game-over').style.display = 'none';
+        
+        // Function to spawn a special silver enemy
+        function spawnSilverEnemy() {
+            // Create silver enemy ship as a group of objects
+            const enemy = new THREE.Group();
+            
+            // Position enemy at random x position, far away
+            enemy.position.x = (Math.random() - 0.5) * 8;
+            enemy.position.y = -1;
+            enemy.position.z = -30;
+            
+            // Add bullets when a new enemy appears
+            bulletCount += 3; // More bullets for silver enemy
+            updateBulletDisplay();
+            
+            // Silver enemy design (modified version of rectangular cruiser) - scaled to 60% of original size
+            const hullGeometry = new THREE.BoxGeometry(0.6, 0.24, 1.2); // 60% of original size
+            const hullMaterial = new THREE.MeshPhongMaterial({ color: 0xC0C0C0 }); // Silver color
+            const hull = new THREE.Mesh(hullGeometry, hullMaterial);
+            enemy.add(hull);
+            
+            // Add top structure
+            const topGeometry = new THREE.BoxGeometry(0.3, 0.18, 0.48); // 60% of original size
+            const topMaterial = new THREE.MeshPhongMaterial({ color: 0xA0A0A0 });
+            const top = new THREE.Mesh(topGeometry, topMaterial);
+            top.position.y = 0.21; // 60% of original position
+            enemy.add(top);
+            
+            // Add side pods
+            const podGeometry = new THREE.CylinderGeometry(0.12, 0.12, 0.48, 8); // 60% of original size
+            const podMaterial = new THREE.MeshPhongMaterial({ color: 0x808080 });
+            
+            const leftPod = new THREE.Mesh(podGeometry, podMaterial);
+            leftPod.rotation.z = Math.PI / 2;
+            leftPod.position.set(-0.36, 0, 0); // 60% of original position
+            enemy.add(leftPod);
+            
+            const rightPod = new THREE.Mesh(podGeometry, podMaterial);
+            rightPod.rotation.z = Math.PI / 2;
+            rightPod.position.set(0.36, 0, 0); // 60% of original position
+            enemy.add(rightPod);
+            
+            // Add dual cannons for silver enemy
+            const enemyCannonGeometry = new THREE.CylinderGeometry(0.048, 0.048, 0.36, 8); // 60% of original size
+            const enemyCannonMaterial = new THREE.MeshPhongMaterial({ color: 0x888888 });
+            
+            const leftCannon = new THREE.Mesh(enemyCannonGeometry, enemyCannonMaterial);
+            leftCannon.rotation.x = Math.PI / 2;
+            leftCannon.position.set(-0.18, 0, 0.6); // 60% of original position
+            enemy.add(leftCannon);
+            
+            const rightCannon = new THREE.Mesh(enemyCannonGeometry, enemyCannonMaterial);
+            rightCannon.rotation.x = Math.PI / 2;
+            rightCannon.position.set(0.18, 0, 0.6); // 60% of original position
+            enemy.add(rightCannon);
+            
+            // Add engine glow (brighter for silver enemy)
+            const engineGlowGeometry = new THREE.CircleGeometry(0.12, 16); // 60% of original size
+            const engineGlowMaterial = new THREE.MeshBasicMaterial({ color: 0x00FFFF });
+            const engineGlow = new THREE.Mesh(engineGlowGeometry, engineGlowMaterial);
+            engineGlow.position.z = -0.6; // 60% of original position
+            engineGlow.rotation.y = Math.PI;
+            enemy.add(engineGlow);
+            
+            // Add a subtle glow effect
+            const glowGeometry = new THREE.SphereGeometry(0.72, 16, 16); // 60% of original size
+            const glowMaterial = new THREE.MeshBasicMaterial({ 
+                color: 0xCCCCFF, 
+                transparent: true, 
+                opacity: 0.3 
+            });
+            const glow = new THREE.Mesh(glowGeometry, glowMaterial);
+            enemy.add(glow);
+            
+            // Silver enemy properties
+            enemy.userData.speed = 0.185; // formerly 0.015 is Slower than regular enemies
+            enemy.userData.lastShotTime = 0;
+            enemy.userData.shotInterval = 1000; // Shoots more frequently (half the interval)
+            enemy.userData.isSilverEnemy = true; // Mark as silver enemy
+            
+            scene.add(enemy);
+            enemies.push(enemy);
+            silverEnemyActive = true;
+            silverEnemyTimer = 0;
+            
+            // No visual indicator text as requested
+            
+            console.log('Silver enemy spawned at score:', score);
+        }
         
         // Start the animation loop
         animate();
