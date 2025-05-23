@@ -157,6 +157,8 @@
     
     <div id="game-over">
         <div style="margin-bottom: 20px;">GAME OVER</div>
+        <div style="margin-bottom: 10px;">Score: <span id="game-over-score">0</span></div>
+        <div style="margin-bottom: 10px;">Bonus: 5 × <span id="bullets-remaining">0</span></div>
         <div style="margin-bottom: 30px;">Final Score:<br><span id="final-score" style="font-size: 28px; display: inline-block; margin-top: 10px;">0</span></div>
         <button id="restart-btn" style="margin-bottom: 20px;">Play Again</button>
         <button id="info-btn-gameover" style="padding: 5px 15px; font-size: 12px; background: rgba(255,255,255,0.2); color: white; border: none; border-radius: 5px; cursor: pointer; font-family: 'Press Start 2P', cursive;">info</button>
@@ -580,7 +582,15 @@ function updateHealth() {
             
     if (health <= 0) {
         gameOver = true;
-        document.getElementById('final-score').textContent = score;
+        
+        // Calculate bonus points (5 × bullets remaining)
+        const bonusPoints = bulletCount * 5;
+        const finalScore = score + bonusPoints;
+        
+        // Update the game over screen
+        document.getElementById('game-over-score').textContent = score;
+        document.getElementById('bullets-remaining').textContent = bulletCount;
+        document.getElementById('final-score').textContent = finalScore;
         document.getElementById('game-over').style.display = 'flex';
         
         // Stop silver enemy sound if it's playing
