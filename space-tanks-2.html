@@ -478,6 +478,7 @@
     // Update UI
     document.getElementById('score').textContent = score;
     document.getElementById('health-bar').style.width = '100%';
+    document.getElementById('health-bar').style.background = '#4CAF50'; // Reset to green color
     document.getElementById('game-over').style.display = 'none';
     updateBulletDisplay();
             
@@ -577,6 +578,10 @@ function updateHealth() {
         gameOver = true;
         document.getElementById('final-score').textContent = score;
         document.getElementById('game-over').style.display = 'flex';
+        
+        // Stop silver enemy sound if it's playing
+        const silverEnemySound = document.getElementById('silver-enemy-sound');
+        silverEnemySound.pause();
     }
 }
 
