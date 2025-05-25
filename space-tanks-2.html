@@ -815,11 +815,6 @@ function spawnEnemy() {
             const currentSegment = Math.floor(score / 500);
             const scoreInSegment = score % 500;
             
-            // Debug info to console
-            if (score > 0 && score % 100 === 0) {
-                console.log(`Score: ${score}, Segment: ${currentSegment}, Position in segment: ${scoreInSegment}`);
-                console.log(`Last silver enemy segment: ${lastSilverEnemySpawnScore}, Silver active: ${silverEnemyActive}`);
-            }
             
           // Spawn silver enemy if:
           // 1. We're in a new segment compared to when we last spawned a silver enemy
@@ -833,7 +828,6 @@ function spawnEnemy() {
 
     // Guaranteed spawn with 10% chance each frame when conditions are met
     if (Math.random() < 0.1) {
-        console.log(`Spawning silver enemy at score ${score} (segment ${currentSegment})`);
         
         // Play silver enemy sound
         const silverEnemySound = document.getElementById('silver-enemy-sound');
@@ -851,8 +845,7 @@ function spawnEnemy() {
                 
                 // Silver enemy disappears after 12 seconds (assuming 60fps, that's ~720 frames)
                 if (silverEnemyTimer > 720) {
-                    console.log('Silver enemy timed out after 12 seconds');
-
+                    
                     // Stop silver enemy sound
                     const silverEnemySound = document.getElementById('silver-enemy-sound');
                     silverEnemySound.pause();
