@@ -244,7 +244,7 @@
         let silverEnemyActive = false; // Track if a silver enemy is currently active
         let silverEnemyTimer = 0; // Timer for silver enemy duration
         let silverEnemyDirection = 1; // Direction for silver enemy side-to-side movement
-        let lastSilverEnemySpawnScore = -1; // Track when the last silver enemy was spawned (segment)
+        let nextSilverEnemyScore = 100; // Score at which next silver enemy will spawn
 
         // Initialize Three.js
         const scene = new THREE.Scene();
@@ -492,6 +492,34 @@
     bullets = [];
     enemyBullets = [];
     score = 0;
+    gameStarted = true;
+    document.getElementById('start-screen').style.display = 'none';
+}
+
+        
+// Initialize sound on first user interaction with the game
+document.addEventListener('click', function initSound() {
+    if (!soundInitialized) {
+        initializeSound();
+        document.removeEventListener('click', initSound);
+    }
+}, { once: true });
+
+function restartGame() {
+    // Remove all enemies and bullets
+    enemies.forEach(enemy => scene.remove(enemy));
+    bullets.forEach(bullet => scene.remove(bullet));
+    enemyBullets.forEach(bullet => scene.remove(bullet));
+    
+    // Stop silver enemy sound if active
+    const silverEnemySound = document.getElementById('silver-enemy-sound');
+    silverEnemySound.pause();
+    
+    // Reset game state
+    enemies = [];
+    bullets = [];
+    enemyBullets = [];
+    score = 0;
     health = 10;
     gameOver = false;
     gameStarted = true;
@@ -499,19 +527,19 @@
     lastLifeGainedAtScore = 0; // Reset life gain tracker
     silverEnemyActive = false;
     silverEnemyTimer = 0;
-    lastSilverEnemySpawnScore = -1; // Reset silver enemy tracking
+    nextSilverEnemyScore = 100; // First spawn at 100 points
     
     console.log('Game restarted, silver enemy tracking reset')
             
-    // Update UI
-    document.getElementById('score').textContent = score;
-    document.getElementById('health-bar').style.width = '100%';
-    document.getElementById('health-bar').style.background = '#4CAF50'; // Reset to green color
-    document.getElementById('game-over').style.display = 'none';
-    updateBulletDisplay();
+// Update UI
+document.getElementById('score').textContent = score;
+document.getElementById('health-bar').style.width = '100%';
+document.getElementById('health-bar').style.background = '#4CAF50'; // Reset to green color
+document.getElementById('game-over').style.display = 'none';
+updateBulletDisplay();
             
-    // Reset player position
-    player.position.x = 0;
+// Reset player position
+player.position.x = 0;
 }
 
 function fireBullet() {
@@ -811,33 +839,20 @@ function spawnEnemy() {
             
             if (gameOver || !gameStarted) return;
             
-            // Check if we should spawn a silver enemy based on score segment
-            const currentSegment = Math.floor(score / 500);
-            const scoreInSegment = score % 500;
-            
-            
-          // Spawn silver enemy if:
-          // 1. We're in a new segment compared to when we last spawned a silver enemy
-          // 2. We're past the first 100 points in the segment
-          // 3. We're before the last 100 points in the segment
-          // 4. There isn't already a silver enemy active
-          if (currentSegment !== lastSilverEnemySpawnScore && 
-              scoreInSegment >= 100 && 
-              scoreInSegment <= 400 && 
-              !silverEnemyActive) {
-
-    // Guaranteed spawn with 10% chance each frame when conditions are met
-    if (Math.random() < 0.1) {
-        
-        // Play silver enemy sound
-        const silverEnemySound = document.getElementById('silver-enemy-sound');
-        silverEnemySound.currentTime = 0;
-        silverEnemySound.play().catch(e => console.log('Error playing silver enemy sound:', e));
-        
-        spawnSilverEnemy();
-        lastSilverEnemySpawnScore = currentSegment;
-    }
-}
+            // Check if we should spawn a silver enemy based on score
+            if (score >= nextSilverEnemyScore && !silverEnemyActive) {
+                // 10% chance to spawn each frame when conditions are met
+                if (Math.random() < 0.1) {
+                    // Play silver enemy sound
+                    const silverEnemySound = document.getElementById('silver-enemy-sound');
+                    silverEnemySound.currentTime = 0;
+                    silverEnemySound.play().catch(e => console.log('Error playing silver enemy sound:', e));
+                    
+                    spawnSilverEnemy();
+                    // Set next spawn between 400-599 points from now
+                    nextSilverEnemyScore = score + 400 + Math.floor(Math.random() * 200);
+                }
+            }
             
             // Handle silver enemy timer if active
             if (silverEnemyActive) {
