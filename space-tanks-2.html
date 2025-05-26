@@ -151,6 +151,9 @@
     <div id="ui">
         <div>Score: <span id="score">0</span></div>
     </div>
+    <button id="sound-toggle" style="position: absolute; top: 50px; left: 10px; cursor: pointer; font-size: 32px; user-select: none; background: rgba(0,0,0,0.5); padding: 8px 12px; border-radius: 5px; z-index: 100; border: none; color: white;" onclick="toggleSound()">
+        🔊
+    </button>
     <!-- Fart Sound Checkbox -->
 <div id="sound-options">
     <input type="checkbox" id="fart-sound-checkbox" style="margin-right: 5px;">
@@ -239,6 +242,7 @@
         let lastEnemySpawnTime = 0;
         const enemySpawnInterval = 2000; // ms
         let soundInitialized = false; // Flag to track if sound has been initialized
+        let soundEnabled = true; // Flag to track if sound is enabled or muted
         let bulletCount = 20; // Starting bullet count
         let lastLifeGainedAtScore = 0; // Track when we last gave an extra life
         let silverEnemyActive = false; // Track if a silver enemy is currently active
@@ -459,6 +463,28 @@
         document.getElementById('info-btn-gameover').addEventListener('click', showInfoModal);
         document.getElementById('close-modal').addEventListener('click', hideInfoModal);
         
+        // Simple global sound toggle function
+        function toggleSound() {
+            // Toggle sound state
+            soundEnabled = !soundEnabled;
+            
+            // Mute/unmute all audio elements
+            const allAudios = document.querySelectorAll('audio');
+            for (let i = 0; i < allAudios.length; i++) {
+                allAudios[i].muted = !soundEnabled;
+            }
+            
+            // Update the button text
+            const soundButton = document.getElementById('sound-toggle');
+            if (soundButton) {
+                soundButton.textContent = soundEnabled ? '🔊' : '🔇';
+                // Remove focus from the button to prevent spacebar from triggering it
+                soundButton.blur();
+            }
+            
+            console.log('Sound ' + (soundEnabled ? 'enabled' : 'disabled'));
+        }
+        
         function showInfoModal() {
             document.getElementById('info-modal').style.display = 'flex';
         }
@@ -564,7 +590,7 @@ function fireBullet() {
     {
         const laserSound = document.getElementById('laser-sound');
         laserSound.currentTime = 0; // Reset sound to start
-                
+        
         // Try to play the sound with error handling
         laserSound.play()
             .then(() => {
@@ -572,6 +598,7 @@ function fireBullet() {
             })
             .catch(e => {
                 // If sound failed because of no user interaction, we'll initialize it later
+                console.log('Error playing laser sound:', e);
             });
     }
             
@@ -694,7 +721,7 @@ function checkCollisions() {
                 scene.remove(bullet);
                 bullets.splice(i, 1);
                         
-                // Check if fart sound is enabled and play the relevant enemy destroyed sound
+                // Check which sound to play
                 const fartSound = document.getElementById('fart-sound');
                 fartSound.currentTime = 0;
                 if (document.getElementById('fart-sound-checkbox').checked) {
@@ -768,18 +795,16 @@ function checkCollisions() {
             health--;
                     
             // Play appropriate sound based on health
-            {
-                if (health <= 0) {
-                    // Game over sound
-                    const gameOverSound = document.getElementById('game-over-sound');
-                    gameOverSound.currentTime = 0;
-                    gameOverSound.play().catch(e => console.log('Error playing game over sound:', e));
-                } else {
-                    // Player hit sound
-                    const playerHitSound = document.getElementById('player-hit-sound');
-                    playerHitSound.currentTime = 0;
-                    playerHitSound.play().catch(e => console.log('Error playing player hit sound:', e));
-                }
+            if (health <= 0) {
+                // Game over sound
+                const gameOverSound = document.getElementById('game-over-sound');
+                gameOverSound.currentTime = 0;
+                gameOverSound.play().catch(e => console.log('Error playing game over sound:', e));
+            } else {
+                // Player hit sound
+                const playerHitSound = document.getElementById('player-hit-sound');
+                playerHitSound.currentTime = 0;
+                playerHitSound.play().catch(e => console.log('Error playing player hit sound:', e));
             }
                     
             updateHealth();
