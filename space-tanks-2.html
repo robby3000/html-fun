@@ -229,6 +229,139 @@
 </audio>
 
     <script>
+        // Sound Manager
+        const SoundManager = {
+            sounds: {},
+            enabled: true,
+            initialized: false,
+            defaultVolume: 0.3, // Lower default volume
+            
+            // Initialize all sounds
+            init() {
+                if (this.initialized) return;
+                
+                try {
+                    // Get all audio elements and store them by ID
+                    document.querySelectorAll('audio').forEach(audio => {
+                        this.sounds[audio.id] = audio;
+                        audio.volume = this.defaultVolume;
+                        audio.muted = !this.enabled;
+                        // Preload audio on mobile
+                        if (isMobile) {
+                            audio.load();
+                        }
+                    });
+                    
+                    // Initialize audio context if available
+                    this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    
+                    this.initialized = true;
+                    console.log('SoundManager initialized with', Object.keys(this.sounds).length, 'sounds');
+                } catch (e) {
+                    console.error('Error initializing SoundManager:', e);
+                    // Continue with limited functionality if audio context fails
+                    this.initialized = true;
+                }
+            },
+            
+            // Play a sound by ID
+            play(id, options = {}) {
+                if (!this.initialized) {
+                    this.init(); // Try to initialize if not already done
+                    if (!this.initialized) return; // Still not initialized, give up
+                }
+                
+                if (!this.enabled) return;
+                
+                const sound = this.sounds[id];
+                if (!sound) {
+                    console.warn(`Sound '${id}' not found`);
+                    return;
+                }
+                
+                try {
+                    // Resume audio context if it was suspended (required on mobile)
+                    if (this.audioContext && this.audioContext.state === 'suspended') {
+                        this.audioContext.resume().catch(e => 
+                            console.warn('Could not resume audio context:', e)
+                        );
+                    }
+                    
+                    if (options.forceRestart || sound.paused) {
+                        sound.currentTime = 0;
+                        const playPromise = sound.play();
+                        
+                        if (playPromise !== undefined) {
+                            playPromise.catch(e => {
+                                if (e.name === 'NotAllowedError' || e.name === 'NotSupportedError') {
+                                    console.warn(`Cannot play sound '${id}':`, e.message);
+                                } else {
+                                    console.warn(`Error playing sound '${id}':`, e);
+                                }
+                            });
+                        }
+                    }
+                } catch (e) {
+                    console.warn(`Error playing sound '${id}':`, e);
+                }
+            },
+            
+            // Stop a sound by ID
+            stop(id) {
+                const sound = this.sounds[id];
+                if (sound) {
+                    sound.pause();
+                    sound.currentTime = 0;
+                }
+            },
+            
+            // Set volume (0.0 to 1.0)
+            setVolume(volume) {
+                Object.values(this.sounds).forEach(sound => {
+                    sound.volume = volume;
+                });
+            },
+            
+            // Toggle sound on/off
+            toggle(enable = null) {
+                this.enabled = enable !== null ? enable : !this.enabled;
+                Object.values(this.sounds).forEach(sound => {
+                    sound.muted = !this.enabled;
+                });
+                
+                // Update UI
+                const soundButton = document.getElementById('sound-button');
+                if (soundButton) {
+                    soundButton.textContent = this.enabled ? '🔊' : '🔇';
+                }
+                
+                // Save preference to localStorage
+                localStorage.setItem('soundEnabled', this.enabled);
+                
+                return this.enabled;
+            },
+            
+            // Initialize sound system (call on first user interaction)
+            initializeSound() {
+                if (this.initialized) return;
+                
+                // Try to play a silent sound to unlock audio on mobile
+                const silentSound = new Audio('data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAZGF0YQQ=');
+                silentSound.volume = 0;
+                silentSound.play()
+                    .then(() => {
+                        silentSound.pause();
+                        this.init();
+                        console.log('Audio unlocked');
+                    })
+                    .catch(e => {
+                        console.warn('Could not initialize audio:', e);
+                        // Still try to initialize sounds even if silent play fails
+                        this.init();
+                    });
+            }
+        };
+        
         // Game variables
         let score = 0;
         let health = 10;
@@ -463,26 +596,9 @@
         document.getElementById('info-btn-gameover').addEventListener('click', showInfoModal);
         document.getElementById('close-modal').addEventListener('click', hideInfoModal);
         
-        // Simple global sound toggle function
+        // Global sound toggle function
         function toggleSound() {
-            // Toggle sound state
-            soundEnabled = !soundEnabled;
-            
-            // Mute/unmute all audio elements
-            const allAudios = document.querySelectorAll('audio');
-            for (let i = 0; i < allAudios.length; i++) {
-                allAudios[i].muted = !soundEnabled;
-            }
-            
-            // Update the button text
-            const soundButton = document.getElementById('sound-toggle');
-            if (soundButton) {
-                soundButton.textContent = soundEnabled ? '🔊' : '🔇';
-                // Remove focus from the button to prevent spacebar from triggering it
-                soundButton.blur();
-            }
-            
-            console.log('Sound ' + (soundEnabled ? 'enabled' : 'disabled'));
+            return SoundManager.toggle();
         }
         
         function showInfoModal() {
@@ -502,10 +618,9 @@
         
         // Initialize sound on first user interaction with the game
         document.addEventListener('click', function initSound() {
-            if (!soundInitialized) {
-                initializeSound();
-                document.removeEventListener('click', initSound);
-            }
+            SoundManager.initializeSound();
+            // Remove this event listener after first interaction
+            document.removeEventListener('click', initSound);
         }, { once: true });
 
         function restartGame() {
@@ -514,305 +629,245 @@
             bullets.forEach(bullet => scene.remove(bullet));
             enemyBullets.forEach(bullet => scene.remove(bullet));
             
-    // Stop silver enemy sound if active
-    const silverEnemySound = document.getElementById('silver-enemy-sound');
-    silverEnemySound.pause();
+            // Stop silver enemy sound if active
+            SoundManager.stop('silver-enemy-sound');
             
-    // Reset game state
-    enemies = [];
-    bullets = [];
-    enemyBullets = [];
-    score = 0;
-    gameStarted = true;
-    document.getElementById('start-screen').style.display = 'none';
-}
-
-        
-// Initialize sound on first user interaction with the game
-document.addEventListener('click', function initSound() {
-    if (!soundInitialized) {
-        initializeSound();
-        document.removeEventListener('click', initSound);
-    }
-}, { once: true });
-
-function restartGame() {
-    // Remove all enemies and bullets
-    enemies.forEach(enemy => scene.remove(enemy));
-    bullets.forEach(bullet => scene.remove(bullet));
-    enemyBullets.forEach(bullet => scene.remove(bullet));
-    
-    // Stop silver enemy sound if active
-    const silverEnemySound = document.getElementById('silver-enemy-sound');
-    silverEnemySound.pause();
-    
-    // Reset game state
-    enemies = [];
-    bullets = [];
-    enemyBullets = [];
-    score = 0;
-    health = 10;
-    gameOver = false;
-    gameStarted = true;
-    bulletCount = 20; // Reset bullet count
-    lastLifeGainedAtScore = 0; // Reset life gain tracker
-    silverEnemyActive = false;
-    silverEnemyTimer = 0;
-    nextSilverEnemyScore = 100; // First spawn at 100 points
-    
-    console.log('Game restarted, silver enemy tracking reset')
+            // Reset game state
+            enemies = [];
+            bullets = [];
+            enemyBullets = [];
+            score = 0;
+            health = 10;
+            gameOver = false;
+            gameStarted = true;
+            bulletCount = 20; // Reset bullet count
+            lastLifeGainedAtScore = 0; // Reset life gain tracker
+            silverEnemyActive = false;
+            silverEnemyTimer = 0;
+            nextSilverEnemyScore = 100; // First spawn at 100 points
             
-// Update UI
-document.getElementById('score').textContent = score;
-document.getElementById('health-bar').style.width = '100%';
-document.getElementById('health-bar').style.background = '#4CAF50'; // Reset to green color
-document.getElementById('game-over').style.display = 'none';
-updateBulletDisplay();
+            console.log('Game restarted, silver enemy tracking reset')
             
-// Reset player position
-player.position.x = 0;
-}
-
-function fireBullet() {
-    if (gameOver || !gameStarted) return;
+            // Update UI
+            document.getElementById('score').textContent = score;
+            document.getElementById('health-bar').style.width = '100%';
+            document.getElementById('health-bar').style.background = '#4CAF50'; // Reset to green color
+            document.getElementById('game-over').style.display = 'none';
+            updateBulletDisplay();
             
-    // Check if player has bullets available
-    if (bulletCount <= 0) {
-        // Maybe add a "click" or "empty" sound here
-        return;
-    }
-            
-    // Decrease bullet count
-    bulletCount--;
-    updateBulletDisplay();
-            
-    // Play laser sound effect
-    {
-        const laserSound = document.getElementById('laser-sound');
-        laserSound.currentTime = 0; // Reset sound to start
-        
-        // Try to play the sound with error handling
-        laserSound.play()
-            .then(() => {
-                soundInitialized = true;
-            })
-            .catch(e => {
-                // If sound failed because of no user interaction, we'll initialize it later
-                console.log('Error playing laser sound:', e);
-            });
-    }
-            
-    const bulletGeometry = new THREE.SphereGeometry(0.1, 16, 16);
-    const bulletMaterial = new THREE.MeshPhongMaterial({ color: 0xFFFF00 });
-    const bullet = new THREE.Mesh(bulletGeometry, bulletMaterial);
-            
-    // Position bullet at the end of the cannon
-    bullet.position.copy(player.position);
-    bullet.position.z -= 2;
-            
-    // Set bullet velocity (forward)
-    bullet.userData.velocity = new THREE.Vector3(0, 0, -0.5);
-            
-    scene.add(bullet);
-    bullets.push(bullet);
-}
-
-function enemyFire(enemy) {
-    if (gameOver) return;
-            
-    // Play enemy laser sound effect
-    {
-        const enemyLaserSound = document.getElementById('enemy-laser-sound');
-        enemyLaserSound.currentTime = 0;
-        enemyLaserSound.play().catch(e => console.log('Error playing enemy laser sound:', e));
-    }
-            
-    const bulletGeometry = new THREE.SphereGeometry(0.1, 16, 16);
-    const bulletMaterial = new THREE.MeshPhongMaterial({ color: 0xFF00FF });
-    const bullet = new THREE.Mesh(bulletGeometry, bulletMaterial);
-            
-    // Position bullet at the enemy's position
-    const worldPosition = new THREE.Vector3();
-    enemy.getWorldPosition(worldPosition);
-    bullet.position.copy(worldPosition);
-    bullet.position.z += 2;
-            
-    // Calculate direction to player
-    const direction = new THREE.Vector3();
-    direction.subVectors(player.position, bullet.position).normalize();
-    bullet.userData.velocity = direction.multiplyScalar(0.3);
-            
-    scene.add(bullet);
-    enemyBullets.push(bullet);
-}
-
-function updateHealth() {
-    const healthPercent = (health / 10) * 100;
-    const healthBar = document.getElementById('health-bar');
-    healthBar.style.width = `${healthPercent}%`;
-    
-    // Update health bar color based on remaining lives
-    if (health >= 7) {
-        healthBar.style.background = '#4CAF50'; // Green
-    } else if (health >= 4) {
-        healthBar.style.background = '#FFC107'; // Yellow
-    } else {
-        healthBar.style.background = '#F44336'; // Red
-    }
-            
-    if (health <= 0) {
-        gameOver = true;
-        
-        // Calculate bonus points (5 × bullets remaining)
-        const bonusPoints = bulletCount * 10;
-        const finalScore = score + bonusPoints;
-        
-        // Update the game over screen
-        document.getElementById('game-over-score').textContent = score;
-        document.getElementById('bullets-remaining').textContent = bulletCount;
-        document.getElementById('final-score').textContent = finalScore;
-        document.getElementById('game-over').style.display = 'flex';
-        
-        // Stop silver enemy sound if it's playing
-        const silverEnemySound = document.getElementById('silver-enemy-sound');
-        silverEnemySound.pause();
-    }
-}
-
-function updateBulletDisplay() {
-    const bulletDisplay = document.getElementById('bullets-display');
-    bulletDisplay.textContent = bulletCount;
-            
-    // Visual feedback - make it pulse when low on bullets
-    if (bulletCount <= 5) {
-        bulletDisplay.style.color = '#FF3333';
-        bulletDisplay.style.textShadow = '0 0 10px #FF0000, 0 0 20px #FF0000';
-    } else {
-        bulletDisplay.style.color = '#CCCCCC';
-        bulletDisplay.style.textShadow = '0 0 10px #00FF00, 0 0 20px #00FF00';
-    }
-}
-
-function updateScore(points = 10) {
-    score += points;
-    document.getElementById('score').textContent = score;
-            
-    // Check if player should get an extra life (every 250 points)
-    if (health < 10 && score >= lastLifeGainedAtScore + 250) {
-        health++;
-        lastLifeGainedAtScore = Math.floor(score / 250) * 250;
-        updateHealth();
-                
-        // Maybe add a special sound or visual effect for gaining a life
-        console.log('Extra life gained at score:', score);
-    }
-}
-
-function checkCollisions() {
-    // Check player bullets hitting enemies
-    for (let i = bullets.length - 1; i >= 0; i--) {
-        const bullet = bullets[i];
-                
-        for (let j = enemies.length - 1; j >= 0; j--) {
-            const enemy = enemies[j];
-                    
-            if (bullet.position.distanceTo(enemy.position) < 1) {
-                // Hit!
-                scene.remove(bullet);
-                bullets.splice(i, 1);
-                        
-                // Check which sound to play
-                const fartSound = document.getElementById('fart-sound');
-                fartSound.currentTime = 0;
-                if (document.getElementById('fart-sound-checkbox').checked) {
-                    fartSound.play().catch(e => console.log('Error playing fart sound:', e));
-                } else {
-                    const enemyDestroyedSound = document.getElementById('enemy-destroyed-sound');
-                    enemyDestroyedSound.currentTime = 0;
-                    enemyDestroyedSound.play().catch(e => console.log('Error playing enemy destroyed sound:', e));
-                }
-                        
-                scene.remove(enemy);
-                enemies.splice(j, 1);
-                
-                // Check if it was a silver enemy (worth 5x points)
-                if (enemy.userData.isSilverEnemy) {
-                    updateScore(50); // 5x normal points
-                    silverEnemyActive = false;
-
-                    //  Stop silver enemy sound
-                    const silverEnemySound = document.getElementById('silver-enemy-sound');
-                    silverEnemySound.pause();
-                    
-                    // Add visual indicator for bonus points
-                    const bonusText = document.createElement('div');
-                    bonusText.textContent = '+50 POINTS!';
-                    bonusText.style.position = 'absolute';
-                    bonusText.style.top = '40%';
-                    bonusText.style.left = '50%';
-                    bonusText.style.transform = 'translate(-50%, -50%)';
-                    bonusText.style.color = '#FFFF00';
-                    bonusText.style.fontSize = '20px';
-                    bonusText.style.fontFamily = "'Press Start 2P', cursive";
-                    bonusText.style.textShadow = '0 0 10px #FFFF00';
-                    bonusText.style.zIndex = '1000';
-                    bonusText.style.pointerEvents = 'none';
-                    document.body.appendChild(bonusText);
-                    
-                    // Animate the text upward and fade out
-                    let posY = 40;
-                    let opacity = 1;
-                    const animInterval = setInterval(() => {
-                        posY -= 0.5;
-                        opacity -= 0.02;
-                        bonusText.style.top = `${posY}%`;
-                        bonusText.style.opacity = opacity;
-                        if (opacity <= 0) {
-                            clearInterval(animInterval);
-                            document.body.removeChild(bonusText);
-                        }
-                    }, 30);
-                    
-                    console.log('Silver enemy destroyed! +50 points');
-                } else {
-                    updateScore(10); // Normal points
-                }
-                // Removed enemy count display
-                break;
-            }
+            // Reset player position
+            player.position.x = 0;
         }
-    }
+
+        function fireBullet() {
+            if (gameOver || !gameStarted) return;
             
-    // Check enemy bullets hitting player
-    for (let i = enemyBullets.length - 1; i >= 0; i--) {
-        const bullet = enemyBullets[i];
-                
-        if (bullet.position.distanceTo(player.position) < 1) {
-            // Hit player!
-            scene.remove(bullet);
-            enemyBullets.splice(i, 1);
-                    
-            health--;
-                    
-            // Play appropriate sound based on health
-            if (health <= 0) {
-                // Game over sound
-                const gameOverSound = document.getElementById('game-over-sound');
-                gameOverSound.currentTime = 0;
-                gameOverSound.play().catch(e => console.log('Error playing game over sound:', e));
+            // Check if player has bullets available
+            if (bulletCount <= 0) {
+                // Maybe add a "click" or "empty" sound here
+                return;
+            }
+            
+            // Decrease bullet count
+            bulletCount--;
+            updateBulletDisplay();
+            
+            // Play laser sound effect
+            SoundManager.play('laser-sound');
+            
+            const bulletGeometry = new THREE.SphereGeometry(0.1, 16, 16);
+            const bulletMaterial = new THREE.MeshPhongMaterial({ color: 0xFFFF00 });
+            const bullet = new THREE.Mesh(bulletGeometry, bulletMaterial);
+            
+            // Position bullet at the end of the cannon
+            bullet.position.copy(player.position);
+            bullet.position.z -= 2;
+            
+            // Set bullet velocity (forward)
+            bullet.userData.velocity = new THREE.Vector3(0, 0, -0.5);
+            
+            scene.add(bullet);
+            bullets.push(bullet);
+        }
+
+        function enemyFire(enemy) {
+            if (gameOver) return;
+            
+            // Play enemy laser sound effect
+            SoundManager.play('enemy-laser-sound');
+            
+            const bulletGeometry = new THREE.SphereGeometry(0.1, 16, 16);
+            const bulletMaterial = new THREE.MeshPhongMaterial({ color: 0xFF00FF });
+            const bullet = new THREE.Mesh(bulletGeometry, bulletMaterial);
+            
+            // Position bullet at the enemy's position
+            const worldPosition = new THREE.Vector3();
+            enemy.getWorldPosition(worldPosition);
+            bullet.position.copy(worldPosition);
+            bullet.position.z += 2;
+            
+            // Calculate direction to player
+            const direction = new THREE.Vector3();
+            direction.subVectors(player.position, bullet.position).normalize();
+            bullet.userData.velocity = direction.multiplyScalar(0.3);
+            
+            scene.add(bullet);
+            enemyBullets.push(bullet);
+        }
+
+        function updateHealth() {
+            const healthPercent = (health / 10) * 100;
+            const healthBar = document.getElementById('health-bar');
+            healthBar.style.width = `${healthPercent}%`;
+            
+            // Update health bar color based on remaining lives
+            if (health >= 7) {
+                healthBar.style.background = '#4CAF50'; // Green
+            } else if (health >= 4) {
+                healthBar.style.background = '#FFC107'; // Yellow
             } else {
-                // Player hit sound
-                const playerHitSound = document.getElementById('player-hit-sound');
-                playerHitSound.currentTime = 0;
-                playerHitSound.play().catch(e => console.log('Error playing player hit sound:', e));
+                healthBar.style.background = '#F44336'; // Red
             }
-                    
-            updateHealth();
+            
+            if (health <= 0) {
+                gameOver = true;
+                
+                // Calculate bonus points (5 × bullets remaining)
+                const bonusPoints = bulletCount * 10;
+                const finalScore = score + bonusPoints;
+                
+                // Update the game over screen
+                document.getElementById('game-over-score').textContent = score;
+                document.getElementById('bullets-remaining').textContent = bulletCount;
+                document.getElementById('final-score').textContent = finalScore;
+                document.getElementById('game-over').style.display = 'flex';
+                
+                // Stop silver enemy sound if it's playing
+                SoundManager.stop('silver-enemy-sound');
+            }
         }
-    }
-}
 
-// Game loop
+                function updateBulletDisplay() {
+            const bulletDisplay = document.getElementById('bullets-display');
+            bulletDisplay.textContent = bulletCount;
+            
+            // Visual feedback - make it pulse when low on bullets
+            if (bulletCount <= 5) {
+                bulletDisplay.style.color = '#FF3333';
+                bulletDisplay.style.textShadow = '0 0 10px #FF0000, 0 0 20px #FF0000';
+            } else {
+                bulletDisplay.style.color = '#CCCCCC';
+                bulletDisplay.style.textShadow = '0 0 10px #00FF00, 0 0 20px #00FF00';
+            }
+        }
+
+        function updateScore(points = 10) {
+            score += points;
+            document.getElementById('score').textContent = score;
+            
+            // Check if player should get an extra life (every 250 points)
+            if (health < 10 && score >= lastLifeGainedAtScore + 250) {
+                health++;
+                lastLifeGainedAtScore = Math.floor(score / 250) * 250;
+                updateHealth();
+                
+                // Play sound for extra life
+                SoundManager.play('extra-life-sound');
+                console.log('Extra life gained at score:', score);
+            }
+        }
+
+        function checkCollisions() {
+            // Check player bullets hitting enemies
+            for (let i = bullets.length - 1; i >= 0; i--) {
+                const bullet = bullets[i];
+                
+                for (let j = enemies.length - 1; j >= 0; j--) {
+                    const enemy = enemies[j];
+                    
+                    if (bullet.position.distanceTo(enemy.position) < 1) {
+                        // Hit!
+                        scene.remove(bullet);
+                        bullets.splice(i, 1);
+                        
+                        // Play appropriate enemy destroyed sound
+                        if (document.getElementById('fart-sound-checkbox').checked) {
+                            SoundManager.play('fart-sound');
+                        } else {
+                            SoundManager.play('enemy-destroyed-sound');
+                        }
+                        
+                        scene.remove(enemy);
+                        enemies.splice(j, 1);
+                        
+                        // Check if it was a silver enemy (worth 5x points)
+                        if (enemy.userData.isSilverEnemy) {
+                            updateScore(50); // 5x normal points
+                            silverEnemyActive = false;
+                            SoundManager.stop('silver-enemy-sound');
+                            
+                            // Add visual indicator for bonus points
+                            const bonusText = document.createElement('div');
+                            bonusText.textContent = '+50 POINTS!';
+                            bonusText.style.position = 'absolute';
+                            bonusText.style.top = '40%';
+                            bonusText.style.left = '50%';
+                            bonusText.style.transform = 'translate(-50%, -50%)';
+                            bonusText.style.color = '#FFFF00';
+                            bonusText.style.fontSize = '20px';
+                            bonusText.style.fontFamily = "'Press Start 2P', cursive";
+                            bonusText.style.textShadow = '0 0 10px #FFFF00';
+                            bonusText.style.zIndex = '1000';
+                            bonusText.style.pointerEvents = 'none';
+                            document.body.appendChild(bonusText);
+                            
+                            // Animate the text upward and fade out
+                            let posY = 40;
+                            let opacity = 1;
+                            const animInterval = setInterval(() => {
+                                posY -= 0.5;
+                                opacity -= 0.02;
+                                bonusText.style.top = `${posY}%`;
+                                bonusText.style.opacity = opacity;
+                                if (opacity <= 0) {
+                                    clearInterval(animInterval);
+                                    document.body.removeChild(bonusText);
+                                }
+                            }, 30);
+                            
+                            console.log('Silver enemy destroyed! +50 points');
+                        } else {
+                            updateScore(10); // Normal points
+                        }
+                        break;
+                    }
+                }
+            }
+            
+            // Check enemy bullets hitting player
+            for (let i = enemyBullets.length - 1; i >= 0; i--) {
+                const bullet = enemyBullets[i];
+                
+                if (bullet.position.distanceTo(player.position) < 1) {
+                    // Hit player!
+                    scene.remove(bullet);
+                    enemyBullets.splice(i, 1);
+                    
+                    health--;
+                    
+                    // Play appropriate sound based on health
+                    if (health <= 0) {
+                        SoundManager.play('game-over-sound');
+                    } else {
+                        SoundManager.play('player-hit-sound');
+                    }
+                    
+                    updateHealth();
+                }
+            }
+        }
+
+        // Game loop
 
 
 function spawnEnemy() {
@@ -843,9 +898,7 @@ function spawnEnemy() {
                 // 10% chance to spawn each frame when conditions are met
                 if (Math.random() < 0.1) {
                     // Play silver enemy sound
-                    const silverEnemySound = document.getElementById('silver-enemy-sound');
-                    silverEnemySound.currentTime = 0;
-                    silverEnemySound.play().catch(e => console.log('Error playing silver enemy sound:', e));
+                    SoundManager.play('silver-enemy-sound');
                     
                     spawnSilverEnemy();
                     // Set next spawn between 400-599 points from now
@@ -861,8 +914,7 @@ function spawnEnemy() {
                 if (silverEnemyTimer > 720) {
                     
                     // Stop silver enemy sound
-                    const silverEnemySound = document.getElementById('silver-enemy-sound');
-                    silverEnemySound.pause();
+                    SoundManager.stop('silver-enemy-sound');
                     
                     // Find and remove the silver enemy
                     for (let i = enemies.length - 1; i >= 0; i--) {
