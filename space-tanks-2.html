@@ -232,9 +232,10 @@
         // Sound Manager
         const SoundManager = {
             sounds: {},
+            soundClones: new Map(), // Store cloned audio elements for rapid fire
             enabled: true,
             initialized: false,
-            defaultVolume: 0.3, // Lower default volume
+            defaultVolume: 0.3,
             
             // Initialize all sounds
             init() {
@@ -250,6 +251,9 @@
                         if (isMobile) {
                             audio.load();
                         }
+                        
+                        // Initialize clone map for this sound
+                        this.soundClones.set(audio.id, []);
                     });
                     
                     // Initialize audio context if available
@@ -259,27 +263,51 @@
                     console.log('SoundManager initialized with', Object.keys(this.sounds).length, 'sounds');
                 } catch (e) {
                     console.error('Error initializing SoundManager:', e);
-                    // Continue with limited functionality if audio context fails
                     this.initialized = true;
                 }
+            },
+            
+            // Get or create a clone of the sound for overlapping playback
+            getSoundClone(id) {
+                const sound = this.sounds[id];
+                if (!sound) return null;
+                
+                // Find an available clone or create a new one
+                const clones = this.soundClones.get(id) || [];
+                let clone = clones.find(c => c.paused);
+                
+                if (!clone) {
+                    // Create a new clone if none available
+                    clone = sound.cloneNode(true);
+                    clone.volume = this.defaultVolume;
+                    clone.muted = !this.enabled;
+                    document.body.appendChild(clone);
+                    clones.push(clone);
+                    this.soundClones.set(id, clones);
+                }
+                
+                return clone;
             },
             
             // Play a sound by ID
             play(id, options = {}) {
                 if (!this.initialized) {
-                    this.init(); // Try to initialize if not already done
-                    if (!this.initialized) return; // Still not initialized, give up
+                    this.init();
+                    if (!this.initialized) return;
                 }
                 
                 if (!this.enabled) return;
                 
-                const sound = this.sounds[id];
-                if (!sound) {
-                    console.warn(`Sound '${id}' not found`);
-                    return;
-                }
-                
                 try {
+                    // For rapid-fire sounds, use a clone to allow overlapping
+                    const useClone = options.rapidFire || id === 'laser-sound' || id === 'enemy-laser-sound';
+                    const sound = useClone ? this.getSoundClone(id) : this.sounds[id];
+                    
+                    if (!sound) {
+                        console.warn(`Sound '${id}' not found`);
+                        return;
+                    }
+                    
                     // Resume audio context if it was suspended (required on mobile)
                     if (this.audioContext && this.audioContext.state === 'suspended') {
                         this.audioContext.resume().catch(e => 
@@ -325,19 +353,34 @@
             // Toggle sound on/off
             toggle(enable = null) {
                 this.enabled = enable !== null ? enable : !this.enabled;
-                Object.values(this.sounds).forEach(sound => {
-                    sound.muted = !this.enabled;
-                });
+                
+                // Update all sounds and their clones
+                const updateSound = (sound) => {
+                    if (sound) {
+                        sound.muted = !this.enabled;
+                        sound.volume = this.enabled ? this.defaultVolume : 0;
+                    }
+                };
+                
+                // Update original sounds
+                Object.values(this.sounds).forEach(updateSound);
+                
+                // Update all clones
+                for (const clones of this.soundClones.values()) {
+                    clones.forEach(updateSound);
+                }
                 
                 // Update UI
                 const soundButton = document.getElementById('sound-button');
                 if (soundButton) {
                     soundButton.textContent = this.enabled ? '🔊' : '🔇';
+                    soundButton.setAttribute('aria-label', this.enabled ? 'Mute sound' : 'Unmute sound');
                 }
                 
                 // Save preference to localStorage
                 localStorage.setItem('soundEnabled', this.enabled);
                 
+                console.log('Sound', this.enabled ? 'enabled' : 'disabled');
                 return this.enabled;
             },
             
@@ -585,20 +628,74 @@
             }
         });
 
-        // Game over and restart
-        document.getElementById('restart-btn').addEventListener('click', restartGame);
+        // Define all game functions first
+        function restartGame() {
+            console.log('Restarting game...');
+            
+            // Reset game state
+            gameOver = false;
+            gameStarted = true;
+            score = 0;
+            health = 10;
+            bulletCount = 20;
+            lastLifeGainedAtScore = 0;
+            silverEnemyActive = false;
+            silverEnemyTimer = 0;
+            nextSilverEnemyScore = 100;
+            
+            // Clear all enemies and bullets
+            enemies.forEach(enemy => scene.remove(enemy));
+            enemies = [];
+            
+            bullets.forEach(bullet => scene.remove(bullet));
+            bullets = [];
+            
+            // Reset player position
+            player.position.x = 0;
+            
+            // Update UI
+            document.getElementById('game-over').style.display = 'none';
+            document.getElementById('score').textContent = score;
+            document.getElementById('health-bar').style.width = '100%';
+            document.getElementById('health-bar').style.background = '#4CAF50';
+            updateBulletDisplay();
+            
+            console.log('Game restarted');
+        }
         
-        // Start game button
-        document.getElementById('start-btn').addEventListener('click', startGame);
-        
-        // Info buttons
-        document.getElementById('info-btn-start').addEventListener('click', showInfoModal);
-        document.getElementById('info-btn-gameover').addEventListener('click', showInfoModal);
-        document.getElementById('close-modal').addEventListener('click', hideInfoModal);
+        // Set up event listeners after functions are defined
+        document.addEventListener('DOMContentLoaded', function() {
+            // Game over and restart
+            const restartBtn = document.getElementById('restart-btn');
+            if (restartBtn) {
+                restartBtn.addEventListener('click', restartGame);
+            }
+            
+            // Start game button
+            const startBtn = document.getElementById('start-btn');
+            if (startBtn) {
+                startBtn.addEventListener('click', startGame);
+            }
+            
+            // Info buttons
+            const infoBtnStart = document.getElementById('info-btn-start');
+            const infoBtnGameOver = document.getElementById('info-btn-gameover');
+            const closeModal = document.getElementById('close-modal');
+            
+            if (infoBtnStart) infoBtnStart.addEventListener('click', showInfoModal);
+            if (infoBtnGameOver) infoBtnGameOver.addEventListener('click', showInfoModal);
+            if (closeModal) closeModal.addEventListener('click', hideInfoModal);
+        });
         
         // Global sound toggle function
         function toggleSound() {
-            return SoundManager.toggle();
+            const isEnabled = SoundManager.toggle();
+            const soundButton = document.getElementById('sound-button');
+            if (soundButton) {
+                soundButton.textContent = isEnabled ? '🔊' : '🔇';
+                soundButton.setAttribute('aria-label', isEnabled ? 'Mute sound' : 'Unmute sound');
+            }
+            return isEnabled;
         }
         
         function showInfoModal() {
@@ -609,44 +706,47 @@
             document.getElementById('info-modal').style.display = 'none';
         }
         
+        // Handle window resize with mobile optimization
+        function handleResize() {
+            // Check if mobile device
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            
+            // Set renderer size based on device
+            if (isMobile) {
+                renderer.setSize(window.innerWidth, window.innerHeight * 1.15); // Extra height for mobile viewport
+                renderer.setPixelRatio(Math.min(window.devicePixelRatio * 0.6, 1.0));
+            } else {
+                renderer.setSize(window.innerWidth, window.innerHeight);
+                renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2.0));
+            }
+            
+            // Update camera aspect ratio
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+        }
+        
+        // Initial window resize handler
+        window.addEventListener('resize', handleResize);
+        handleResize(); // Call once to set initial size
+        
         function startGame() {
             gameStarted = true;
             document.getElementById('start-screen').style.display = 'none';
-        }
-        
 
-        
-        // Initialize sound on first user interaction with the game
-        document.addEventListener('click', function initSound() {
-            SoundManager.initializeSound();
-            // Remove this event listener after first interaction
-            document.removeEventListener('click', initSound);
-        }, { once: true });
-
-        function restartGame() {
-            // Remove all enemies and bullets
-            enemies.forEach(enemy => scene.remove(enemy));
-            bullets.forEach(bullet => scene.remove(bullet));
-            enemyBullets.forEach(bullet => scene.remove(bullet));
-            
-            // Stop silver enemy sound if active
-            SoundManager.stop('silver-enemy-sound');
+            // Set camera position
+            camera.position.set(0, 2, 5);
+            camera.lookAt(0, 0, -10);
             
             // Reset game state
-            enemies = [];
-            bullets = [];
-            enemyBullets = [];
             score = 0;
             health = 10;
-            gameOver = false;
-            gameStarted = true;
-            bulletCount = 20; // Reset bullet count
-            lastLifeGainedAtScore = 0; // Reset life gain tracker
+            bulletCount = 20;
+            lastLifeGainedAtScore = 0;
             silverEnemyActive = false;
             silverEnemyTimer = 0;
             nextSilverEnemyScore = 100; // First spawn at 100 points
             
-            console.log('Game restarted, silver enemy tracking reset')
+            console.log('Game started, silver enemy tracking reset');
             
             // Update UI
             document.getElementById('score').textContent = score;
@@ -672,8 +772,8 @@
             bulletCount--;
             updateBulletDisplay();
             
-            // Play laser sound effect
-            SoundManager.play('laser-sound');
+            // Play laser sound effect using SoundManager with rapidFire enabled
+            SoundManager.play('laser-sound', { rapidFire: true });
             
             const bulletGeometry = new THREE.SphereGeometry(0.1, 16, 16);
             const bulletMaterial = new THREE.MeshPhongMaterial({ color: 0xFFFF00 });
