@@ -246,6 +246,11 @@
         let silverEnemyDirection = 1; // Direction for silver enemy side-to-side movement
         let nextSilverEnemyScore = 100; // Score at which next silver enemy will spawn
 
+        // Mobile detection and pixel ratio handling
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        const pixelRatio = isMobile ? Math.min(window.devicePixelRatio * 0.6, 1.0) : Math.min(window.devicePixelRatio, 2.0);
+        console.log(`Running on ${isMobile ? 'mobile' : 'desktop'}, pixel ratio: ${pixelRatio}`);
+
         // Initialize Three.js
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -564,10 +569,8 @@ function fireBullet() {
         laserSound.play()
             .then(() => {
                 soundInitialized = true;
-                console.log('Sound played successfully');
             })
             .catch(e => {
-                console.log('Error playing sound:', e);
                 // If sound failed because of no user interaction, we'll initialize it later
             });
     }
@@ -802,35 +805,6 @@ function spawnEnemy() {
             
     // Randomize enemy type (3 different designs)
     const enemyType = Math.floor(Math.random() * 3);
-            // Check enemy bullets hitting player
-            for (let i = enemyBullets.length - 1; i >= 0; i--) {
-                const bullet = enemyBullets[i];
-                
-                if (bullet.position.distanceTo(player.position) < 1) {
-                    // Hit player!
-                    scene.remove(bullet);
-                    enemyBullets.splice(i, 1);
-                    
-                    health--;
-                    
-                    // Play appropriate sound based on health
-                    {
-                        if (health <= 0) {
-                            // Game over sound
-                            const gameOverSound = document.getElementById('game-over-sound');
-                            gameOverSound.currentTime = 0;
-                            gameOverSound.play().catch(e => console.log('Error playing game over sound:', e));
-                        } else {
-                            // Player hit sound
-                            const playerHitSound = document.getElementById('player-hit-sound');
-                            playerHitSound.currentTime = 0;
-                            playerHitSound.play().catch(e => console.log('Error playing player hit sound:', e));
-                        }
-                    }
-                    
-                    updateHealth();
-                }
-            }
         }
 
         // Game loop
