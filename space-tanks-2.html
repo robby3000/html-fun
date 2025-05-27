@@ -300,7 +300,8 @@
                 
                 try {
                     // For rapid-fire sounds, use a clone to allow overlapping
-                    const useClone = options.rapidFire || id === 'laser-sound' || id === 'enemy-laser-sound';
+                    const useClone = options.rapidFire || 
+                        ['laser-sound', 'enemy-laser-sound', 'fart-sound', 'player-hit-sound', 'enemy-destroyed-sound'].includes(id);
                     const sound = useClone ? this.getSoundClone(id) : this.sounds[id];
                     
                     // Set volume specifically for laser sounds
