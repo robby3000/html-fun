@@ -697,10 +697,10 @@
         // Global sound toggle function
         function toggleSound() {
             const isEnabled = SoundManager.toggle();
-            const soundButton = document.getElementById('sound-button');
-            if (soundButton) {
-                soundButton.textContent = isEnabled ? '🔊' : '🔇';
-                soundButton.setAttribute('aria-label', isEnabled ? 'Mute sound' : 'Unmute sound');
+            const soundToggle = document.getElementById('sound-toggle');
+            if (soundToggle) {
+                soundToggle.textContent = isEnabled ? '🔊' : '🔇';
+                soundToggle.setAttribute('aria-label', isEnabled ? 'Mute sound' : 'Unmute sound');
             }
             return isEnabled;
         }
