@@ -304,8 +304,10 @@
                     const sound = useClone ? this.getSoundClone(id) : this.sounds[id];
                     
                     // Set volume specifically for laser sounds
-                    if (id === 'laser-sound' || id === 'enemy-laser-sound') {
+                    if (id === 'laser-sound') {
                         sound.volume = 0.08;
+                    } else if (id === 'enemy-laser-sound') {
+                        sound.volume = 0.3; // Slightly louder than player's laser
                     }
                     
                     if (!sound) {
