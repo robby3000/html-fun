@@ -303,6 +303,11 @@
                     const useClone = options.rapidFire || id === 'laser-sound' || id === 'enemy-laser-sound';
                     const sound = useClone ? this.getSoundClone(id) : this.sounds[id];
                     
+                    // Set volume specifically for laser sounds
+                    if (id === 'laser-sound' || id === 'enemy-laser-sound') {
+                        sound.volume = 0.08;
+                    }
+                    
                     if (!sound) {
                         console.warn(`Sound '${id}' not found`);
                         return;
@@ -443,7 +448,7 @@
             const laserSound = document.getElementById('laser-sound');
             
             // Create a short silent sound to unlock audio on iOS/Safari
-            laserSound.volume = 0.1;
+            laserSound.volume = 0.05;
             laserSound.play()
                 .then(() => {
                     soundInitialized = true;
