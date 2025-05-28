@@ -1074,8 +1074,8 @@
             console.log('Game started/restarted.');
         }
         
-        // Event Handlers
-        function handleResize() {
+                // Event Handlers
+                function handleResize() {
             const viewportWidth = window.innerWidth;
             const viewportHeight = window.innerHeight;
             
@@ -1083,14 +1083,30 @@
             camera.updateProjectionMatrix();
             renderer.setSize(viewportWidth, viewportHeight);
             
-            // Adjust pixel ratio based on device
-            const pixelRatio = isMobile ? Math.min(window.devicePixelRatio * 0.6, 1.0) : Math.min(window.devicePixelRatio, 2.0);
+            const pixelRatio = (isMobile || isIOS) ? Math.min(window.devicePixelRatio * 0.6, 1.0) : Math.min(window.devicePixelRatio, 2.0);
             renderer.setPixelRatio(pixelRatio);
 
             if (domElements.controlsBar) {
                 domElements.controlsBar.style.bottom = `${Math.max(20, viewportHeight * 0.05)}px`;
+
+                // --- START OF ADDED/MODIFIED CODE FOR iOS TOUCH CONTROLS VISIBILITY ---
+                if (isIOS) {
+                    // On iOS devices (especially iPads), force the touch controls to be visible,
+                    // overriding any CSS media queries that might hide them based on width.
+                    domElements.controlsBar.style.display = 'flex'; 
+                    const controlBtns = domElements.controlsBar.querySelectorAll('.control-btn');
+                    controlBtns.forEach(btn => {
+                        // .control-btn itself has `display: flex` for its content alignment.
+                        // The media query sets `display: none`. We need to restore its intended display.
+                        btn.style.display = 'flex'; 
+                    });
+                    // console.log('Forcing controls visible for iOS device.'); // Optional: for debugging
+                }
+                // For non-iOS devices, the CSS media query will handle visibility based on width.
+                // No explicit 'else' is needed here if the CSS is correctly hiding/showing them.
+                // --- END OF ADDED/MODIFIED CODE ---
             }
-            console.log(`Resized. Viewport: ${viewportWidth}x${viewportHeight}, PixelRatio: ${pixelRatio}`);
+            // console.log(`Resized. Viewport: ${viewportWidth}x${viewportHeight}, PixelRatio: ${pixelRatio}, isIOS: ${isIOS}`); // Optional: for debugging
         }
 
         function showInfoModal() {
