@@ -1038,25 +1038,6 @@
 
         // Game Flow Control
         function startGame() {
-                // iOS Audio Fix: Play a sound immediately during user interaction
-    if (document.getElementById('laser-sound')) {
-        const tempSound = document.getElementById('laser-sound').cloneNode(true);
-        tempSound.volume = 0.01; // Very low volume so it's not noticeable
-        const playPromise = tempSound.play();
-        if (playPromise !== undefined) {
-            playPromise.then(() => {
-                console.log("iOS audio unlocked successfully");
-            }).catch(e => {
-                console.warn("iOS audio unlock failed:", e);
-            });
-        }
-    }
-    
-    // Resume audio context explicitly
-    if (window.AudioContext || window.webkitAudioContext) {
-        const tempContext = new (window.AudioContext || window.webkitAudioContext)();
-        tempContext.resume().catch(e => console.warn("Could not resume AudioContext:", e));
-    }
             SoundManager.initializeOnFirstPlay(); // Crucial for mobile sound
 
             gameState.gameStarted = true;
