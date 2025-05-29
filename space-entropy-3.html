@@ -1085,11 +1085,11 @@
                 console.warn("Sound initialization potentially problematic:", error);
             }
 
-
             gameState.gameStarted = true;
             gameState.gameOver = false;
             domElements.startScreen.style.display = 'none';
             domElements.gameOverScreen.style.display = 'none';
+            document.getElementById('leaderboardScreen').style.display = 'none';
 
             // Reset game state variables
             gameState.score = 0;
@@ -1152,11 +1152,12 @@
         function toggleSoundGlobal() {
             SoundManager.toggle();
         }
-        
+
         // Setup Event Listeners
         document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('start-btn').addEventListener('click', startGame);
-            document.getElementById('restart-game-btn').addEventListener('click', startGame); 
+            document.getElementById('restart-game-btn').addEventListener('click', startGame);
+            document.getElementById('play-again-btn').addEventListener('click', startGame); 
             
             document.getElementById('info-btn-start').addEventListener('click', showInfoModal);
             document.getElementById('info-btn-gameover').addEventListener('click', showInfoModal);
@@ -1192,7 +1193,276 @@
             domElements.startScreen.style.display = 'flex'; 
         });
         
+        // Leaderboard functionality
+        class Leaderboard {
+            constructor() {
+                this.apiUrl = 'https://spc-ent-leaderboard.robbyayres.workers.dev'; // Replace with your worker URL
+                this.currentDevice = this.detectDevice();
+                this.currentMonth = this.getCurrentMonth();
+            }
+
+            detectDevice() {
+                return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) 
+                    ? 'mobile' 
+                    : 'desktop';
+            }
+
+            getCurrentMonth() {
+                const date = new Date();
+                return date.toLocaleString('default', { month: 'long' }) + ' ' + date.getFullYear();
+            }
+
+            async checkHighScore(score) {
+                try {
+                    const response = await fetch(
+                        `${this.apiUrl}/api/check-score?score=${score}&deviceType=${this.currentDevice}`
+                    );
+                    if (!response.ok) throw new Error('Network response was not ok');
+                    const data = await response.json();
+                    return data.qualifies || false;
+                } catch (error) {
+                    console.error('Failed to check high score:', error);
+                    return false;
+                }
+            }
+
+            async submitScore(name, score) {
+                try {
+                    const response = await fetch(`${this.apiUrl}/api/score`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ 
+                            name: name.substring(0, 5).toUpperCase(),
+                            score: Math.floor(score),
+                            deviceType: this.currentDevice
+                        }),
+                    });
+                    if (!response.ok) throw new Error('Failed to submit score');
+                    return await response.json();
+                } catch (error) {
+                    console.error('Failed to submit score:', error);
+                    return { success: false, error: error.message };
+                }
+            }
+
+            async getLeaderboard(deviceType = this.currentDevice) {
+                try {
+                    const response = await fetch(
+                        `${this.apiUrl}/api/leaderboard?deviceType=${deviceType}`
+                    );
+                    if (!response.ok) throw new Error('Failed to load leaderboard');
+                    return await response.json();
+                } catch (error) {
+                    console.error('Failed to load leaderboard:', error);
+                    return [];
+                }
+            }
+        }
+        
+        // Initialize leaderboard
+        const leaderboard = new Leaderboard();
+        
+        // Show leaderboard function
+        async function showLeaderboard(deviceType) {
+            // Default to the current device if none specified
+            deviceType = deviceType || leaderboard.currentDevice;
+            
+            // Update active tab
+            document.querySelectorAll('.leaderboard-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.getElementById(`tab-${deviceType}`).classList.add('active');
+            
+            // Get and display scores
+            const scores = await leaderboard.getLeaderboard(deviceType);
+            const container = document.getElementById('leaderboard-list');
+            container.innerHTML = '';
+            
+            if (scores.length === 0) {
+                container.innerHTML = '<div class="leaderboard-empty">No scores yet for this month!</div>';
+                return;
+            }
+            
+            scores.forEach((entry, index) => {
+                const row = document.createElement('div');
+                row.className = 'leaderboard-row' + (index < 3 ? ' top-three' : '');
+                row.innerHTML = `
+                    <span class="rank">${index + 1}</span>
+                    <span class="name">${entry.name}</span>
+                    <span class="score">${entry.score}</span>
+                `;
+                container.appendChild(row);
+            });
+            
+            // Update month title
+            document.getElementById('current-month').textContent = leaderboard.getCurrentMonth();
+        }
+        
+        // Original game over function
+        function gameOver() {
+            gameState.gameOver = true;
+            const finalScore = gameState.score;
+            
+            // Update both score displays
+            document.getElementById('final-score').textContent = finalScore;
+            document.getElementById('leaderboard-final-score').textContent = finalScore;
+            
+            // Check if this is a high score
+            leaderboard.checkHighScore(finalScore).then(isHighScore => {
+                if (isHighScore) {
+                    // Show high score form
+                    document.getElementById('high-score-alert').style.display = 'block';
+                    document.getElementById('high-score-form').style.display = 'block';
+                    document.getElementById('leaderboard-container').style.display = 'none';
+                } else {
+                    // Show leaderboard directly
+                    document.getElementById('high-score-alert').style.display = 'none';
+                    document.getElementById('high-score-form').style.display = 'none';
+                    document.getElementById('leaderboard-container').style.display = 'block';
+                    showLeaderboard();
+                }
+                
+                // Show the leaderboard screen
+                domElements.gameOverScreen.style.display = 'none';
+                document.getElementById('leaderboardScreen').style.display = 'flex';
+            });
+            
+            SoundManager.playGameOver();
+        }
+        
         animate(); // Start the game loop
+    </script>
+    <!-- Leaderboard Screen -->
+    <div id="leaderboardScreen" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 1000; display: none; flex-direction: column; justify-content: center; align-items: center; color: white; font-family: 'Press Start 2P', cursive;">
+        <h2 style="text-shadow: 0 0 10px #00ff00, 0 0 20px #00ff00; margin-bottom: 10px;">GAME OVER</h2>
+        <div id="leaderboard-final-score" style="font-size: 1.5em; margin-bottom: 20px;">0</div>
+        
+        <!-- High Score Alert -->
+        <div id="high-score-alert" style="display: none;">
+            <h3 style="color: #ff0000; animation: flash 1s infinite; margin-bottom: 10px;">NEW HIGH SCORE!</h3>
+        </div>
+        
+        <!-- Score Submission Form -->
+        <div id="high-score-form" style="display: none; margin-bottom: 20px;">
+            <p>Enter your name (max 5 chars):</p>
+            <div style="display: flex; margin-top: 10px;">
+                <input type="text" id="player-name" maxlength="5" style="font-size: 1.2em; padding: 5px; text-transform: uppercase; background: #000; color: #00ff00; border: 1px solid #00ff00;">
+                <button id="submit-score-btn" style="margin-left: 10px; padding: 5px 15px; background: #00aa00; color: white; border: none; cursor: pointer;">Submit</button>
+            </div>
+        </div>
+        
+        <!-- Leaderboard Container -->
+        <div id="leaderboard-container" style="width: 80%; max-width: 500px; margin: 20px 0;">
+            <h3>High Scores - <span id="current-month"></span></h3>
+            
+            <!-- Tabs -->
+            <div class="leaderboard-tabs" style="display: flex; margin: 15px 0;">
+                <button id="tab-desktop" class="leaderboard-tab active" style="flex: 1; padding: 8px; background: #222; border: 1px solid #00ff00; color: white; cursor: pointer;">Desktop</button>
+                <button id="tab-mobile" class="leaderboard-tab" style="flex: 1; padding: 8px; background: #222; border: 1px solid #00ff00; color: white; cursor: pointer;">Mobile</button>
+            </div>
+            
+            <!-- Scores List -->
+            <div id="leaderboard-list" style="max-height: 300px; overflow-y: auto; background: rgba(0,0,0,0.5); padding: 10px; border: 1px solid #00ff00;">
+                <!-- Scores will be populated here -->
+            </div>
+        </div>
+        
+        <button id="play-again-btn" style="margin-top: 20px; padding: 10px 30px; background: #00aa00; color: white; border: none; cursor: pointer; font-family: 'Press Start 2P', cursive;">Play Again</button>
+    </div>
+
+    <style>
+        @keyframes flash {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .leaderboard-tab.active {
+            background: #00aa00 !important;
+        }
+        
+        .leaderboard-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 5px;
+            border-bottom: 1px solid rgba(0, 255, 0, 0.2);
+        }
+        
+        .leaderboard-row .rank {
+            width: 30px;
+        }
+        
+        .leaderboard-row .name {
+            flex: 1;
+            text-align: left;
+            padding-left: 10px;
+        }
+        
+        .leaderboard-row .score {
+            text-align: right;
+        }
+        
+        .top-three {
+            color: #ffff00;
+            font-weight: bold;
+        }
+        
+        .leaderboard-empty {
+            text-align: center;
+            padding: 20px;
+            color: #aaa;
+        }
+    </style>
+    
+    <script>
+        // Add event listeners for leaderboard functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            // Tab switching
+            document.getElementById('tab-desktop').addEventListener('click', () => showLeaderboard('desktop'));
+            document.getElementById('tab-mobile').addEventListener('click', () => showLeaderboard('mobile'));
+            
+            // Score submission
+            document.getElementById('submit-score-btn').addEventListener('click', async function() {
+                const nameInput = document.getElementById('player-name');
+                const name = nameInput.value.trim();
+                if (!name) return;
+                
+                const score = parseInt(document.getElementById('leaderboard-final-score').textContent);
+                const result = await leaderboard.submitScore(name, score);
+                
+                if (result.success) {
+                    document.getElementById('high-score-form').style.display = 'none';
+                    document.getElementById('high-score-alert').style.display = 'none';
+                    document.getElementById('leaderboard-container').style.display = 'block';
+                    await showLeaderboard();
+                }
+            });
+        });
+    </script>
+    
+    <script>
+        // Add event listeners for leaderboard functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            // Tab switching
+            document.getElementById('tab-desktop').addEventListener('click', () => showLeaderboard('desktop'));
+            document.getElementById('tab-mobile').addEventListener('click', () => showLeaderboard('mobile'));
+            
+            // Score submission
+            document.getElementById('submit-score-btn').addEventListener('click', async function() {
+                const nameInput = document.getElementById('player-name');
+                const name = nameInput.value.trim();
+                if (!name) return;
+                
+                const score = parseInt(document.getElementById('leaderboard-final-score').textContent);
+                const result = await leaderboard.submitScore(name, score);
+                
+                if (result.success) {
+                    document.getElementById('high-score-form').style.display = 'none';
+                    document.getElementById('high-score-alert').style.display = 'none';
+                    document.getElementById('leaderboard-container').style.display = 'block';
+                    await showLeaderboard();
+                }
+            });
+        });
     </script>
 </body>
 </html>
