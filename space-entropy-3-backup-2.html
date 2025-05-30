@@ -1220,8 +1220,14 @@
                 else if (e.key === 'ArrowRight' || e.key.toLowerCase() === 'd') gameState.moveRight = true;
             });
             document.addEventListener('keyup', (e) => {
-                if (e.key === 'ArrowLeft' || e.key.toLowerCase() === 'a') gameState.moveLeft = false;
-                else if (e.key === 'ArrowRight' || e.key.toLowerCase() === 'd') gameState.moveRight = false;
+                // Check if e.key is a string before calling toLowerCase
+                const keyLower = typeof e.key === 'string' ? e.key.toLowerCase() : '';
+
+                if (e.key === 'ArrowLeft' || keyLower === 'a') {
+                    gameState.moveLeft = false;
+                } else if (e.key === 'ArrowRight' || keyLower === 'd') {
+                    gameState.moveRight = false;
+                }
             });
 
             window.addEventListener('resize', handleResize);
