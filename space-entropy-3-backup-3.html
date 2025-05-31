@@ -102,22 +102,36 @@
 
         /* Styles for the combined leaderboard screen */
         #leaderboardScreen {
-            display: none; 
-            position: fixed; 
-            top: 0; 
-            left: 0; 
-            width: 100%; 
-            min-height: 100vh; 
-            background: rgba(0,0,0,0.75); /* Slightly les opaque */
-            z-index: 1000; 
-            flex-direction: column; 
-            justify-content: flex-start; 
-            align-items: center; 
-            color: white; 
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh; /* MODIFIED: Changed from min-height, or use 100% */
+            background: rgba(0,0,0,0.85); /* MODIFIED: Slightly darker like info-modal parent */
+            z-index: 1000;
+            flex-direction: column;
+            justify-content: flex-start; /* Keeps content starting from top */
+            align-items: flex-start; /* MODIFIED: Align wrapper to the start (top) */
+            color: white;
             font-family: 'Press Start 2P', cursive;
-            padding: 15px;
+            padding: 5vh 0; /* MODIFIED: Top/bottom padding for the screen, wrapper handles side margins */
             box-sizing: border-box;
-            overflow-y: auto; /* Allow scrolling if content is too tall */
+            overflow-y: auto; /* This allows the screen itself to scroll if wrapper is too tall */
+        }
+        #leaderboard-content-wrapper {
+            background: rgba(20, 20, 50, 0.85); /* Similar to info-modal's content box */
+            padding: 20px;
+            border-radius: 10px;
+            max-width: 500px; /* Adjust as needed for leaderboard content */
+            width: 90%; /* Responsive width */
+            margin: 0 auto 10vh; /* Auto horizontal margins for centering, bottom margin for scroll room */
+            text-align: center;
+            position: relative;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            align-items: center; /* Center direct children like buttons */
         }
         /* Info Button on Leaderboard - new styling for flow position */
         #leaderboardScreen .info-button-leaderboard {
@@ -1573,40 +1587,42 @@ document.addEventListener('DOMContentLoaded', function() {
 });
     </script>
     <!-- leaderboard ui -->
-<div id="leaderboardScreen" style="display: none; /* Other styles applied by CSS */">
-    <h2>GAME OVER</h2>
-    
-    <div class="score-display">
-        Score: <span id="base-score-display">0</span> + bonus (8 × <span id="bonus-bullets-display">0</span>) = <span id="final-score-display">0</span>
+    <div id="leaderboardScreen" style="display: none; /* Other styles applied by CSS */">
+        <div id="leaderboard-content-wrapper"> <!-- ADD THIS OPENING TAG -->
+            <h2>GAME OVER</h2>
+            
+            <div class="score-display">
+                Score: <span id="base-score-display">0</span> + bonus (8 × <span id="bonus-bullets-display">0</span>) = <span id="final-score-display">0</span>
+            </div>
+            
+            <div id="high-score-alert" style="display: none;">
+                <h3>NEW HIGH SCORE!</h3>
+            </div>
+            
+            <div id="high-score-form" style="display: none;">
+                <p>Enter your name (max 5 chars):</p>
+                <div style="display: flex; justify-content: center; align-items: center; margin-top: 18px;">
+                    <input type="text" id="player-name" maxlength="5" style="padding: 5px; width: 120px;">
+                    <button id="submit-score-btn" style="margin-left: 10px;">Submit</button>
+                </div>
+            </div>
+            
+            <div id="leaderboard-container" style="display: block;"> 
+                <h3>High Scores - <span id="current-month"></span></h3>
+                <div class="leaderboard-tabs">
+                    <button id="tab-desktop" class="leaderboard-tab active">Desktop</button>
+                    <button id="tab-mobile" class="leaderboard-tab">Mobile</button>
+                </div>
+                <div id="leaderboard-list">
+                    <!-- Scores will be populated here by JS -->
+                </div>
+                <div id="leaderboardTableBody\"></div> 
+                <div id="leaderboard-message" style="text-align: center; margin-top: 10px;"></div>
+            </div>
+            
+            <button id="play-again-btn">Play Again</button>
+            <button id="info-btn-leaderboard" class="info-button-leaderboard">info</button>
+        </div> <!-- ADD THIS CLOSING TAG -->
     </div>
-    
-    <div id="high-score-alert" style="display: none;">
-        <h3>NEW HIGH SCORE!</h3>
-    </div>
-    
-    <div id="high-score-form" style="display: none;">
-        <p>Enter your name (max 5 chars):</p>
-        <div style="display: flex; justify-content: center; align-items: center; margin-top: 18px;">
-            <input type="text" id="player-name" maxlength="5" style="padding: 5px; width: 120px;">
-            <button id="submit-score-btn" style="margin-left: 10px;">Submit</button>
-        </div>
-    </div>
-    
-    <div id="leaderboard-container" style="display: block;"> <!-- Initially visible, JS will hide if form is shown -->
-        <h3>High Scores - <span id="current-month"></span></h3>
-        <div class="leaderboard-tabs">
-            <button id="tab-desktop" class="leaderboard-tab active">Desktop</button>
-            <button id="tab-mobile" class="leaderboard-tab">Mobile</button>
-        </div>
-        <div id="leaderboard-list">
-            <!-- Scores will be populated here by JS -->
-        </div>
-        <div id="leaderboardTableBody"></div> <!-- Retaining for compatibility if showLeaderboard uses it directly -->
-        <div id="leaderboard-message" style="text-align: center; margin-top: 10px;"></div>
-    </div>
-    
-    <button id="play-again-btn">Play Again</button>
-    <button id="info-btn-leaderboard" class="info-button-leaderboard">info</button>
-</div>
 </body>
 </html>
