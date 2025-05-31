@@ -119,18 +119,22 @@
             box-sizing: border-box;
             overflow-y: auto; /* Allow scrolling if content is too tall */
         }
+        /* Info Button on Leaderboard - new styling for flow position */
         #leaderboardScreen .info-button-leaderboard {
-            position: absolute;
-            top: 10px;
-            padding: 5px 10px;
-            font-size: 0.8em;
-            background: rgba(255,255,255,0.15);
+            position: relative; /* Changed from absolute */
+            top: auto; /* Reset */
+            padding: 8px 18px; /* Adjusted padding */
+            font-size: 0.9em;
+            background: rgba(255,255,255,0.15); /* Keep subtle background */
             color: white;
-            border: 1px solid rgba(255, 55, 55, 0.76);
+            border: 1px solid rgba(255, 55, 55, 0.76); /* Your red border */
             border-radius: 5px;
             cursor: pointer;
             font-family: 'Press Start 2P', cursive;
-            z-index: 1005;
+            z-index: auto; /* Reset */
+            display: block; /* To allow margin auto */
+            width: fit-content;
+            margin: 10px auto 60px auto; /* Top: 10px, Right: auto, Bottom: 60px, Left: auto */
         }
         #leaderboardScreen h2 {
             font-size: 1.8em; /* Reduced */
