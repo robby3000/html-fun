@@ -143,9 +143,9 @@
             margin-bottom: 15px;
         }
         #leaderboardScreen .score-display {
-            font-size: 1.1em; /* Reduced */
+            font-size: .8 em; /* Reduced */
             margin-bottom: 15px;
-            line-height: 1.4;
+            line-height: 1.1;
             text-align: center;
         }
         #leaderboardScreen #high-score-alert h3 {
@@ -181,7 +181,7 @@
             margin-bottom: 15px;
         }
         #leaderboardScreen #leaderboard-container h3 {
-            font-size: 1em; /* Reduced */
+            font-size: .8em; /* Reduced */
             margin-bottom: 8px;
             text-align: center; 
         }
@@ -1577,7 +1577,7 @@ document.addEventListener('DOMContentLoaded', function() {
     <h2>GAME OVER</h2>
     
     <div class="score-display">
-        Score: <span id="base-score-display">0</span> + bonus: (8 × <span id="bonus-bullets-display">0</span>): <span id="final-score-display">0</span>
+        Score: <span id="base-score-display">0</span> + bonus (8 × <span id="bonus-bullets-display">0</span>) = <span id="final-score-display">0</span>
     </div>
     
     <div id="high-score-alert" style="display: none;">
@@ -1593,8 +1593,7 @@ document.addEventListener('DOMContentLoaded', function() {
     </div>
     
     <div id="leaderboard-container" style="display: block;"> <!-- Initially visible, JS will hide if form is shown -->
-        <h3>High Scores</h3><br>
-        <h3><span id="current-month"></span></h3>
+        <h3>High Scores - <span id="current-month"></span></h3>
         <div class="leaderboard-tabs">
             <button id="tab-desktop" class="leaderboard-tab active">Desktop</button>
             <button id="tab-mobile" class="leaderboard-tab">Mobile</button>
