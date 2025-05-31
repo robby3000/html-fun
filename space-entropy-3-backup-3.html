@@ -181,8 +181,9 @@
             margin-bottom: 15px;
         }
         #leaderboardScreen #leaderboard-container h3 {
-            font-size: 1.1em; /* Reduced */
+            font-size: 1em; /* Reduced */
             margin-bottom: 8px;
+            text-align: center; 
         }
         #leaderboardScreen #leaderboardTable th, /* Assuming you might add a table header later */
         #leaderboardScreen #leaderboardTable td, /* Assuming leaderboard-list might become a table */
@@ -1592,7 +1593,8 @@ document.addEventListener('DOMContentLoaded', function() {
     </div>
     
     <div id="leaderboard-container" style="display: block;"> <!-- Initially visible, JS will hide if form is shown -->
-        <h3>High Scores - <span id="current-month"></span></h3>
+        <h3>High Scores</h3><br>
+        <h3><span id="current-month"></span></h3>
         <div class="leaderboard-tabs">
             <button id="tab-desktop" class="leaderboard-tab active">Desktop</button>
             <button id="tab-mobile" class="leaderboard-tab">Mobile</button>
