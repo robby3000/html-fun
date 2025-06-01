@@ -65,10 +65,10 @@
             bottom: 0; /* Aligns to the bottom of #game-container */
             left: 50%;
             transform: translateX(-50%); /* Center the container */
-            width: 90vw; /* Width now solely determined by viewport width */
+            width: 90vw;
             max-width: 1000px;
-            height: 60vh; /* Define the vertical space for the perspective effect */
-            perspective: 600px; /* Moderately increased perspective */
+            height: 50vh; /* Define the vertical space for the perspective effect */
+            perspective: 600px;
             overflow: hidden; /* Crucial: hides the text before it enters and after it leaves */
             z-index: 1; /* Above canvas (z-index: 0), below game controls/UI */
             pointer-events: none; /* Text should not be interactive */
@@ -79,11 +79,11 @@
         #star-wars-crawl-content {
             position: absolute;
             top: 100%; /* Start fully below the container's visible area */
-            width: 125%; /* Pushing content width further */
+            width: 145%; /* Pushing content width further */
             text-align: justify; /* Classic crawl text alignment */
             color: #ffc070; /* Requested text color */
             font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; /* Common, readable sans-serif */
-            font-size: clamp(30px, 6vw, 50px); /* Even bigger responsive font size */
+            font-size: clamp(40px, 8vw, 80px); /* Even bigger responsive font size */
             font-weight: bold;
             line-height: 1.6; /* Spacing between lines */
             transform-origin: 50% 100%; /* Rotate around bottom-center for the perspective effect */
