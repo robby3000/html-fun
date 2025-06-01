@@ -65,9 +65,10 @@
             bottom: 0; /* Aligns to the bottom of #game-container */
             left: 50%;
             transform: translateX(-50%); /* Center the container */
-            width: 95vw; /* Width now solely determined by viewport width */
-            height: 55vh; /* Define the vertical space for the perspective effect */
-            perspective: 1500px; /* Moderately increased perspective */
+            width: 90vw; /* Width now solely determined by viewport width */
+            max-width: 1000px;
+            height: 60vh; /* Define the vertical space for the perspective effect */
+            perspective: 800px; /* Moderately increased perspective */
             overflow: hidden; /* Crucial: hides the text before it enters and after it leaves */
             z-index: 1; /* Above canvas (z-index: 0), below game controls/UI */
             pointer-events: none; /* Text should not be interactive */
@@ -86,7 +87,7 @@
             font-weight: bold;
             line-height: 1.6; /* Spacing between lines */
             transform-origin: 50% 100%; /* Rotate around bottom-center for the perspective effect */
-            transform: rotateX(45deg) translateY(0%); /* More extreme 3D angle */
+            transform: rotateX(55deg) translateY(0%); /* More extreme 3D angle */
             /* Animation will be applied via JS or by adding a class */
         }
 
@@ -96,7 +97,7 @@
                 transform: rotateX(45deg) translateY(0%); /* Consistent with more extreme 3D angle */
                 opacity: 1;
             }
-            70% { /* Text remains fully opaque for a good portion of its journey */
+            50% { /* Text remains fully opaque for a good portion of its journey */
                 opacity: 1;
             }
             100% {
