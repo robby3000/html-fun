@@ -66,7 +66,7 @@
             left: 50%;
             transform: translateX(-50%); /* Center the container */
             width: 95vw; /* Width now solely determined by viewport width */
-            height: 75vh; /* Define the vertical space for the perspective effect */
+            height: 55vh; /* Define the vertical space for the perspective effect */
             perspective: 1500px; /* Moderately increased perspective */
             overflow: hidden; /* Crucial: hides the text before it enters and after it leaves */
             z-index: 1; /* Above canvas (z-index: 0), below game controls/UI */
@@ -1760,14 +1760,14 @@ document.addEventListener('DOMContentLoaded', () => {
     */
     
     // Example for standalone testing of the crawl (you can remove this block later):
-    /*
+    
     setTimeout(() => {
         if (!window.crawlHasPlayed) { // Check flag before auto-starting for test
              console.log("Simulating score >= 100 for crawl test after 5s.");
              window.startStarWarsCrawl();
         }
     }, 5000); // Trigger crawl after 5 seconds for quick visual test
-    
+    /*
     // Example to test reset (you can remove this block later):
     setTimeout(() => {
         console.log("Simulating game reset after 15s to test crawl reset.");
