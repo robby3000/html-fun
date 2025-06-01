@@ -73,6 +73,7 @@
             z-index: 1; /* Above canvas (z-index: 0), below game controls/UI (e.g., z-index: 10+) */
             pointer-events: none; /* Text should not be interactive */
             display: none; /* Initially hidden, will be shown by JavaScript */
+            /* CSS Mask removed, opacity will be handled by the animation */
         }
 
         #star-wars-crawl-content {
@@ -93,15 +94,15 @@
         /* The actual animation for the crawl */
         @keyframes crawlAnimation {
             0% {
-                transform: rotateX(55deg) translateY(0%); /* Starts at the bottom, tilted */
+                transform: rotateX(55deg) translateY(0%);
                 opacity: 1;
             }
-            85% { /* Point where text is still fully visible before starting to fade */
+            70% { /* Text remains fully opaque for a good portion of its journey */
                 opacity: 1;
             }
-            100% { /* Text has crawled off into the distance and faded out */
-                transform: rotateX(55deg) translateY(-250%); /* Adjust -250% based on text length and desired speed/duration */
-                opacity: 0;
+            100% {
+                transform: rotateX(55deg) translateY(-350%); /* Travels far into the distance */
+                opacity: 0; /* Fades out completely as it reaches its furthest point */
             }
         }
         /* Star Wars Crawl CSS - END */
@@ -918,6 +919,11 @@
         function updateScoreUI(points = GAME_CONSTANTS.NORMAL_ENEMY_SCORE) {
             gameState.score += points;
             domElements.scoreDisplay.textContent = gameState.score;
+
+            // Check for Star Wars Crawl trigger
+            if (gameState.score >= 100 && !window.crawlHasPlayed) {
+                window.startStarWarsCrawl();
+            }
             
             if (gameState.health < GAME_CONSTANTS.MAX_HEALTH && gameState.score >= gameState.lastLifeGainedAtScore + GAME_CONSTANTS.EXTRA_LIFE_SCORE_THRESHOLD) {
                 gameState.health++;
@@ -1697,7 +1703,7 @@ document.addEventListener('DOMContentLoaded', () => {
     window.crawlHasPlayed = false; // Global flag, accessible from your game logic
 
     // Shortened placeholder text for the crawl
-    const placeholderCrawlText = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.\n\nUt enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.";
+    const placeholderCrawlText = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.\n\nUt enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.\n\nUt enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.\n\nUt enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.";
 
     window.startStarWarsCrawl = function() {
         if (!crawlContainer || !crawlContent) {
@@ -1712,9 +1718,18 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log("Starting Star Wars crawl...");
         crawlContent.innerHTML = placeholderCrawlText.replace(/\n/g, '<br><br>');
         crawlContainer.style.display = 'block';
-        // Ensure 'crawlAnimation' matches your @keyframes name in CSS
-        // Adjust '60s' (60 seconds) duration as needed for readability and text length
-        crawlContent.style.animation = 'crawlAnimation 60s linear forwards'; 
+
+        // --- Dynamic Animation Duration --- 
+        const pixelsPerSecond = 15; // Adjust this value to control scroll speed (lower = slower)
+        // Ensure content is visible to get accurate scrollHeight, then hide if needed before animation starts
+        // (though display:block should be fine here as it's positioned absolutely)
+        const contentHeight = crawlContent.scrollHeight;
+        const animationDurationSeconds = contentHeight / pixelsPerSecond;
+
+        console.log(`Content height: ${contentHeight}px, Calculated duration: ${animationDurationSeconds.toFixed(2)}s`);
+
+        // Apply the animation with dynamic duration
+        crawlContent.style.animation = `crawlAnimation ${animationDurationSeconds}s linear forwards`; 
         window.crawlHasPlayed = true;
     };
 
@@ -1746,14 +1761,14 @@ document.addEventListener('DOMContentLoaded', () => {
     */
     
     // Example for standalone testing of the crawl (you can remove this block later):
-    
+    /*
     setTimeout(() => {
         if (!window.crawlHasPlayed) { // Check flag before auto-starting for test
              console.log("Simulating score >= 100 for crawl test after 5s.");
              window.startStarWarsCrawl();
         }
     }, 5000); // Trigger crawl after 5 seconds for quick visual test
-    /*
+    
     // Example to test reset (you can remove this block later):
     setTimeout(() => {
         console.log("Simulating game reset after 15s to test crawl reset.");
