@@ -65,12 +65,11 @@
             bottom: 0; /* Aligns to the bottom of #game-container */
             left: 50%;
             transform: translateX(-50%); /* Center the container */
-            width: 95vw; /* Further increased responsive width */
-            max-width: 1200px; /* Increased max width */
+            width: 95vw; /* Width now solely determined by viewport width */
             height: 75vh; /* Define the vertical space for the perspective effect */
-            perspective: 450px; /* Adjust for more or less dramatic perspective */
+            perspective: 1500px; /* Moderately increased perspective */
             overflow: hidden; /* Crucial: hides the text before it enters and after it leaves */
-            z-index: 1; /* Above canvas (z-index: 0), below game controls/UI (e.g., z-index: 10+) */
+            z-index: 1; /* Above canvas (z-index: 0), below game controls/UI */
             pointer-events: none; /* Text should not be interactive */
             display: none; /* Initially hidden, will be shown by JavaScript */
             /* CSS Mask removed, opacity will be handled by the animation */
@@ -79,7 +78,7 @@
         #star-wars-crawl-content {
             position: absolute;
             top: 100%; /* Start fully below the container's visible area */
-            width: 100%;
+            width: 125%; /* Pushing content width further */
             text-align: justify; /* Classic crawl text alignment */
             color: #ffc070; /* Requested text color */
             font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; /* Common, readable sans-serif */
@@ -87,21 +86,21 @@
             font-weight: bold;
             line-height: 1.6; /* Spacing between lines */
             transform-origin: 50% 100%; /* Rotate around bottom-center for the perspective effect */
-            transform: rotateX(55deg) translateY(0%); /* Initial tilt and starting position */
+            transform: rotateX(45deg) translateY(0%); /* More extreme 3D angle */
             /* Animation will be applied via JS or by adding a class */
         }
 
         /* The actual animation for the crawl */
         @keyframes crawlAnimation {
             0% {
-                transform: rotateX(55deg) translateY(0%);
+                transform: rotateX(45deg) translateY(0%); /* Consistent with more extreme 3D angle */
                 opacity: 1;
             }
             70% { /* Text remains fully opaque for a good portion of its journey */
                 opacity: 1;
             }
             100% {
-                transform: rotateX(55deg) translateY(-350%); /* Travels far into the distance */
+                transform: rotateX(45deg) translateY(-350%); /* Consistent with more extreme 3D angle */
                 opacity: 0; /* Fades out completely as it reaches its furthest point */
             }
         }
