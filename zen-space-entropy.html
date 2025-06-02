@@ -1826,8 +1826,22 @@ document.addEventListener('DOMContentLoaded', () => {
     if (openWriteModalButton) {
         openWriteModalButton.addEventListener('click', openWriteModal);
     }
+    function handleCloseModalButtonClick() {
+        const textsProcessed = processAndStoreCrawlTexts();
+        if (textsProcessed) {
+            console.log('Processing texts from close action:', crawlTexts);
+            initiateStarWarsCrawlSequence(crawlTexts);
+        } else {
+            console.log('No valid text to process from close action. Crawl will not play.');
+            if(crawlContainer) crawlContainer.style.display = 'none';
+            window.crawlHasPlayed = true;
+            isCrawlSequenceActive = false;
+        }
+        closeWriteModal();
+    }
+
     if (closeWriteModalButton) {
-        closeWriteModalButton.addEventListener('click', closeWriteModal);
+        closeWriteModalButton.addEventListener('click', handleCloseModalButtonClick);
     }
     if (newTextBlockButton) {
         newTextBlockButton.addEventListener('click', () => addTextBlock(false));
@@ -1842,6 +1856,38 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
     updateSaveButtonState(); // Call initially to set state
+
+    function processAndStoreCrawlTexts() {
+        crawlTexts = []; // Clear previous texts
+        const textareas = textBlocksContainer.getElementsByTagName('textarea');
+        let validTextsFound = false;
+        for (let i = 0; i < textareas.length; i++) {
+            const text = textareas[i].value.trim();
+            if (text.length > 0 && text.length <= MAX_CHARS_PER_BLOCK) {
+                crawlTexts.push(text);
+                validTextsFound = true;
+            }
+        }
+        return validTextsFound;
+    }
+
+    function downloadCrawlTexts(texts, filename) {
+        if (!texts || texts.length === 0) {
+            console.log("No texts to download.");
+            return;
+        }
+        const content = texts.join('\n\n--------------------\n\n');
+        const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename || 'crawl_texts.txt';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        console.log('Crawl texts download initiated.');
+    }
 
     function updateSaveButtonState() {
         if (!saveCrawlTextButton || !textBlocksContainer) return;
@@ -1870,30 +1916,24 @@ document.addEventListener('DOMContentLoaded', () => {
         saveCrawlTextButton.style.cursor = saveCrawlTextButton.disabled ? 'not-allowed' : 'pointer';
     }
 
-    function saveCrawlText() {
-        crawlTexts = [];
-        const textareas = textBlocksContainer.getElementsByTagName('textarea');
-        for (let i = 0; i < textareas.length; i++) {
-            const text = textareas[i].value.trim();
-            if (text.length > 0 && text.length <= MAX_CHARS_PER_BLOCK) {
-                crawlTexts.push(text);
-            }
-        }
+    function handleSaveButtonClick() {
+        const textsProcessed = processAndStoreCrawlTexts();
 
-        if (crawlTexts.length > 0) {
-            console.log('Processing saved crawl texts:', crawlTexts);
-            initiateStarWarsCrawlSequence(crawlTexts); // Initiate new crawl sequence
-            closeWriteModal();
+        if (textsProcessed) {
+            console.log('Processing texts for save and download:', crawlTexts);
+            downloadCrawlTexts(crawlTexts, 'star_wars_crawl.txt');
+            initiateStarWarsCrawlSequence(crawlTexts);
         } else {
-            console.log('No valid text to save for crawl. Crawl will not play.');
-            // Ensure crawl doesn't play if no text is saved
+            console.log('No valid text to save, download, or animate. Crawl will not play.');
             if(crawlContainer) crawlContainer.style.display = 'none';
-            window.crawlHasPlayed = true; // Mark as 'played' (or rather, 'attempted and nothing to show')
+            window.crawlHasPlayed = true; 
+            isCrawlSequenceActive = false;
         }
+        closeWriteModal();
     }
 
     if (saveCrawlTextButton) {
-        saveCrawlTextButton.addEventListener('click', saveCrawlText);
+        saveCrawlTextButton.addEventListener('click', handleSaveButtonClick);
     }
 
     function playNextCrawlBlock() {
