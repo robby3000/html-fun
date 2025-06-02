@@ -411,7 +411,29 @@
             <p style="font-size: 12px; line-height: 1.8;">Shoot down the enemy spaceships. Keep an eye on your laser cannon ammo count at the top right, you get 2 more shots with every enemy spaceship that spawns. </p>
             <p style="font-size: 12px; line-height: 1.8;">The goal is to use this game as mind training therapy, and to be an extreme badass space hero. The continued existence of the universe is all down to your skill. </p>
             <p style="font-size: 12px; line-height: 1.8; margin-bottom: 20px;">Good luck!</p>
+            <p style="font-size: 12px; margin-top: 20px; margin-bottom: 10px; color: #ccc;">Click 'Write' to change the animated text.</p>
+            <button id="open-write-modal-button" style="padding: 5px 15px; background: #FFD700; color: black; border: none; border-radius: 5px; cursor: pointer; margin-top: 10px; font-family: 'Press Start 2P', cursive; font-size: 12px; position: relative; z-index: 1001;">Write</button>
             <button id="close-modal" style="padding: 5px 15px; background: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer; margin-top: 20px; font-family: 'Press Start 2P', cursive; font-size: 12px; position: relative; z-index: 1001;">Close</button>
+        </div>
+    </div>
+
+    <!-- Write Modal HTML -->
+    <div id="write-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.95); z-index: 2001; justify-content: center; align-items: center; flex-direction: column; overflow-y: auto; padding: 20px; box-sizing: border-box;">
+        <div style="background: rgba(30, 30, 50, 0.95); padding: 25px; border-radius: 10px; max-width: 600px; width: 90%; text-align: center; color: white; position: relative; box-sizing: border-box;">
+            <h2 style="font-family: 'Press Start 2P', cursive; font-size: 24px; margin-top: 0; margin-bottom: 10px; color: #FFE81F;">WRITE</h2>
+            <p style="font-family: 'Press Start 2P', cursive; font-size: 12px; margin-bottom: 15px; color: #ccc;">Craft your Star Wars intro</p>
+            <p style="font-size: 11px; margin-bottom: 20px; color: #aaa; font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;">500 characters max per text block. Up to 10 blocks.</p>
+            
+            <div id="text-blocks-container" style="margin-bottom: 20px; max-height: 40vh; overflow-y: auto; padding-right: 10px; /* For scrollbar */">
+                <!-- Text blocks will be added here by JavaScript -->
+            </div>
+            
+            <button id="new-text-block-button" style="padding: 8px 15px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; margin-bottom:20px; font-family: 'Press Start 2P', cursive; font-size: 10px;">New block</button>
+            
+            <div style="margin-top: 20px;">
+                <button id="save-crawl-text-button" style="padding: 10px 20px; background: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer; font-family: 'Press Start 2P', cursive; font-size: 12px; margin-right: 10px;">Save</button>
+                <button id="close-write-modal-button" style="padding: 10px 20px; background: #dc3545; color: white; border: none; border-radius: 5px; cursor: pointer; font-family: 'Press Start 2P', cursive; font-size: 12px;">Close</button>
+            </div>
         </div>
     </div>
     
@@ -1702,33 +1724,246 @@ document.addEventListener('DOMContentLoaded', () => {
     const crawlContainer = document.getElementById('star-wars-crawl-container');
     const crawlContent = document.getElementById('star-wars-crawl-content');
     window.crawlHasPlayed = false; // Global flag, accessible from your game logic
+    // --- Write Modal Logic ---
+    const writeModal = document.getElementById('write-modal');
+    const openWriteModalButton = document.getElementById('open-write-modal-button');
+    const closeWriteModalButton = document.getElementById('close-write-modal-button');
+    const textBlocksContainer = document.getElementById('text-blocks-container');
+    const newTextBlockButton = document.getElementById('new-text-block-button');
+    const saveCrawlTextButton = document.getElementById('save-crawl-text-button');
+    const infoModal = document.getElementById('info-modal'); // Already used elsewhere, but good to have here.
 
-    // Shortened placeholder text for the crawl
-    const placeholderCrawlText = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam. (almost 500)";
+    let textBlockCount = 0;
+    const MAX_BLOCKS = 10;
+    const MAX_CHARS_PER_BLOCK = 500;
+    let crawlTexts = []; // To store saved texts
+    const fixedAnimationDurationSeconds = 45.0; // Duration for each crawl block
+    let currentCrawlBlockIndex = 0;
+    let activeCrawlTexts = [];
+    let animationEndHandler; // To store the event handler function for removal
 
-    window.startStarWarsCrawl = function() {
-        if (!crawlContainer || !crawlContent) {
-            console.error("Star Wars crawl elements not found! Ensure HTML is correct.");
+    function createTextBlockElement() {
+        textBlockCount++;
+        const blockId = `text-block-${textBlockCount}`;
+        const textAreaId = `textarea-${textBlockCount}`;
+        const charCountId = `char-count-${textBlockCount}`;
+
+        const blockDiv = document.createElement('div');
+        blockDiv.id = blockId;
+        blockDiv.style.marginBottom = '15px';
+        blockDiv.style.padding = '10px';
+        blockDiv.style.border = '1px solid #555';
+        blockDiv.style.borderRadius = '5px';
+        blockDiv.style.background = 'rgba(0,0,0,0.2)';
+
+        const textarea = document.createElement('textarea');
+        textarea.id = textAreaId;
+        textarea.style.width = '100%';
+        textarea.style.minHeight = '80px';
+        textarea.style.boxSizing = 'border-box';
+        textarea.style.background = '#222';
+        textarea.style.color = '#eee';
+        textarea.style.border = '1px solid #444';
+        textarea.style.padding = '8px';
+        textarea.style.fontFamily = 'system-ui, sans-serif';
+        textarea.setAttribute('maxlength', MAX_CHARS_PER_BLOCK.toString());
+        textarea.placeholder = `Block ${textBlockCount} text...`;
+
+        const charCounter = document.createElement('div');
+        charCounter.id = charCountId;
+        charCounter.style.fontSize = '10px';
+        charCounter.style.textAlign = 'right';
+        charCounter.style.color = '#aaa';
+        charCounter.style.marginTop = '5px';
+        charCounter.textContent = `0 / ${MAX_CHARS_PER_BLOCK}`;
+
+        textarea.addEventListener('input', () => {
+            const currentLength = textarea.value.length;
+            charCounter.textContent = `${currentLength} / ${MAX_CHARS_PER_BLOCK}`;
+            if (currentLength > MAX_CHARS_PER_BLOCK) {
+                charCounter.style.color = 'red';
+            } else {
+                charCounter.style.color = '#aaa';
+            }
+            updateSaveButtonState();
+        });
+
+        blockDiv.appendChild(textarea);
+        blockDiv.appendChild(charCounter);
+        return blockDiv;
+    }
+
+    function addTextBlock(isInitialBlock = false) {
+        if (textBlockCount >= MAX_BLOCKS) {
+            newTextBlockButton.style.display = 'none'; // Hide button if max blocks reached
             return;
         }
-        if (window.crawlHasPlayed) {
-            // console.log("Crawl has already played this session.");
+        
+        const newBlockElement = createTextBlockElement();
+        textBlocksContainer.appendChild(newBlockElement);
+
+        if (textBlockCount >= MAX_BLOCKS) {
+            newTextBlockButton.style.display = 'none';
+        } else {
+            newTextBlockButton.style.display = 'inline-block';
+        }
+        updateSaveButtonState();
+    }
+
+    function openWriteModal() {
+        if (infoModal) infoModal.style.display = 'none';
+        writeModal.style.display = 'flex'; // Use flex to center content
+        if (textBlocksContainer.children.length === 0) { // Only add initial block if container is empty
+            addTextBlock(true);
+        }
+    }
+
+    function closeWriteModal() {
+        writeModal.style.display = 'none';
+    }
+
+    if (openWriteModalButton) {
+        openWriteModalButton.addEventListener('click', openWriteModal);
+    }
+    if (closeWriteModalButton) {
+        closeWriteModalButton.addEventListener('click', closeWriteModal);
+    }
+    if (newTextBlockButton) {
+        newTextBlockButton.addEventListener('click', () => addTextBlock(false));
+    }
+
+    // Initial state for newTextBlockButton and save button
+    if (newTextBlockButton) {
+      if (textBlockCount >= MAX_BLOCKS) {
+          newTextBlockButton.style.display = 'none';
+      } else {
+          newTextBlockButton.style.display = 'inline-block';
+      }
+    }
+    updateSaveButtonState(); // Call initially to set state
+
+    function updateSaveButtonState() {
+        if (!saveCrawlTextButton || !textBlocksContainer) return;
+
+        const textareas = textBlocksContainer.getElementsByTagName('textarea');
+        let allTextsValid = true;
+        let atLeastOneNonEmptyBlock = false;
+
+        if (textareas.length === 0) {
+            allTextsValid = false; // No blocks to save
+        } else {
+            for (let i = 0; i < textareas.length; i++) {
+                const text = textareas[i].value;
+                if (text.length > MAX_CHARS_PER_BLOCK) {
+                    allTextsValid = false;
+                    break;
+                }
+                if (text.trim().length > 0) {
+                    atLeastOneNonEmptyBlock = true;
+                }
+            }
+        }
+        
+        saveCrawlTextButton.disabled = !(allTextsValid && atLeastOneNonEmptyBlock);
+        saveCrawlTextButton.style.opacity = saveCrawlTextButton.disabled ? 0.5 : 1;
+        saveCrawlTextButton.style.cursor = saveCrawlTextButton.disabled ? 'not-allowed' : 'pointer';
+    }
+
+    function saveCrawlText() {
+        crawlTexts = [];
+        const textareas = textBlocksContainer.getElementsByTagName('textarea');
+        for (let i = 0; i < textareas.length; i++) {
+            const text = textareas[i].value.trim();
+            if (text.length > 0 && text.length <= MAX_CHARS_PER_BLOCK) {
+                crawlTexts.push(text);
+            }
+        }
+
+        if (crawlTexts.length > 0) {
+            console.log('Processing saved crawl texts:', crawlTexts);
+            initiateStarWarsCrawlSequence(crawlTexts); // Initiate new crawl sequence
+            closeWriteModal();
+        } else {
+            console.log('No valid text to save for crawl. Crawl will not play.');
+            // Ensure crawl doesn't play if no text is saved
+            if(crawlContainer) crawlContainer.style.display = 'none';
+            window.crawlHasPlayed = true; // Mark as 'played' (or rather, 'attempted and nothing to show')
+        }
+    }
+
+    if (saveCrawlTextButton) {
+        saveCrawlTextButton.addEventListener('click', saveCrawlText);
+    }
+
+    function playNextCrawlBlock() {
+        if (!crawlContainer || !crawlContent) return;
+
+        if (currentCrawlBlockIndex >= activeCrawlTexts.length) {
+            console.log('All crawl blocks have played.');
+            crawlContainer.style.display = 'none';
+            window.crawlHasPlayed = true;
+            if (animationEndHandler) {
+                crawlContent.removeEventListener('animationend', animationEndHandler);
+            }
             return;
         }
 
-        console.log("Starting Star Wars crawl...");
-        crawlContent.innerHTML = placeholderCrawlText.replace(/\n/g, '<br><br>');
+        const currentText = activeCrawlTexts[currentCrawlBlockIndex];
+        console.log(`Playing crawl block ${currentCrawlBlockIndex + 1}: "${currentText.substring(0,30)}..."`);
+        crawlContent.innerHTML = currentText.replace(/\n/g, '<br><br>');
         crawlContainer.style.display = 'block';
 
-        // --- Fixed Animation Duration --- 
-        const fixedAnimationDurationSeconds = 45.0; // All crawls will take 35 seconds
+        // Reset and restart animation
+        crawlContent.style.animation = 'none';
+        void crawlContent.offsetWidth; // Trigger reflow
+        crawlContent.style.animation = `crawlAnimation ${fixedAnimationDurationSeconds}s linear forwards`;
 
-        console.log(`Applying fixed animation duration: ${fixedAnimationDurationSeconds.toFixed(2)}s`);
+        currentCrawlBlockIndex++;
+    }
 
-        // Apply the animation with fixed duration
-        crawlContent.style.animation = `crawlAnimation ${fixedAnimationDurationSeconds}s linear forwards`; 
-        window.crawlHasPlayed = true;
+    animationEndHandler = playNextCrawlBlock; // Assign the handler
+
+    function initiateStarWarsCrawlSequence(textsToPlay) {
+        if (!textsToPlay || textsToPlay.length === 0) {
+            console.log("No texts provided for crawl sequence.");
+            if (crawlContainer) crawlContainer.style.display = 'none';
+            window.crawlHasPlayed = true; // No crawl will occur
+            return;
+        }
+        console.log("Initiating new Star Wars crawl sequence.");
+        activeCrawlTexts = [...textsToPlay];
+        currentCrawlBlockIndex = 0;
+        window.crawlHasPlayed = false; // Allow this new sequence to play
+
+        if (crawlContent) {
+            // Remove any existing listener before adding a new one
+            if (animationEndHandler) {
+                crawlContent.removeEventListener('animationend', animationEndHandler);
+            }
+            crawlContent.addEventListener('animationend', animationEndHandler);
+        }
+        playNextCrawlBlock(); // Start the first block
+    }
+
+    // This function is typically called when the game starts.
+    // It now triggers the sequence based on saved texts.
+    window.startStarWarsCrawl = function() {
+        if (window.crawlHasPlayed) {
+            console.log("Crawl sequence has already completed or is in progress.");
+            return;
+        }
+        if (crawlTexts && crawlTexts.length > 0) {
+            console.log("Game start: Triggering saved Star Wars crawl sequence.");
+            initiateStarWarsCrawlSequence(crawlTexts);
+        } else {
+            console.log("Game start: No saved crawl text. Crawl will not play.");
+            if (crawlContainer) crawlContainer.style.display = 'none';
+            window.crawlHasPlayed = true; // Mark as 'nothing to play'
+        }
     };
+
+    // Placeholder text is no longer directly used by startStarWarsCrawl, but keep for reference or other uses if any.
+    const placeholderCrawlText = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam. (almost 500)";
 
     window.resetStarWarsCrawl = function() {
         console.log("Resetting Star Wars crawl state.");
