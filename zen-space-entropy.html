@@ -398,6 +398,7 @@
         <img src="images/space-tank-battle-800.png" alt="Space Tank Battle Preview" style="max-width: 80%; max-height: 40vh; height: auto; border-radius: 5px; margin: 0 0 30px; border: 2px solid #4CAF50; box-shadow: 0 0 15px rgba(76, 175, 80, 0.5);">
         <button id="start-btn" style="margin-bottom: 20px; padding: 10px 30px; font-size: 16px; background: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer; box-shadow: 0 0 10px rgba(76, 175, 80, 0.5); font-family: 'Press Start 2P', cursive;">Start Game</button>
         <button id="info-btn-start" style="padding: 5px 15px; font-size: 12px; background: rgba(255,255,255,0.2); color: white; border: none; border-radius: 5px; cursor: pointer; font-family: 'Press Start 2P', cursive;">info</button>
+        <button id="open-write-modal-button" style="margin-top: 20px; padding: 10px 30px; font-size: 16px; background: #FFD700; color: black; border: none; border-radius: 5px; cursor: pointer; box-shadow: 0 0 10px rgba(255, 215, 0, 0.5); font-family: 'Press Start 2P', cursive;">Write Your Story</button>
     </div>
     
     <!-- Old game-over div removed -->
@@ -411,8 +412,6 @@
             <p style="font-size: 12px; line-height: 1.8;">Shoot down the enemy spaceships. Keep an eye on your laser cannon ammo count at the top right, you get 2 more shots with every enemy spaceship that spawns. </p>
             <p style="font-size: 12px; line-height: 1.8;">The goal is to use this game as mind training therapy, and to be an extreme badass space hero. The continued existence of the universe is all down to your skill. </p>
             <p style="font-size: 12px; line-height: 1.8; margin-bottom: 20px;">Good luck!</p>
-            <p style="font-size: 12px; margin-top: 20px; margin-bottom: 10px; color: #ccc;">Click 'Write' to change the animated text.</p>
-            <button id="open-write-modal-button" style="padding: 5px 15px; background: #FFD700; color: black; border: none; border-radius: 5px; cursor: pointer; margin-top: 10px; font-family: 'Press Start 2P', cursive; font-size: 12px; position: relative; z-index: 1001;">Write</button>
             <button id="close-modal" style="padding: 5px 15px; background: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer; margin-top: 20px; font-family: 'Press Start 2P', cursive; font-size: 12px; position: relative; z-index: 1001;">Close</button>
         </div>
     </div>
@@ -1932,21 +1931,101 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             let currentHtml = document.documentElement.outerHTML;
             writeModal.style.display = originalModalDisplay; // Restore modal display for current session
-            const crawlTextsJSON = JSON.stringify(crawlTexts); 
-            // Regex to find 'let crawlTexts = ... ; // comment'
-            // It captures: (1) 'let crawlTexts = ' 
-            //             (2) the existing array content (which we discard)
-            //             (3) '; // any comment'
-            const regex = /(let\s+crawlTexts\s*=\s*)(?:[^;]+)(\s*;\s*\/\/.*)/m;
+
+            // --- Reset Game State and UI for Saved File ---
+            const defaultGameStateValues = {
+                score: 0,
+                health: 'GAME_CONSTANTS.INITIAL_HEALTH',
+                enemies: [],
+                bullets: [],
+                enemyBullets: [],
+                gameOver: false,
+                gameStarted: false,
+                lastEnemySpawnTime: 0,
+                bulletCount: 'GAME_CONSTANTS.INITIAL_BULLET_COUNT',
+                lastLifeGainedAtScore: 0,
+                silverEnemyActive: false,
+                silverEnemyTimer: 0,
+                nextSilverEnemyScore: 'GAME_CONSTANTS.SILVER_ENEMY_BASE_SCORE_TRIGGER',
+            };
+
+            // --- Nuke and Rebuild gameState --- 
+            const defaultGameStateString = `const gameState = {
+                score: 0,
+                health: GAME_CONSTANTS.INITIAL_HEALTH,
+                enemies: [],
+                bullets: [],
+                enemyBullets: [],
+                gameOver: false,
+                gameStarted: false,
+                moveLeft: false,
+                moveRight: false,
+                lastEnemySpawnTime: 0,
+                bulletCount: GAME_CONSTANTS.INITIAL_BULLET_COUNT,
+                lastLifeGainedAtScore: 0,
+                silverEnemyActive: false,
+                silverEnemyTimer: 0,
+                silverEnemyDirection: 1, // Default direction
+                nextSilverEnemyScore: GAME_CONSTANTS.SILVER_ENEMY_BASE_SCORE_TRIGGER,
+            };`;
+
+            const gameStateRegex = /(const\s+gameState\s*=\s*{[\s\S]*?};)/m;
+            if (gameStateRegex.test(currentHtml)) {
+                currentHtml = currentHtml.replace(gameStateRegex, defaultGameStateString);
+                console.log('gameState object completely reset in HTML for download.');
+            } else {
+                console.error('Could not find the gameState object definition to replace it. HTML will be saved with potentially old game state.');
+                // As a fallback, attempt individual critical resets if the full block replacement fails
+                // This is less ideal but better than nothing if the main regex fails.
+                currentHtml = currentHtml.replace(/(score\s*:\s*)[^,}]+(?=[,}])/m, '$10');
+                currentHtml = currentHtml.replace(/(gameOver\s*:\s*)[^,}]+(?=[,}])/m, '$1false');
+                currentHtml = currentHtml.replace(/(gameStarted\s*:\s*)[^,}]+(?=[,}])/m, '$1false');
+                currentHtml = currentHtml.replace(/(health\s*:\s*)[^,}]+(?=[,}])/m, '$1GAME_CONSTANTS.INITIAL_HEALTH');
+                currentHtml = currentHtml.replace(/(enemies\s*:\s*)\[[\s\S]*?\](?=[,}])/m, '$1[]'); // Reset enemies array
+                currentHtml = currentHtml.replace(/(bullets\s*:\s*)\[[\s\S]*?\](?=[,}])/m, '$1[]'); // Reset bullets array
+                currentHtml = currentHtml.replace(/(enemyBullets\s*:\s*)\[[\s\S]*?\](?=[,}])/m, '$1[]'); // Reset enemyBullets array
+            }
+
+            currentHtml = currentHtml.replace(/(window\.crawlHasPlayed\s*=\s*)[^;]+;/m, '$1false;');
+            currentHtml = currentHtml.replace(/(isCrawlSequenceActive\s*=\s*)[^;]+;/m, '$1false;');
+
+            // Reset UI screen visibility
+            // For gameOverScreen: ensure display:none
+            currentHtml = currentHtml.replace(/(id="game-over"[^>]*)(>)/m, (match, elementTag, endBracket) => {
+                if (elementTag.includes('style="')) {
+                    return elementTag.replace(/(style=")([^"*]*)(")/m, (styleMatch, styleP1, styleP2, styleP3) => {
+                        let styles = styleP2.replace(/display\s*:[^;]+;?/gi, '').trim();
+                        if (styles && !styles.endsWith(';')) styles += ';';
+                        return `${styleP1}${styles}display:none;${styleP3}${endBracket}`;
+                    });
+                } else {
+                    return `${elementTag} style="display:none;"${endBracket}`;
+                }
+            });
+
+            // For startScreen: ensure display:flex (or its default visible state)
+            currentHtml = currentHtml.replace(/(id="start-screen"[^>]*)(>)/m, (match, elementTag, endBracket) => {
+                if (elementTag.includes('style="')) {
+                    return elementTag.replace(/(style=")([^"*]*)(")/m, (styleMatch, styleP1, styleP2, styleP3) => {
+                        let styles = styleP2.replace(/display\s*:[^;]+;?/gi, '').trim();
+                        if (styles && !styles.endsWith(';')) styles += ';';
+                        return `${styleP1}${styles}display:flex;${styleP3}${endBracket}`; // Assuming flex for visibility
+                    });
+                } else {
+                    return `${elementTag} style="display:flex;"${endBracket}`; // Assuming flex for visibility
+                }
+            });
+            // --- End Reset Game State and UI ---
+
+            const crawlTextsJSON = JSON.stringify(crawlTexts);
+            const crawlEmbedRegex = /(let\s+crawlTexts\s*=\s*)(?:[^;]+)(\s*;\s*\/\/.*)/m;
             const newCrawlTextsInitialization = `$1${crawlTextsJSON}$2`;
 
-            if (regex.test(currentHtml)) {
-                currentHtml = currentHtml.replace(regex, newCrawlTextsInitialization);
+            if (crawlEmbedRegex.test(currentHtml)) {
+                currentHtml = currentHtml.replace(crawlEmbedRegex, newCrawlTextsInitialization);
                 console.log('Crawl texts embedded into HTML for download.');
             } else {
-                console.error('Could not find crawlTexts initialization line in HTML to embed saved texts. HTML will be saved without updated texts embedded.');
-                // Fallback: attempt to save HTML as-is, or alert user.
-                // For now, we'll proceed but the downloaded HTML might not have the texts perfectly embedded if regex fails.
+                console.error('Could not find crawlTexts initialization line in HTML to embed saved texts.');
             }
 
             const blob = new Blob([currentHtml], { type: 'text/html;charset=utf-8' });
