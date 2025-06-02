@@ -1741,6 +1741,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentCrawlBlockIndex = 0;
     let activeCrawlTexts = [];
     let animationEndHandler; // To store the event handler function for removal
+    let isCrawlSequenceActive = false; // Flag to indicate if a crawl sequence is currently playing
 
     function createTextBlockElement() {
         textBlockCount++;
@@ -1896,12 +1897,15 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function playNextCrawlBlock() {
+        console.log('[CRAWL DEBUG] playNextCrawlBlock called. Current Index:', currentCrawlBlockIndex, 'Active Texts:', activeCrawlTexts.length);
+        // console.trace('[CRAWL DEBUG] playNextCrawlBlock trace');
         if (!crawlContainer || !crawlContent) return;
 
         if (currentCrawlBlockIndex >= activeCrawlTexts.length) {
             console.log('All crawl blocks have played.');
             crawlContainer.style.display = 'none';
             window.crawlHasPlayed = true;
+            isCrawlSequenceActive = false; // Sequence is no longer active
             if (animationEndHandler) {
                 crawlContent.removeEventListener('animationend', animationEndHandler);
             }
@@ -1924,16 +1928,20 @@ document.addEventListener('DOMContentLoaded', () => {
     animationEndHandler = playNextCrawlBlock; // Assign the handler
 
     function initiateStarWarsCrawlSequence(textsToPlay) {
+        console.log('[CRAWL DEBUG] initiateStarWarsCrawlSequence called. Texts to play:', textsToPlay ? textsToPlay.length : 0);
+        console.trace('[CRAWL DEBUG] initiateStarWarsCrawlSequence trace');
         if (!textsToPlay || textsToPlay.length === 0) {
             console.log("No texts provided for crawl sequence.");
             if (crawlContainer) crawlContainer.style.display = 'none';
             window.crawlHasPlayed = true; // No crawl will occur
+            isCrawlSequenceActive = false; // Ensure flag is false if no sequence starts
             return;
         }
         console.log("Initiating new Star Wars crawl sequence.");
         activeCrawlTexts = [...textsToPlay];
         currentCrawlBlockIndex = 0;
         window.crawlHasPlayed = false; // Allow this new sequence to play
+        isCrawlSequenceActive = true;   // Mark sequence as active
 
         if (crawlContent) {
             // Remove any existing listener before adding a new one
@@ -1948,6 +1956,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // This function is typically called when the game starts.
     // It now triggers the sequence based on saved texts.
     window.startStarWarsCrawl = function() {
+        console.log('[CRAWL DEBUG] window.startStarWarsCrawl called. crawlHasPlayed:', window.crawlHasPlayed, 'isCrawlSequenceActive:', isCrawlSequenceActive, 'Saved crawlTexts:', crawlTexts.length);
+        // console.trace('[CRAWL DEBUG] window.startStarWarsCrawl trace'); // Keep trace for deeper debug if needed, but log is often enough
+
+        if (isCrawlSequenceActive) {
+            console.log('[CRAWL DEBUG] startStarWarsCrawl: Sequence already active. Exiting.');
+            return;
+        }
         if (window.crawlHasPlayed) {
             console.log("Crawl sequence has already completed or is in progress.");
             return;
@@ -1966,8 +1981,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const placeholderCrawlText = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam. (almost 500)";
 
     window.resetStarWarsCrawl = function() {
+        console.log('[CRAWL DEBUG] window.resetStarWarsCrawl called.');
+        console.trace('[CRAWL DEBUG] window.resetStarWarsCrawl trace');
         console.log("Resetting Star Wars crawl state.");
         window.crawlHasPlayed = false;
+        isCrawlSequenceActive = false; // Also reset this flag
         if (crawlContainer) {
             crawlContainer.style.display = 'none';
         }
