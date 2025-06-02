@@ -1743,7 +1743,28 @@ document.addEventListener('DOMContentLoaded', () => {
     let animationEndHandler; // To store the event handler function for removal
     let isCrawlSequenceActive = false; // Flag to indicate if a crawl sequence is currently playing
 
-    function createTextBlockElement() {
+    function populateWriteModalFromSavedTexts() {
+        if (!textBlocksContainer) return;
+        // Clear any existing blocks that might be in the DOM (e.g. if HTML was saved with empty template blocks)
+        textBlocksContainer.innerHTML = '';
+        textBlockCount = 0; // Reset counter
+
+        if (crawlTexts && crawlTexts.length > 0) {
+            console.log('Populating write modal from saved crawlTexts:', crawlTexts);
+            crawlTexts.forEach(text => {
+                if (textBlockCount < MAX_BLOCKS) {
+                    addTextBlock(false, text); // isInitialBlock is false, pass the text
+                }
+            });
+        }
+        // Ensure the 'New Block' button visibility is correct after populating
+        if (newTextBlockButton) {
+            newTextBlockButton.style.display = textBlockCount >= MAX_BLOCKS ? 'none' : 'inline-block';
+        }
+        updateSaveButtonState(); // Update save button based on populated texts
+    }
+
+    function createTextBlockElement(initialText = '') {
         textBlockCount++;
         const blockId = `text-block-${textBlockCount}`;
         const textAreaId = `textarea-${textBlockCount}`;
@@ -1758,6 +1779,7 @@ document.addEventListener('DOMContentLoaded', () => {
         blockDiv.style.background = 'rgba(0,0,0,0.2)';
 
         const textarea = document.createElement('textarea');
+        textarea.value = initialText; // Set initial text if provided
         textarea.id = textAreaId;
         textarea.style.width = '100%';
         textarea.style.minHeight = '80px';
@@ -1776,7 +1798,7 @@ document.addEventListener('DOMContentLoaded', () => {
         charCounter.style.textAlign = 'right';
         charCounter.style.color = '#aaa';
         charCounter.style.marginTop = '5px';
-        charCounter.textContent = `0 / ${MAX_CHARS_PER_BLOCK}`;
+        charCounter.textContent = `${initialText.length}/${MAX_CHARS_PER_BLOCK}`;
 
         textarea.addEventListener('input', () => {
             const currentLength = textarea.value.length;
@@ -1794,13 +1816,13 @@ document.addEventListener('DOMContentLoaded', () => {
         return blockDiv;
     }
 
-    function addTextBlock(isInitialBlock = false) {
+    function addTextBlock(isInitialBlock, text = '') {
         if (textBlockCount >= MAX_BLOCKS) {
             newTextBlockButton.style.display = 'none'; // Hide button if max blocks reached
             return;
         }
         
-        const newBlockElement = createTextBlockElement();
+        const newBlockElement = createTextBlockElement(text);
         textBlocksContainer.appendChild(newBlockElement);
 
         if (textBlockCount >= MAX_BLOCKS) {
@@ -1847,6 +1869,9 @@ document.addEventListener('DOMContentLoaded', () => {
         newTextBlockButton.addEventListener('click', () => addTextBlock(false));
     }
 
+    // Populate modal from any saved texts first, then set initial UI states
+    populateWriteModalFromSavedTexts();
+
     // Initial state for newTextBlockButton and save button
     if (newTextBlockButton) {
       if (textBlockCount >= MAX_BLOCKS) {
@@ -1869,24 +1894,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
         return validTextsFound;
-    }
-
-    function downloadCrawlTexts(texts, filename) {
-        if (!texts || texts.length === 0) {
-            console.log("No texts to download.");
-            return;
-        }
-        const content = texts.join('\n\n--------------------\n\n');
-        const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = filename || 'crawl_texts.txt';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-        console.log('Crawl texts download initiated.');
     }
 
     function updateSaveButtonState() {
@@ -1917,17 +1924,60 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function handleSaveButtonClick() {
-        const textsProcessed = processAndStoreCrawlTexts();
+        const textsProcessed = processAndStoreCrawlTexts(); // Updates global crawlTexts
 
-        if (textsProcessed) {
-            console.log('Processing texts for save and download:', crawlTexts);
-            downloadCrawlTexts(crawlTexts, 'star_wars_crawl.txt');
+        const originalModalDisplay = writeModal.style.display;
+        writeModal.style.display = 'none'; // Ensure modal is closed for HTML capture
+
+        try {
+            let currentHtml = document.documentElement.outerHTML;
+            writeModal.style.display = originalModalDisplay; // Restore modal display for current session
+            const crawlTextsJSON = JSON.stringify(crawlTexts); 
+            // Regex to find 'let crawlTexts = ... ; // comment'
+            // It captures: (1) 'let crawlTexts = ' 
+            //             (2) the existing array content (which we discard)
+            //             (3) '; // any comment'
+            const regex = /(let\s+crawlTexts\s*=\s*)(?:[^;]+)(\s*;\s*\/\/.*)/m;
+            const newCrawlTextsInitialization = `$1${crawlTextsJSON}$2`;
+
+            if (regex.test(currentHtml)) {
+                currentHtml = currentHtml.replace(regex, newCrawlTextsInitialization);
+                console.log('Crawl texts embedded into HTML for download.');
+            } else {
+                console.error('Could not find crawlTexts initialization line in HTML to embed saved texts. HTML will be saved without updated texts embedded.');
+                // Fallback: attempt to save HTML as-is, or alert user.
+                // For now, we'll proceed but the downloaded HTML might not have the texts perfectly embedded if regex fails.
+            }
+
+            const blob = new Blob([currentHtml], { type: 'text/html;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'zen-space-entropy.html';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            console.log('HTML download initiated.');
+
+        } catch (error) {
+            console.error('Error during HTML save process:', error);
+            alert('An error occurred while trying to save the game HTML.');
+        }
+
+        // Regardless of download success/failure, try to animate if texts were processed from modal
+        if (textsProcessed && crawlTexts.length > 0) {
+            console.log('Initiating crawl sequence after save attempt:', crawlTexts);
             initiateStarWarsCrawlSequence(crawlTexts);
-        } else {
-            console.log('No valid text to save, download, or animate. Crawl will not play.');
-            if(crawlContainer) crawlContainer.style.display = 'none';
-            window.crawlHasPlayed = true; 
-            isCrawlSequenceActive = false;
+        } else if (!textsProcessed) {
+            console.log('No new valid text from modal to animate after save attempt. Crawl will not play unless previously set.');
+            // If crawlTexts was already populated and textsProcessed is false (modal was empty/invalid),
+            // we might still want to play existing crawlTexts if that's desired.
+            // For now, only animate if new texts were processed from the modal for this action.
+            if(crawlContainer && !isCrawlSequenceActive) {
+                 // if no new texts, and no sequence active, ensure it's hidden if it was supposed to be cleared.
+                 // This part might need refinement based on desired behavior if modal is submitted empty.
+            }
         }
         closeWriteModal();
     }
