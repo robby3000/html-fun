@@ -67,7 +67,7 @@
             transform: translateX(-50%); /* Center the container */
             width: 95vw;
             max-width: 1200px;
-            height: 50vh; /* Define the vertical space for the perspective effect */
+            height: 80vh; /* Define the vertical space for the perspective effect */
             perspective: 1000px;
             overflow: hidden; /* Crucial: hides the text before it enters and after it leaves */
             z-index: 1; /* Above canvas (z-index: 0), below game controls/UI */
@@ -98,12 +98,12 @@
                 transform: rotateX(55deg) translateY(0%); /* Consistent with more extreme 3D angle */
                 opacity: 1;
             }
-            50% { /* Text remains fully opaque for a good portion of its journey */
+            80% { /* Text remains fully opaque for a good portion of its journey */
                 opacity: 1;
             }
             100% {
-                transform: rotateX(55deg) translateY(-250%); /* Consistent with more extreme 3D angle */
-                opacity: 0; /* Fades out completely as it reaches its furthest point */
+                transform: rotateX(55deg) translateY(-250vh); /* INCREASED TRAVEL to compensate for foreshortening */
+                opacity: 0;
             }
         }
         /* Star Wars Crawl CSS - END */
@@ -1704,7 +1704,7 @@ document.addEventListener('DOMContentLoaded', () => {
     window.crawlHasPlayed = false; // Global flag, accessible from your game logic
 
     // Shortened placeholder text for the crawl
-    const placeholderCrawlText = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam";
+    const placeholderCrawlText = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam (147)";
 
     window.startStarWarsCrawl = function() {
         if (!crawlContainer || !crawlContent) {
@@ -1720,17 +1720,13 @@ document.addEventListener('DOMContentLoaded', () => {
         crawlContent.innerHTML = placeholderCrawlText.replace(/\n/g, '<br><br>');
         crawlContainer.style.display = 'block';
 
-        // --- Dynamic Animation Duration --- 
-        const pixelsPerSecond = 15; // Adjust this value to control scroll speed (lower = slower)
-        // Ensure content is visible to get accurate scrollHeight, then hide if needed before animation starts
-        // (though display:block should be fine here as it's positioned absolutely)
-        const contentHeight = crawlContent.scrollHeight;
-        const animationDurationSeconds = contentHeight / pixelsPerSecond;
+        // --- Fixed Animation Duration --- 
+        const fixedAnimationDurationSeconds = 25.0; // All crawls will take 25 seconds
 
-        console.log(`Content height: ${contentHeight}px, Calculated duration: ${animationDurationSeconds.toFixed(2)}s`);
+        console.log(`Applying fixed animation duration: ${fixedAnimationDurationSeconds.toFixed(2)}s`);
 
-        // Apply the animation with dynamic duration
-        crawlContent.style.animation = `crawlAnimation ${animationDurationSeconds}s linear forwards`; 
+        // Apply the animation with fixed duration
+        crawlContent.style.animation = `crawlAnimation ${fixedAnimationDurationSeconds}s linear forwards`; 
         window.crawlHasPlayed = true;
     };
 
