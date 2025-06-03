@@ -2083,7 +2083,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const currentText = activeCrawlTexts[currentCrawlBlockIndex];
         console.log(`Playing crawl block ${currentCrawlBlockIndex + 1}: "${currentText.substring(0,30)}..."`);
-        crawlContent.innerHTML = currentText.replace(/\n/g, '<br><br>');
+        crawlContent.innerHTML = currentText.replace(/\n/g, '<br>');
         crawlContainer.style.display = 'block';
 
         // Reset and restart animation
