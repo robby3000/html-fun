@@ -474,13 +474,13 @@
 
         // Game Constants
         const GAME_CONSTANTS = {
-            PLAYER_SPEED: 0.1,
+            PLAYER_SPEED: 6.0, // Player speed in units per second
             PLAYER_MAX_X: 5,
-            PLAYER_BULLET_SPEED: 0.5,
-            ENEMY_BULLET_SPEED: 0.3,
+            PLAYER_BULLET_SPEED: 30.0, // Player bullet speed in units per second
+            ENEMY_BULLET_SPEED: 18.0, // Enemy bullet speed in units per second
             ENEMY_SPAWN_INTERVAL: 2000, // ms
-            ENEMY_MIN_SPEED: 0.02,
-            ENEMY_SPEED_RANGE: 0.03,
+            ENEMY_MIN_SPEED: 1.2, // Min enemy speed in units per second
+            ENEMY_SPEED_RANGE: 1.8, // Additional random speed range in units per second
             ENEMY_SHOT_INTERVAL_MIN: 2000,
             ENEMY_SHOT_INTERVAL_RANGE: 2000,
             INITIAL_BULLET_COUNT: 20,
@@ -491,8 +491,8 @@
             SILVER_ENEMY_BASE_SCORE_TRIGGER: 100,
             SILVER_ENEMY_SCORE_INTERVAL_MIN: 400,
             SILVER_ENEMY_SCORE_INTERVAL_RANGE: 200,
-            SILVER_ENEMY_DURATION_FRAMES: 720, // Approx 12 seconds at 60fps
-            SILVER_ENEMY_SIDE_SPEED: 0.08,
+            SILVER_ENEMY_DURATION_MS: 12000, // Duration in milliseconds
+            SILVER_ENEMY_SIDE_SPEED: 4.8, // Silver enemy side-to-side speed in units per second
             SILVER_ENEMY_SHOT_INTERVAL: 1000,
             BULLET_REMOVAL_Z_PLAYER: -30,
             BULLET_REMOVAL_Z_ENEMY: 10,
@@ -504,7 +504,7 @@
             STAR_COUNT: 1000,
             STAR_SIZE: 0.1,
             STAR_SPREAD: 2000,
-            STAR_ROTATION_SPEED: 0.0005,
+            STAR_ROTATION_SPEED: 0.03, // Radians per second
             SOUND_LASER_BASE_VOLUME: isIOS ? 0.025 : 0.15, 
             SOUND_ENEMY_LASER_BASE_VOLUME: 0.3,
             SOUND_DEFAULT_BASE_VOLUME: 0.5,
@@ -513,6 +513,7 @@
 
         // Game State
         let animationFrameId;
+        let lastFrameTimestamp = 0; // For delta time calculation
         const gameState = {
             score: 0,
             health: GAME_CONSTANTS.INITIAL_HEALTH,
@@ -1213,19 +1214,19 @@
         }
         
         // Game Loop Updates
-        function updatePlayer() {
+        function updatePlayer(deltaTime) {
             if (gameState.moveLeft && player.position.x > -GAME_CONSTANTS.PLAYER_MAX_X) {
-                player.position.x -= GAME_CONSTANTS.PLAYER_SPEED;
+                player.position.x -= GAME_CONSTANTS.PLAYER_SPEED * deltaTime;
             }
             if (gameState.moveRight && player.position.x < GAME_CONSTANTS.PLAYER_MAX_X) {
-                player.position.x += GAME_CONSTANTS.PLAYER_SPEED;
+                player.position.x += GAME_CONSTANTS.PLAYER_SPEED * deltaTime;
             }
         }
 
-        function updateBulletsCollection(bulletsArray, removalZ) {
+        function updateBulletsCollection(bulletsArray, removalZ, deltaTime) {
             for (let i = bulletsArray.length - 1; i >= 0; i--) {
                 const bullet = bulletsArray[i];
-                bullet.position.add(bullet.userData.velocity);
+                bullet.position.addScaledVector(bullet.userData.velocity, deltaTime);
                 
                 let outOfBounds = false;
                 if (bullet.userData.velocity.z < 0) { // Player bullet moving away from camera
@@ -1241,18 +1242,18 @@
             }
         }
 
-        function updateEnemies(currentTime) {
+        function updateEnemies(currentTime, deltaTime) {
             for (let i = gameState.enemies.length - 1; i >= 0; i--) {
                 const enemy = gameState.enemies[i];
                 
                 if (enemy.userData.isSilverEnemy) {
-                    enemy.position.x += GAME_CONSTANTS.SILVER_ENEMY_SIDE_SPEED * gameState.silverEnemyDirection;
+                    enemy.position.x += GAME_CONSTANTS.SILVER_ENEMY_SIDE_SPEED * gameState.silverEnemyDirection * deltaTime;
                     if (enemy.position.x > GAME_CONSTANTS.PLAYER_MAX_X -1 || enemy.position.x < -GAME_CONSTANTS.PLAYER_MAX_X + 1) {
                          gameState.silverEnemyDirection *= -1; // Reverse direction
                          enemy.position.x = Math.max(-GAME_CONSTANTS.PLAYER_MAX_X + 1, Math.min(GAME_CONSTANTS.PLAYER_MAX_X -1, enemy.position.x)); // Clamp
                     }
                 } else {
-                    enemy.position.z += enemy.userData.speed;
+                    enemy.position.z += enemy.userData.speed * deltaTime;
                 }
                 
                 if (enemy.position.z > GAME_CONSTANTS.ENEMY_REMOVAL_Z) {
@@ -1278,10 +1279,10 @@
             }
         }
         
-        function manageSilverEnemyState() {
+        function manageSilverEnemyState(deltaTime) {
             if (gameState.silverEnemyActive) {
-                gameState.silverEnemyTimer++;
-                if (gameState.silverEnemyTimer > GAME_CONSTANTS.SILVER_ENEMY_DURATION_FRAMES) {
+                gameState.silverEnemyTimer += deltaTime; // Accumulate seconds
+                if (gameState.silverEnemyTimer * 1000 > GAME_CONSTANTS.SILVER_ENEMY_DURATION_MS) { // Compare in MS
                     SoundManager.stop('silver-enemy-sound');
                     for (let i = gameState.enemies.length - 1; i >= 0; i--) {
                         if (gameState.enemies[i].userData.isSilverEnemy) {
@@ -1309,18 +1310,33 @@
 
 
         // Main Game Loop
-        function animate() {
-            requestAnimationFrame(animate);
-            if (gameState.gameOver || !gameState.gameStarted) return;
+        function animate(timestamp) { // timestamp is provided by setAnimationLoop
+            // requestAnimationFrame(animate); // Removed, as renderer.setAnimationLoop handles the loop
+            if (gameState.gameOver || !gameState.gameStarted) {
+                // If game is over or not started, we might want to stop the loop
+                // or just not update game logic. For now, just return.
+                // To stop: renderer.setAnimationLoop(null);
+                return;
+            }
+
+            if (lastFrameTimestamp === 0) { // First frame initialization
+                lastFrameTimestamp = timestamp;
+            }
+            const deltaTime = (timestamp - lastFrameTimestamp) / 1000; // deltaTime in seconds
+            lastFrameTimestamp = timestamp;
+
+            // IMPORTANT: For Step 1, deltaTime is calculated but NOT YET USED by game logic.
+            // Game will likely run very fast.
+
             
             const currentTime = Date.now();
 
-            updatePlayer();
-            updateBulletsCollection(gameState.bullets, GAME_CONSTANTS.BULLET_REMOVAL_Z_PLAYER);
-            updateBulletsCollection(gameState.enemyBullets, GAME_CONSTANTS.BULLET_REMOVAL_Z_ENEMY);
-            updateEnemies(currentTime);
+            updatePlayer(deltaTime);
+            updateBulletsCollection(gameState.bullets, GAME_CONSTANTS.BULLET_REMOVAL_Z_PLAYER, deltaTime);
+            updateBulletsCollection(gameState.enemyBullets, GAME_CONSTANTS.BULLET_REMOVAL_Z_ENEMY, deltaTime);
+            updateEnemies(currentTime, deltaTime);
             
-            manageSilverEnemyState(); // Handles active silver enemy timer and removal
+            manageSilverEnemyState(deltaTime); // Handles active silver enemy timer and removal
 
             if (currentTime - gameState.lastEnemySpawnTime > GAME_CONSTANTS.ENEMY_SPAWN_INTERVAL) {
                 spawnEnemy();
@@ -1330,7 +1346,7 @@
             
             checkCollisions();
             
-            stars.rotation.y += GAME_CONSTANTS.STAR_ROTATION_SPEED;
+            stars.rotation.y += GAME_CONSTANTS.STAR_ROTATION_SPEED * deltaTime;
             renderer.render(scene, camera);
         }
 
@@ -1463,7 +1479,8 @@
             domElements.startScreen.style.display = 'flex'; 
         });
         
-        animate(); // Start the game loop
+        // animate(); // Old way to start the loop
+        renderer.setAnimationLoop(animate); // Start the new game loop with Three.js
     // Leaderboard functionality
 class Leaderboard {
     constructor() {
