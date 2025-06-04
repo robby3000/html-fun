@@ -359,6 +359,184 @@
             padding: 20px;
             color: #aaa;
         }
+
+        /* Write Modal Rework Styles */
+        .write-modal-content-box {
+            background: rgba(30, 30, 50, 0.95);
+            padding: 25px;
+            border-radius: 3px;
+            max-width: 600px;
+            width: 90%;
+            text-align: center;
+            color: white;
+            position: relative;
+            box-sizing: border-box;
+            box-shadow: inset 0 0 0 1px #FFE81F, inset 0 0 5px rgba(0,0,0,0.5);
+        }
+
+        .write-modal-title {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 24px;
+            margin-top: 0;
+            margin-bottom: 10px;
+            color: #FFE81F;
+        }
+
+        .write-modal-subtitle {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 12px;
+            margin-bottom: 15px;
+            color: #ccc;
+        }
+
+        .write-modal-info {
+            font-size: 11px;
+            margin-bottom: 20px;
+            color: #aaa;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            border-bottom: 1px solid #FFE81F;
+            padding-bottom: 15px;
+        }
+
+        #text-blocks-container::-webkit-scrollbar {
+          width: 8px; /* Thin scrollbar */
+        }
+
+        #text-blocks-container::-webkit-scrollbar-track {
+          background: rgb(20, 20, 35); /* Dark track */
+        }
+
+        #text-blocks-container::-webkit-scrollbar-thumb {
+          background-color: #FFE81F; /* Yellow accent thumb */
+          border-radius: 4px;
+        }
+
+        /* Text Block Editor Item Styles */
+        .text-block-editor-item {
+            background: rgb(15,15,30); /* Darker than modal bg */
+            border: 1px solid #444; /* Darker gray border */
+            border-radius: 3px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .block-label {
+            font-family: 'Press Start 2P', cursive;
+            color: #ccc;
+            font-size: 12px;
+            margin-bottom: 8px; /* Increased slightly for better separation */
+            display: block;
+            text-align: left; /* Align label to the left */
+        }
+
+        .block-textarea {
+            width: 100%;
+            min-height: 80px;
+            box-sizing: border-box;
+            background: rgb(20, 20, 35); /* Dark gray/blue */
+            color: #DDDDDD;
+            border: 1px solid #444;
+            padding: 10px;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif; /* Clean sans-serif */
+            border-radius: 3px; /* Match other elements */
+        }
+
+        .controls-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 10px;
+        }
+
+        .alignment-group {
+            display: flex;
+            align-items: center;
+        }
+
+        .alignment-label {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            color: #bbb;
+            font-size: 11px;
+            margin-right: 5px;
+        }
+
+        /* Existing .alignment-select class will be used, but we can add specific overrides if needed later */
+        .alignment-select {
+            padding: 5px 8px; /* Adjusted padding */
+            background-color: rgb(20, 20, 35); /* Match textarea */
+            color: #DDDDDD; /* Match textarea */
+            border: 1px solid #444; /* Match textarea */
+            border-radius: 3px;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            font-size: 11px; /* Match other control text */
+        }
+
+        .char-counter {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            color: #aaa;
+            font-size: 11px;
+        }
+
+        .remove-block-button {
+            background: rgb(20, 20, 35); /* Dark base */
+            color: #FF6B6B; /* Muted red/orange text */
+            border: 1px solid #FF6B6B; /* Muted red/orange border */
+            border-radius: 3px;
+            padding: 4px 8px;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 10px;
+            cursor: pointer;
+            transition: background-color 0.2s, color 0.2s;
+        }
+
+        .remove-block-button:hover {
+            background: #FF6B6B;
+            color: rgb(20, 20, 35);
+        }
+
+        .write-modal-footer {
+            border-top: 1px solid #FFE81F;
+            padding-top: 20px;
+            margin-top: 20px; /* Space above the border */
+            display: flex;
+            justify-content: space-between; /* Or space-around if preferred */
+            align-items: center;
+            width: 100%;
+        }
+
+        .retrofuturistic-button {
+            font-family: 'Press Start 2P', cursive;
+            border-radius: 3px; /* Sharper corners */
+            padding: 8px 15px;
+            font-size: 11px; /* Consistent small button size */
+            cursor: pointer;
+            transition: background-color 0.2s, color 0.2s, border-color 0.2s;
+            background: rgb(35, 35, 60); /* Base dark background */
+            color: #DDDDDD; /* Default text color */
+            border: 1px solid #50C8C8; /* Default border (secondary accent) */
+        }
+
+        .retrofuturistic-button:hover {
+            filter: brightness(1.2);
+        }
+
+        .action-save {
+            border-color: #FFE81F; /* Primary accent */
+            color: #FFE81F;
+        }
+        .action-save:hover {
+            background-color: #FFE81F;
+            color: rgb(35, 35, 60);
+        }
+
+        .action-close {
+            border-color: #FF6B6B; /* Destructive accent */
+            color: #FF6B6B;
+        }
+        .action-close:hover {
+            background-color: #FF6B6B;
+            color: rgb(35, 35, 60);
+        }
     </style>
 </head>
 <body>
@@ -418,20 +596,19 @@
 
     <!-- Write Modal HTML -->
     <div id="write-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.95); z-index: 2001; justify-content: center; align-items: center; flex-direction: column; overflow-y: auto; padding: 20px; box-sizing: border-box;">
-        <div style="background: rgba(30, 30, 50, 0.95); padding: 25px; border-radius: 10px; max-width: 600px; width: 90%; text-align: center; color: white; position: relative; box-sizing: border-box;">
-            <h2 style="font-family: 'Press Start 2P', cursive; font-size: 24px; margin-top: 0; margin-bottom: 10px; color: #FFE81F;">WRITE</h2>
-            <p style="font-family: 'Press Start 2P', cursive; font-size: 12px; margin-bottom: 15px; color: #ccc;">Craft your Star Wars intro</p>
-            <p style="font-size: 11px; margin-bottom: 20px; color: #aaa; font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;">500 characters max per text block. Up to 10 blocks.</p>
+        <div class="write-modal-content-box">
+            <h2 class="write-modal-title">WRITE</h2>
+            <p class="write-modal-subtitle">Craft your Star Wars intro</p>
+            <p class="write-modal-info">500 characters max per text block. Up to 10 blocks.</p>
             
             <div id="text-blocks-container" style="margin-bottom: 20px; max-height: 40vh; overflow-y: auto; padding-right: 10px; /* For scrollbar */">
                 <!-- Text blocks will be added here by JavaScript -->
             </div>
             
-            <button id="new-text-block-button" style="padding: 8px 15px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; margin-bottom:20px; font-family: 'Press Start 2P', cursive; font-size: 10px;">New block</button>
-            
-            <div style="margin-top: 20px;">
-                <button id="save-crawl-text-button" style="padding: 10px 20px; background: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer; font-family: 'Press Start 2P', cursive; font-size: 12px; margin-right: 10px;">Save</button>
-                <button id="close-write-modal-button" style="padding: 10px 20px; background: #dc3545; color: white; border: none; border-radius: 5px; cursor: pointer; font-family: 'Press Start 2P', cursive; font-size: 12px;">Close</button>
+            <div class="write-modal-footer">
+                <button id="new-text-block-button" class="retrofuturistic-button action-new">New Block</button>
+                <button id="save-crawl-text-button" class="retrofuturistic-button action-save">Save</button> 
+                <button id="close-write-modal-button" class="retrofuturistic-button action-close">Close</button>
             </div>
         </div>
     </div>
@@ -1781,72 +1958,48 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function createTextBlockElement(initialText = '', initialAlign = 'justify') {
-        textBlockCount++;
+        textBlockCount++; // Keep for unique IDs and initial label
         const blockId = `text-block-${textBlockCount}`;
         const textAreaId = `textarea-${textBlockCount}`;
         const charCountId = `char-count-${textBlockCount}`;
 
         const blockDiv = document.createElement('div');
         blockDiv.id = blockId;
-        blockDiv.style.marginBottom = '15px';
-        blockDiv.style.padding = '10px';
-        blockDiv.style.border = '1px solid #555';
-        blockDiv.style.borderRadius = '5px';
-        blockDiv.style.background = 'rgba(0,0,0,0.2)';
+        blockDiv.className = 'text-block-editor-item'; // Use new class
 
+        // 1. Block Label
+        const blockLabel = document.createElement('label');
+        blockLabel.className = 'block-label';
+        blockLabel.textContent = `Text Block ${textBlockCount}`;
+        blockLabel.htmlFor = textAreaId; // Good practice for accessibility
+        blockDiv.appendChild(blockLabel);
+
+        // 2. Textarea
         const textarea = document.createElement('textarea');
-        textarea.value = initialText; // Set initial text if provided
         textarea.id = textAreaId;
-        textarea.style.width = '100%';
-        textarea.style.minHeight = '80px';
-        textarea.style.boxSizing = 'border-box';
-        textarea.style.background = '#222';
-        textarea.style.color = '#eee';
-        textarea.style.border = '1px solid #444';
-        textarea.style.padding = '8px';
-        textarea.style.fontFamily = 'system-ui, sans-serif';
+        textarea.className = 'block-textarea'; // Use new class
+        textarea.value = initialText;
         textarea.setAttribute('maxlength', MAX_CHARS_PER_BLOCK.toString());
-        textarea.placeholder = `Block ${textBlockCount} text...`;
-
-        const charCounter = document.createElement('div');
-        charCounter.id = charCountId;
-        charCounter.style.fontSize = '10px';
-        charCounter.style.textAlign = 'right';
-        charCounter.style.color = '#aaa';
-        charCounter.style.marginTop = '5px';
-        charCounter.textContent = `${initialText.length}/${MAX_CHARS_PER_BLOCK}`;
-
-        textarea.addEventListener('input', () => {
-            const currentLength = textarea.value.length;
-            charCounter.textContent = `${currentLength} / ${MAX_CHARS_PER_BLOCK}`;
-            if (currentLength > MAX_CHARS_PER_BLOCK) {
-                charCounter.style.color = 'red';
-            } else {
-                charCounter.style.color = '#aaa';
-            }
-            updateSaveButtonState();
-        });
-
+        textarea.placeholder = `Enter text for block ${textBlockCount}...`; // Slightly more descriptive
         blockDiv.appendChild(textarea);
-        blockDiv.appendChild(charCounter);
 
-        const alignmentLabel = document.createElement('label');
-        alignmentLabel.textContent = 'Alignment: ';
-        alignmentLabel.style.color = '#ccc';
-        alignmentLabel.style.marginRight = '5px';
-    alignmentLabel.style.fontSize = '12px'; // Set font size to 12px
-        alignmentLabel.style.display = 'inline-block'; // Keep it on the same line as select
-        alignmentLabel.style.verticalAlign = 'middle';
+        // 3. Controls Row
+        const controlsRow = document.createElement('div');
+        controlsRow.className = 'controls-row';
+
+        // 3a. Alignment Group (Label + Select)
+        const alignmentGroup = document.createElement('div');
+        alignmentGroup.className = 'alignment-group';
+
+        const alignmentLabelEl = document.createElement('label'); // Renamed to avoid conflict
+        alignmentLabelEl.className = 'alignment-label';
+        alignmentLabelEl.textContent = 'Align:'; // Shorter label
+        // alignmentLabelEl.htmlFor = `alignment-select-${textBlockCount}`; // For accessibility
+        alignmentGroup.appendChild(alignmentLabelEl);
 
         const alignmentSelect = document.createElement('select');
-        alignmentSelect.className = 'alignment-select'; // Added class for easier selection
-        alignmentSelect.style.padding = '5px';
-        alignmentSelect.style.backgroundColor = '#222';
-        alignmentSelect.style.color = '#ddd';
-        alignmentSelect.style.border = '1px solid #444';
-        alignmentSelect.style.borderRadius = '3px';
-        alignmentSelect.style.marginBottom = '10px';
-        alignmentSelect.style.verticalAlign = 'middle';
+        alignmentSelect.className = 'alignment-select'; // Existing class, styled via CSS
+        // alignmentSelect.id = `alignment-select-${textBlockCount}`;
 
         const justifyOption = document.createElement('option');
         justifyOption.value = 'justify';
@@ -1858,10 +2011,48 @@ document.addEventListener('DOMContentLoaded', () => {
         centerOption.textContent = 'Center';
         alignmentSelect.appendChild(centerOption);
 
-        alignmentSelect.value = initialAlign; // Set initial value
+        alignmentSelect.value = initialAlign;
+        alignmentGroup.appendChild(alignmentSelect);
+        controlsRow.appendChild(alignmentGroup);
 
-        blockDiv.appendChild(alignmentLabel);
-        blockDiv.appendChild(alignmentSelect);
+        // 3b. Character Counter
+        const charCounter = document.createElement('div');
+        charCounter.id = charCountId; // Keep ID if used elsewhere, though class handles styling
+        charCounter.className = 'char-counter'; // Use new class
+        charCounter.textContent = `${initialText.length}/${MAX_CHARS_PER_BLOCK}`;
+        controlsRow.appendChild(charCounter);
+
+        // Event listener for textarea input (char count update)
+        textarea.addEventListener('input', () => {
+            const currentLength = textarea.value.length;
+            charCounter.textContent = `${currentLength}/${MAX_CHARS_PER_BLOCK}`;
+            if (currentLength > MAX_CHARS_PER_BLOCK) {
+                charCounter.style.color = 'red'; // Keep dynamic style for error state
+            } else {
+                charCounter.style.color = ''; // Revert to CSS class color
+            }
+            updateSaveButtonState(); // Assumed function
+        });
+
+        // 3c. Remove Button
+        const removeButton = document.createElement('button');
+        removeButton.className = 'remove-block-button';
+        removeButton.textContent = 'X';
+        removeButton.type = 'button'; // Good practice for buttons not submitting forms
+        removeButton.title = 'Remove this text block'; // Accessibility
+        removeButton.addEventListener('click', () => {
+            blockDiv.remove();
+            // Note: We might need to update an array holding text block data here
+            // and potentially re-evaluate textBlockCount if it's used for limiting max blocks.
+            // For now, just removing the element and updating save state.
+            updateSaveButtonState(); // Assumed function
+            // Call a function to update the main crawlTexts array
+            updateCrawlTextsArray(); 
+        });
+        controlsRow.appendChild(removeButton);
+
+        blockDiv.appendChild(controlsRow);
+
         return blockDiv;
     }
 
@@ -1930,6 +2121,13 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
     updateSaveButtonState(); // Call initially to set state
+
+    function updateCrawlTextsArray() {
+        console.log('Updating crawlTexts array after block removal...');
+        processAndStoreCrawlTexts();
+        // Optionally, log the updated crawlTexts for debugging
+        // console.log('Updated crawlTexts:', crawlTexts);
+    }
 
     function processAndStoreCrawlTexts() {
         crawlTexts = []; // Clear previous texts
