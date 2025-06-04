@@ -537,6 +537,13 @@
             background-color: #FF6B6B;
             color: rgb(35, 35, 60);
         }
+
+        @media (max-width: 480px) { /* Adjust breakpoint as needed for small mobile */
+            .retrofuturistic-button {
+                font-size: 9px;
+                padding: 6px 8px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -606,7 +613,7 @@
             </div>
             
             <div class="write-modal-footer">
-                <button id="new-text-block-button" class="retrofuturistic-button action-new">New Block</button>
+                <button id="new-text-block-button" class="retrofuturistic-button action-new">+block</button>
                 <button id="save-crawl-text-button" class="retrofuturistic-button action-save">Save</button> 
                 <button id="close-write-modal-button" class="retrofuturistic-button action-close">Close</button>
             </div>
