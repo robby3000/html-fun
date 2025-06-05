@@ -2248,6 +2248,24 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             // --- End Reset Game State and UI ---
 
+        // --- Reset Star Wars Crawl Display for Saved File ---
+            // Reset crawl content to placeholder
+            currentHtml = currentHtml.replace(
+                /(<div id="star-wars-crawl-content"[^>]*>)[\s\S]*?(<\/div>)/m,
+                '$1<!-- Placeholder text will be injected by JavaScript -->$2'
+            );
+            // Remove inline style from crawl content div
+            currentHtml = currentHtml.replace(
+                /(<div id="star-wars-crawl-content")\s+style="[^"]*"/m,
+                '$1'
+            );
+            // Remove inline style from crawl container div
+            currentHtml = currentHtml.replace(
+                /(<div id="star-wars-crawl-container")\s+style="[^"]*"/m,
+                '$1'
+            );
+        // --- End Reset Star Wars Crawl Display ---
+
             const crawlTextsJSON = JSON.stringify(crawlTexts);
             const crawlEmbedRegex = /(let\s+crawlTexts\s*=\s*)(?:[^;]+)(\s*;\s*\/\/.*)/m;
             const newCrawlTextsInitialization = `$1${crawlTextsJSON}$2`;
