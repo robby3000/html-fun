@@ -1665,9 +1665,13 @@ class Leaderboard {
     }
 
     getCurrentMonth() {
-        const date = new Date();
-        return date.toLocaleString('default', { month: 'long' }) + ' ' + date.getFullYear();
-    }
+    const date = new Date();
+    // Get the month name in English, based on UTC
+    const month = date.toLocaleString('en-US', { month: 'long', timeZone: 'UTC' });
+    // Get the year based on UTC
+    const year = date.getUTCFullYear();
+    return month + ' ' + year;
+}
 
     async checkHighScore(score) {
         try {
