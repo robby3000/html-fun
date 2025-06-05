@@ -477,22 +477,6 @@
             font-size: 11px;
         }
 
-        .remove-block-button {
-            background: rgb(20, 20, 35); /* Dark base */
-            color: #FF6B6B; /* Muted red/orange text */
-            border: 1px solid #FF6B6B; /* Muted red/orange border */
-            border-radius: 3px;
-            padding: 4px 8px;
-            font-family: 'Press Start 2P', cursive;
-            font-size: 10px;
-            cursor: pointer;
-            transition: background-color 0.2s, color 0.2s;
-        }
-
-        .remove-block-button:hover {
-            background: #FF6B6B;
-            color: rgb(20, 20, 35);
-        }
 
         .write-modal-footer {
             border-top: 1px solid #FFE81F;
@@ -2040,23 +2024,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             updateSaveButtonState(); // Assumed function
         });
-
-        // 3c. Remove Button
-        const removeButton = document.createElement('button');
-        removeButton.className = 'remove-block-button';
-        removeButton.textContent = 'X';
-        removeButton.type = 'button'; // Good practice for buttons not submitting forms
-        removeButton.title = 'Remove this text block'; // Accessibility
-        removeButton.addEventListener('click', () => {
-            blockDiv.remove();
-            // Note: We might need to update an array holding text block data here
-            // and potentially re-evaluate textBlockCount if it's used for limiting max blocks.
-            // For now, just removing the element and updating save state.
-            updateSaveButtonState(); // Assumed function
-            // Call a function to update the main crawlTexts array
-            updateCrawlTextsArray(); 
-        });
-        controlsRow.appendChild(removeButton);
 
         blockDiv.appendChild(controlsRow);
 
