@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Art Hunter</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            -khtml-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #222;
+            color: white;
+            overflow: hidden;
+            padding: env(safe-area-inset-top, 0) env(safe-area-inset-right, 0) env(safe-area-inset-bottom, 0) env(safe-area-inset-left, 0);
+        }
+
+        #gameContainer {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #gameCanvas {
+            background: white;
+            flex: 1;
+            touch-action: none;
+            cursor: none;
+        }
+
+        #ui {
+            position: absolute;
+            bottom: max(20px, env(safe-area-inset-bottom, 20px));
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            z-index: 100;
+            padding-bottom: 20px;
+        }
+
+        #fireButton {
+            background: linear-gradient(145deg, #ff4444, #cc0000);
+            border: none;
+            border-radius: 50%;
+            width: 80px;
+            height: 80px;
+            color: white;
+            font-weight: bold;
+            font-size: 16px;
+            box-shadow: 0 4px 15px rgba(255, 68, 68, 0.3);
+            cursor: pointer;
+            touch-action: manipulation;
+            transition: all 0.1s;
+        }
+
+        #fireButton:active {
+            transform: scale(0.95);
+            box-shadow: 0 2px 8px rgba(255, 68, 68, 0.4);
+        }
+
+        #score {
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        #scope {
+            position: absolute;
+            width: 100px;
+            height: 100px;
+            pointer-events: none;
+            z-index: 50;
+            transform: translate(-50%, -50%);
+        }
+
+        .scope-ring {
+            position: absolute;
+            border: 2px solid rgba(0, 0, 0, 0.8);
+            border-radius: 50%;
+            animation: scopePulse 2s ease-in-out infinite;
+        }
+
+        .scope-outer {
+            width: 100px;
+            height: 100px;
+        }
+
+        .scope-inner {
+            width: 60px;
+            height: 60px;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .scope-center {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: rgba(0, 0, 0, 0.9);
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .scope-crosshair {
+            position: absolute;
+            background: rgba(0, 0, 0, 0.7);
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .scope-crosshair.horizontal {
+            width: 80px;
+            height: 1px;
+        }
+
+        .scope-crosshair.vertical {
+            width: 1px;
+            height: 80px;
+        }
+
+        @keyframes scopePulse {
+            0%, 100% { opacity: 0.8; }
+            50% { opacity: 0.4; }
+        }
+
+        #startScreen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 200;
+        }
+
+        #startScreen h1 {
+            font-size: 3em;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        #startScreen p {
+            font-size: 1.2em;
+            text-align: center;
+            margin-bottom: 30px;
+            max-width: 80%;
+            line-height: 1.5;
+        }
+
+        #startButton {
+            background: linear-gradient(145deg, #4CAF50, #45a049);
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.5em;
+            color: white;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+            transition: all 0.2s;
+        }
+
+        #startButton:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px 8px rgba(76, 175, 80, 0.4);
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <div id="startScreen">
+            <h1>🎯 Art Hunter</h1>
+            <p>Hunt the moving dots and create beautiful art!<br>
+            Drag to aim your scope, then tap FIRE to splat the dots.<br>
+            <small style="opacity: 0.8;">Game will enter fullscreen mode for the best experience.</small></p>
+            <button id="startButton">START GAME</button>
+        </div>
+        
+        <canvas id="gameCanvas"></canvas>
+        
+        <div id="scope">
+            <div class="scope-ring scope-outer"></div>
+            <div class="scope-ring scope-inner"></div>
+            <div class="scope-crosshair horizontal"></div>
+            <div class="scope-crosshair vertical"></div>
+            <div class="scope-center"></div>
+        </div>
+        
+        <div id="ui">
+            <div id="score">Score: 0</div>
+            <button id="fireButton">FIRE</button>
+        </div>
+    </div>
+
+    <script>
+        class ArtHunterGame {
+            constructor() {
+                this.canvas = document.getElementById('gameCanvas');
+                this.ctx = this.canvas.getContext('2d');
+                this.scope = document.getElementById('scope');
+                this.fireButton = document.getElementById('fireButton');
+                this.scoreElement = document.getElementById('score');
+                this.startScreen = document.getElementById('startScreen');
+                this.startButton = document.getElementById('startButton');
+                
+                this.splats = [];
+                this.score = 0;
+                this.dot = null;
+                this.gameStarted = false;
+                this.scopeX = 0;
+                this.scopeY = 0;
+                
+                this.colors = [
+                    '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7',
+                    '#DDA0DD', '#98D8C8', '#F7DC6F', '#BB8FCE', '#85C1E9'
+                ];
+                
+                this.setupCanvas();
+                this.setupEventListeners();
+                this.setupFullscreenEvents();
+                this.gameLoop();
+            }
+            
+            setupCanvas() {
+                this.resizeCanvas();
+                window.addEventListener('resize', () => this.resizeCanvas());
+            }
+            
+            resizeCanvas() {
+                const rect = this.canvas.getBoundingClientRect();
+                this.canvas.width = rect.width;
+                this.canvas.height = rect.height;
+                this.canvasRect = rect;
+                
+                // Initial scope position
+                this.scopeX = this.canvas.width / 2;
+                this.scopeY = this.canvas.height / 2;
+                this.updateScopePosition();
+            }
+            
+            setupEventListeners() {
+                this.startButton.addEventListener('click', () => this.startGame());
+                
+                // Touch events for scope movement
+                this.canvas.addEventListener('touchstart', (e) => this.handleTouchStart(e));
+                this.canvas.addEventListener('touchmove', (e) => this.handleTouchMove(e));
+                
+                // Mouse events for desktop testing
+                this.canvas.addEventListener('mousedown', (e) => this.handleMouseDown(e));
+                this.canvas.addEventListener('mousemove', (e) => this.handleMouseMove(e));
+                
+                // Fire button
+                this.fireButton.addEventListener('click', () => this.fire());
+                this.fireButton.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    this.fire();
+                });
+                
+                this.isDragging = false;
+            }
+            
+            handleTouchStart(e) {
+                e.preventDefault();
+                this.isDragging = true;
+                const touch = e.touches[0];
+                this.updateScopeFromEvent(touch);
+            }
+            
+            handleTouchMove(e) {
+                e.preventDefault();
+                if (this.isDragging) {
+                    const touch = e.touches[0];
+                    this.updateScopeFromEvent(touch);
+                }
+            }
+            
+            handleMouseDown(e) {
+                this.isDragging = true;
+                this.updateScopeFromEvent(e);
+            }
+            
+            handleMouseMove(e) {
+                if (this.isDragging) {
+                    this.updateScopeFromEvent(e);
+                }
+            }
+            
+            updateScopeFromEvent(event) {
+                const rect = this.canvas.getBoundingClientRect();
+                this.scopeX = event.clientX - rect.left;
+                this.scopeY = event.clientY - rect.top;
+                this.updateScopePosition();
+            }
+            
+            updateScopePosition() {
+                this.scope.style.left = this.scopeX + 'px';
+                this.scope.style.top = this.scopeY + 'px';
+            }
+            
+            startGame() {
+                // Request fullscreen mode
+                this.requestFullscreen();
+                
+                this.startScreen.style.display = 'none';
+                this.gameStarted = true;
+                this.spawnDot();
+            }
+            
+            requestFullscreen() {
+                const element = document.documentElement;
+                
+                if (element.requestFullscreen) {
+                    element.requestFullscreen();
+                } else if (element.webkitRequestFullscreen) {
+                    element.webkitRequestFullscreen();
+                } else if (element.mozRequestFullScreen) {
+                    element.mozRequestFullScreen();
+                } else if (element.msRequestFullscreen) {
+                    element.msRequestFullscreen();
+                }
+            }
+            
+            setupFullscreenEvents() {
+                // Handle fullscreen change events
+                document.addEventListener('fullscreenchange', () => this.handleFullscreenChange());
+                document.addEventListener('webkitfullscreenchange', () => this.handleFullscreenChange());
+                document.addEventListener('mozfullscreenchange', () => this.handleFullscreenChange());
+                document.addEventListener('MSFullscreenChange', () => this.handleFullscreenChange());
+            }
+            
+            handleFullscreenChange() {
+                // Resize canvas when entering/exiting fullscreen
+                setTimeout(() => {
+                    this.resizeCanvas();
+                }, 100);
+            }
+            
+            spawnDot() {
+                const margin = 20;
+                this.dot = {
+                    x: Math.random() * (this.canvas.width - 2 * margin) + margin,
+                    y: Math.random() * (this.canvas.height - 2 * margin) + margin,
+                    vx: (Math.random() - 0.5) * 4,
+                    vy: (Math.random() - 0.5) * 4,
+                    radius: 7.5
+                };
+                
+                // Ensure minimum speed
+                const speed = Math.sqrt(this.dot.vx * this.dot.vx + this.dot.vy * this.dot.vy);
+                if (speed < 1) {
+                    this.dot.vx = (Math.random() > 0.5 ? 1 : -1) * 1.5;
+                    this.dot.vy = (Math.random() > 0.5 ? 1 : -1) * 1.5;
+                }
+            }
+            
+            updateDot() {
+                if (!this.dot) return;
+                
+                this.dot.x += this.dot.vx;
+                this.dot.y += this.dot.vy;
+                
+                // Bounce off walls
+                if (this.dot.x <= this.dot.radius || this.dot.x >= this.canvas.width - this.dot.radius) {
+                    this.dot.vx = -this.dot.vx;
+                    this.dot.x = Math.max(this.dot.radius, Math.min(this.canvas.width - this.dot.radius, this.dot.x));
+                    
+                    // Add some randomness to the bounce
+                    this.dot.vy += (Math.random() - 0.5) * 0.5;
+                }
+                
+                if (this.dot.y <= this.dot.radius || this.dot.y >= this.canvas.height - this.dot.radius) {
+                    this.dot.vy = -this.dot.vy;
+                    this.dot.y = Math.max(this.dot.radius, Math.min(this.canvas.height - this.dot.radius, this.dot.y));
+                    
+                    // Add some randomness to the bounce
+                    this.dot.vx += (Math.random() - 0.5) * 0.5;
+                }
+            }
+            
+            fire() {
+                if (!this.gameStarted || !this.dot) return;
+                
+                const distance = Math.sqrt(
+                    (this.dot.x - this.scopeX) ** 2 + 
+                    (this.dot.y - this.scopeY) ** 2
+                );
+                
+                if (distance <= 30) { // Hit detection within scope center
+                    this.createSplat(this.dot.x, this.dot.y);
+                    this.score++;
+                    this.scoreElement.textContent = `Score: ${this.score}`;
+                    this.spawnDot();
+                }
+            }
+            
+            createSplat(x, y) {
+                const color = this.colors[Math.floor(Math.random() * this.colors.length)];
+                const size = 30 + Math.random() * 80; // Increased maximum size
+                
+                // Create splat data and store it
+                const splatData = {
+                    x: x,
+                    y: y,
+                    color: color,
+                    size: size,
+                    points: []
+                };
+                
+                // Generate irregular splat shape
+                const numPoints = 8 + Math.floor(Math.random() * 8);
+                for (let i = 0; i < numPoints; i++) {
+                    const angle = (i / numPoints) * Math.PI * 2;
+                    const radius = size * (0.5 + Math.random() * 0.7);
+                    splatData.points.push({
+                        angle: angle,
+                        radius: radius
+                    });
+                }
+                
+                // Generate droplets
+                splatData.droplets = [];
+                for (let i = 0; i < 5; i++) {
+                    splatData.droplets.push({
+                        x: x + (Math.random() - 0.5) * size * 2,
+                        y: y + (Math.random() - 0.5) * size * 2,
+                        size: 2 + Math.random() * 8
+                    });
+                }
+                
+                this.splats.push(splatData);
+                this.drawSplat(splatData);
+            }
+            
+            drawSplat(splatData) {
+                this.ctx.save();
+                this.ctx.globalAlpha = 0.8; // Increased opacity to 80%
+                this.ctx.fillStyle = splatData.color;
+                
+                // Draw main splat shape
+                this.ctx.beginPath();
+                for (let i = 0; i < splatData.points.length; i++) {
+                    const point = splatData.points[i];
+                    const px = splatData.x + Math.cos(point.angle) * point.radius;
+                    const py = splatData.y + Math.sin(point.angle) * point.radius;
+                    
+                    if (i === 0) {
+                        this.ctx.moveTo(px, py);
+                    } else {
+                        // Add some curve to make it more organic
+                        const prevPoint = splatData.points[i - 1];
+                        const cpx = splatData.x + Math.cos(prevPoint.angle + 0.3) * prevPoint.radius * 0.8;
+                        const cpy = splatData.y + Math.sin(prevPoint.angle + 0.3) * prevPoint.radius * 0.8;
+                        this.ctx.quadraticCurveTo(cpx, cpy, px, py);
+                    }
+                }
+                this.ctx.closePath();
+                this.ctx.fill();
+                
+                // Draw droplets
+                splatData.droplets.forEach(droplet => {
+                    this.ctx.beginPath();
+                    this.ctx.arc(droplet.x, droplet.y, droplet.size, 0, Math.PI * 2);
+                    this.ctx.fill();
+                });
+                
+                this.ctx.restore();
+            }
+            
+            draw() {
+                if (!this.gameStarted) return;
+                
+                // Clear entire canvas
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                
+                // Redraw all splats
+                this.splats.forEach(splat => this.drawSplat(splat));
+                
+                // Draw dot on top
+                if (this.dot) {
+                    this.ctx.fillStyle = '#000';
+                    this.ctx.beginPath();
+                    this.ctx.arc(this.dot.x, this.dot.y, this.dot.radius, 0, Math.PI * 2);
+                    this.ctx.fill();
+                }
+            }
+            
+            gameLoop() {
+                this.updateDot();
+                this.draw();
+                requestAnimationFrame(() => this.gameLoop());
+            }
+        }
+        
+        // Start the game when page loads
+        window.addEventListener('load', () => {
+            new ArtHunterGame();
+        });
+        
+        // Prevent scrolling on touch devices
+        document.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+        }, { passive: false });
+        
+        // Stop dragging on touch end/mouse up
+        document.addEventListener('touchend', () => {
+            // Any cleanup needed
+        });
+        
+        document.addEventListener('mouseup', () => {
+            // Any cleanup needed
+        });
+    </script>
+</body>
+</html>
